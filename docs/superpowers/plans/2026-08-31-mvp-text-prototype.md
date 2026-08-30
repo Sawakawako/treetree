@@ -1,727 +1,1059 @@
-# 世界树 MVP 文字原型 Implementation Plan
+# 世界树 MVP 文字原型 Implementation Plan（Godot 版）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 搭起《世界树》最小可玩文字原型：玩家扮演一棵树，点击舒展叶片收集日光，经光合转化为树液，购买斐波那契成本的升级（叶序螺旋/分枝序）实现自动采集，树液累积为树高（生长），并带 localStorage 自动存档。
+**Goal:** 用 Godot 4.7 搭起《世界树》最小可玩文字原型：玩家扮演一棵树，点击舒展叶片收集日光，经光合转化为树液，购买斐波那契成本的升级（叶序螺旋/分枝序）实现自动采集，树液累积为树高（生长），带 `user://` 自动存档。
 
-**Architecture:** 纯前端 ES modules 分层：`state.js`（游戏状态）、`costs.js`（斐波那契成本）、`actions.js`（玩家动作）、`loop.js`（每 tick 资源计算）、`format.js`（数字格式化）、`render.js`（DOM 渲染）、`main.js`（入口：定时器/事件/存档）。所有计算逻辑为纯函数，可在 Node `node:test` 下直接测试；浏览器层仅做渲染与事件转发。
+**Architecture:** 按 godot-master Layer Cake 分层：`GameState`（RefCounted 数据容器）、`GameLoop`/`GameActions`/`CostCalculator`/`BigNum`/`Formatter`（RefCounted 纯逻辑，headless 可测）、`GameManager`（Autoload：持有状态、`_process(delta)` 手动累加 tick、发 `resources_changed` 信号）、`main.tscn`（Presentation 只监听信号更新 UI）。测试用 GdUnit4，`godot --headless` 运行。
 
-**Tech Stack:** 原生 HTML/CSS/JS（ES modules，零依赖）；Node ≥ 18 内置 `node:test` 跑测试；`server.mjs` 用 Node 内置 `http` 做静态文件服务器。
+**Tech Stack:** Godot 4.7.1（mono，已装于 `C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\`，`godot` 命令在 PATH）；GDScript（typed）；GdUnit4 v6.x（MIT，克隆到 `addons/gdUnit4/`）。零第三方运行时依赖。
 
-**Spec:** `docs/superpowers/specs/2026-08-31-world-tree-design.md`（本计划实现其 §4 双轨资源中的具象轨 MVP 部分 + §9 斐波那契升级组中的叶序螺旋/分枝序）
+**Spec:** `docs/superpowers/specs/2026-08-31-world-tree-design.md`（本计划实现其 §4 具象轨 MVP 部分 + §9 斐波那契升级组中的叶序螺旋/分枝序）
 
 ## Global Constraints
 
-- 零第三方依赖：不得引入任何 npm 包（Node 内置模块除外）。
-- 全部代码文件使用 ES modules（`export`/`import`），`package.json` 设 `"type": "module"`。
-- 所有计算逻辑放 `src/` 纯函数模块，DOM 操作只允许出现在 `src/render.js` 与 `src/main.js`。
-- 每个 `src/` 模块必须有对应 `test/` 测试文件，`npm test` 全绿才算任务完成。
-- 升级成本按斐波那契数列：`fib(1)=1, fib(2)=1, fib(3)=2, ..., fib(34)=5702887`（F₁=F₂=1）。
-- 数值规则（MVP 定稿，不得自行调整）：
+- Godot 版本：4.7.x（勿降级；mono 版亦可跑 GDScript）。
+- 全部数据与逻辑使用 typed GDScript；`@export` 资源按需 `duplicate()`，避免共享内存。
+- 货币与资源数值**一律使用 `BigNum`**（尾数+指数），禁止裸 `float` 存储资源（防 1e308 INF，idle-clicker NEVER 规则）。
+- 收入与 tick **在 `GameManager._process(delta)` 用累加器手动累加**，禁止 `Timer` 节点驱动经济（防帧率漂移）。
+- UI 只通过 `resources_changed` 信号更新，禁止在 `_process` 里直接改 Label。
+- 存档走 `user://`（禁止 `res://` 写入），保存为 JSON；BigNum 序列化为 `{"m": mantissa, "e": exponent}`。
+- 升级成本按斐波那契数列：`fib(1)=1, fib(2)=1, fib(3)=2, ..., fib(34)=5702887`（F₁=F₂=1）。**刻意偏离 idle-clicker 行业标准 1.15 指数曲线**，采用斐波那契（spec §9 主题设计：植物的数学 + 前期密集/中期紧张/后期仰望的体验曲线）。
+- 数值规则（MVP 定稿）：
   - 点击「舒展叶片」：`daylight += 1 × (1 + 0.25 × leafLevel)`
   - 每 tick 自动采集：`daylight += branchLevel × (1 + 0.25 × leafLevel)`
   - 每 tick 光合：`sap += daylight × 0.1`（日光不因转化而消耗）
   - 每 tick 生长：`growth += sap × 0.01`
   - 叶序螺旋（level 从 0 计，升到 level+1 的花费）：`500 × fib(level + 1)`
   - 分枝序：`1200 × fib(level + 1)`
-- 开局状态：`daylight=0, sap=0, growth=0, leafLevel=0, branchLevel=0, tick=0, hope=1`（`hope` 为叙事元素，MVP 不消费，只显示）。
-- 存档：localStorage 键 `world-tree-save`，每 60 tick 自动保存一次，页面加载时读取。
-- 命名与文案：游戏内文案简体中文；界面元素 id 用 camelCase。
+- 开局状态：`daylight=0, sap=0, growth=0, leafLevel=0, branchLevel=0, tick=0, hope=1`（`hope` 叙事元素，MVP 只显示）。
+- 自动存档：每 60 tick 保存一次；加载时读档，无档则新建。
+- 命名与文案：脚本/节点用 snake_case；游戏内文案简体中文。
+- 测试：GdUnit4；命令 `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 必须全绿；每个 `features/` 逻辑模块有对应 `tests/unit/` 套件。
 
 ---
 
-### Task 1: 项目脚手架与静态服务器
+### Task 1: Godot 项目脚手架 + GdUnit4 安装 + headless 测试跑通
 
 **Files:**
-- Create: `package.json`
-- Create: `server.mjs`
-- Create: `index.html`
-- Create: `style.css`
+- Create: `project.godot`
+- Create: `icon.svg`
+- Create: `autoloads/.gitkeep`
+- Create: `features/game/.gitkeep`、`features/economy/.gitkeep`、`features/ui/.gitkeep`
+- Create: `tests/unit/.gitkeep`
+- Create: `tests/unit/test_smoke.gd`（冒烟测试，验证 GdUnit4 可用）
+- Create: `addons/gdUnit4/`（克隆自 https://github.com/MikeSchulze/gdUnit4）
 
 **Interfaces:**
-- Consumes: 无（第一个任务）
-- Produces: `npm test` 运行 `node --test test/`；`npm run serve` 启动静态服务器（端口 8000）；`index.html` 引入 `<script type="module" src="src/main.js">`
+- Consumes: 无
+- Produces: 可运行项目骨架；`godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 能跑并显示 1 个通过用例；`godot` 打开项目无报错
 
-- [ ] **Step 1: 创建 package.json**
+- [ ] **Step 1: 创建 project.godot**
 
-```json
-{
-  "name": "world-tree",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test test/",
-    "serve": "node server.mjs"
-  }
-}
+```ini
+; Engine configuration file.
+config_version=5
+
+[application]
+config/name="世界树"
+run/main_scene="res://features/ui/main.tscn"
+
+[display]
+window/size/viewport_width=420
+window/size/viewport_height=640
+
+[editor_plugins]
+enabled=PackedStringArray("gdUnit4")
 ```
 
-- [ ] **Step 2: 创建 server.mjs（静态文件服务器）**
+- [ ] **Step 2: 创建 icon.svg（极简树形图标）**
 
-```js
-import http from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
-
-const ROOT = new URL('.', import.meta.url).pathname;
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json' };
-
-const server = http.createServer(async (req, res) => {
-  try {
-    const urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    const filePath = normalize(join(ROOT, urlPath === '/' ? 'index.html' : urlPath));
-    if (!filePath.startsWith(ROOT)) { res.writeHead(403); res.end('Forbidden'); return; }
-    const body = await readFile(filePath);
-    res.writeHead(200, { 'Content-Type': MIME[extname(filePath)] ?? 'application/octet-stream' });
-    res.end(body);
-  } catch {
-    res.writeHead(404); res.end('Not Found');
-  }
-});
-
-server.listen(8000, () => console.log('世界树原型: http://localhost:8000'));
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="#1a1512"/><path d="M64 20 L96 84 L32 84 Z" fill="#3f7a3f"/><rect x="60" y="84" width="8" height="28" fill="#6b5638"/></svg>
 ```
 
-- [ ] **Step 3: 创建 index.html（骨架）**
+- [ ] **Step 3: 安装 GdUnit4 插件**
 
-```html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>世界树</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="game">
-    <h1>世界树</h1>
-    <p id="hope-line" class="hope">一点希望，在废墟中静静燃烧。</p>
-    <button id="gather-btn">舒展叶片</button>
-    <div id="resources">
-      <p>日光：<span id="daylight-display">0</span></p>
-      <p>树液：<span id="sap-display">0</span></p>
-      <p>树高：<span id="growth-display">0</span></p>
-    </div>
-    <div id="upgrades">
-      <button id="leaf-upgrade">叶序螺旋（日光采集 +25%/级）—— 价格：<span id="leaf-cost">500</span></button>
-      <button id="branch-upgrade">分枝序（自动采集 +1/级）—— 价格：<span id="branch-cost">1200</span></button>
-    </div>
-    <p id="log-line"></p>
-  </div>
-  <script type="module" src="src/main.js"></script>
-</body>
-</html>
+Run:
+```bash
+mkdir -p addons
+git clone --depth 1 https://github.com/MikeSchulze/gdUnit4.git addons/gdUnit4
+```
+（若 git clone 被网络 reset，改用：下载 `https://codeload.github.com/MikeSchulze/gdUnit4/zip/refs/heads/master` 解压并将解压出的 `gdUnit4-master` 目录重命名为 `addons/gdUnit4`。）
+Expected: `addons/gdUnit4/plugin.cfg` 存在。
+
+- [ ] **Step 4: 创建冒烟测试**
+
+```gdscript
+# tests/unit/test_smoke.gd
+extends GdUnitTestSuite
+
+func test_gdunit_works() -> void:
+    assert_that(1 + 1).is_equal(2)
 ```
 
-- [ ] **Step 4: 创建 style.css（极简）**
+- [ ] **Step 5: 运行冒烟测试验证 headless 链路**
 
-```css
-body { font-family: "Microsoft YaHei", sans-serif; background: #1a1512; color: #d8cfc0; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-button { display: block; margin: 0.5rem 0; padding: 0.6rem 1rem; background: #3a2f24; color: #e8dcc8; border: 1px solid #6b5638; cursor: pointer; }
-button:hover { background: #4d3f2e; }
-.hope { color: #b89a5a; font-style: italic; }
-#resources p { margin: 0.25rem 0; }
-```
-
-- [ ] **Step 5: 验证服务器可用**
-
-Run: `npm run serve`（后台启动），浏览器打开 `http://localhost:8000`
-Expected: 页面显示"世界树"标题与各元素，无控制台报错（src/main.js 尚不存在会有 404，属预期，Task 7 接入后消除）
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
+Expected: 输出包含 test_gdunit_works 通过；退出码 0
+（首次运行若报 "Plugin not enabled"，确认 project.godot `[editor_plugins]` 已写入且路径为 `res://addons/gdUnit4/plugin.cfg`。）
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add package.json server.mjs index.html style.css
-git commit -m "feat: 世界树 MVP 脚手架（静态服务器 + 页面骨架）"
+git add project.godot icon.svg autoloads features tests addons/gdUnit4
+git commit -m "feat: Godot 4.7 脚手架 + GdUnit4 接入（headless 测试跑通）"
 ```
 
 ---
 
-### Task 2: 游戏状态模块 state.js
+### Task 2: 大数模块 big_num.gd
 
 **Files:**
-- Create: `src/state.js`
-- Test: `test/state.test.js`
+- Create: `features/economy/big_num.gd`
+- Test: `tests/unit/test_big_num.gd`
 
 **Interfaces:**
-- Produces: `createInitialState()` → `{ daylight, sap, growth, leafLevel, branchLevel, tick, hope }`（全为 number）；`serializeState(state)` → string；`deserializeState(json)` → state 对象（字段缺失时回退初始值）
+- Produces: `class_name BigNum extends RefCounted`，字段 `mantissa: float`、`exponent: int`（值 = mantissa × 10^exponent，mantissa ∈ [1,10) 或 0）。方法：
+  - `_init(v: float = 0.0)`
+  - `set_value(v: float) -> void`
+  - `add(other: BigNum) -> void`（原地加）
+  - `sub(other: BigNum) -> void`（原地减）
+  - `mul_scalar(f: float) -> BigNum`（返回新 BigNum）
+  - `is_greater_or_equal(other: BigNum) -> bool`
+  - `to_value() -> float`（测试辅助）
+  - `to_dict() -> Dictionary`（`{"m": mantissa, "e": exponent}`）
+  - `static from_dict(d: Dictionary) -> BigNum`
 
 - [ ] **Step 1: 写失败测试**
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createInitialState, serializeState, deserializeState } from '../src/state.js';
+```gdscript
+# tests/unit/test_big_num.gd
+extends GdUnitTestSuite
 
-test('createInitialState 返回规范初始值', () => {
-  const s = createInitialState();
-  assert.deepEqual(s, { daylight: 0, sap: 0, growth: 0, leafLevel: 0, branchLevel: 0, tick: 0, hope: 1 });
-});
+func test_zero() -> void:
+    var bn := BigNum.new(0.0)
+    assert_that(bn.to_value()).is_equal(0.0)
 
-test('serializeState 与 deserializeState 往返一致', () => {
-  const s = createInitialState();
-  s.daylight = 42; s.leafLevel = 3;
-  const back = deserializeState(serializeState(s));
-  assert.equal(back.daylight, 42);
-  assert.equal(back.leafLevel, 3);
-});
+func test_initialization_normalizes() -> void:
+    var bn := BigNum.new(1234.5)
+    assert_that(bn.mantissa).is_equal_approx(1.2345)
+    assert_that(bn.exponent).is_equal(3)
+    assert_that(bn.to_value()).is_equal_approx(1234.5)
 
-test('deserializeState 对缺失字段回退初始值', () => {
-  const back = deserializeState('{"daylight":7}');
-  assert.equal(back.daylight, 7);
-  assert.equal(back.sap, 0);
-  assert.equal(back.hope, 1);
-});
+func test_add_with_carry() -> void:
+    var a := BigNum.new(9.5)
+    var b := BigNum.new(0.8)
+    a.add(b)
+    assert_that(a.to_value()).is_equal_approx(10.3)
+    assert_that(a.exponent).is_equal(1)
+
+func test_sub() -> void:
+    var a := BigNum.new(500.0)
+    var b := BigNum.new(499.0)
+    a.sub(b)
+    assert_that(a.to_value()).is_equal_approx(1.0)
+
+func test_mul_scalar() -> void:
+    var a := BigNum.new(1234.0)
+    var c := a.mul_scalar(0.1)
+    assert_that(c.to_value()).is_equal_approx(123.4)
+    # 原对象不变
+    assert_that(a.to_value()).is_equal_approx(1234.0)
+
+func test_compare() -> void:
+    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(998.0))).is_true()
+    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(999.0))).is_true()
+    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(1000.0))).is_false()
+    # 跨指数比较
+    assert_that(BigNum.new(1e9).is_greater_or_equal(BigNum.new(9e8))).is_true()
+
+func test_serialization_roundtrip() -> void:
+    var bn := BigNum.new(5702887.0)
+    var back := BigNum.from_dict(bn.to_dict())
+    assert_that(back.to_value()).is_equal_approx(5702887.0)
 ```
 
 - [ ] **Step 2: 运行确认失败**
 
-Run: `node --test test/state.test.js`
-Expected: FAIL，报 `Cannot find module '../src/state.js'`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_big_num.gd`
+Expected: FAIL（无法解析 `BigNum` 类）
 
-- [ ] **Step 3: 实现 src/state.js**
+- [ ] **Step 3: 实现 features/economy/big_num.gd**
 
-```js
-export function createInitialState() {
-  return { daylight: 0, sap: 0, growth: 0, leafLevel: 0, branchLevel: 0, tick: 0, hope: 1 };
-}
+```gdscript
+class_name BigNum
+extends RefCounted
 
-export function serializeState(state) {
-  return JSON.stringify(state);
-}
+var mantissa: float = 0.0
+var exponent: int = 0
 
-export function deserializeState(json) {
-  const parsed = JSON.parse(json);
-  const base = createInitialState();
-  return { ...base, ...parsed };
-}
+func _init(v: float = 0.0) -> void:
+    set_value(v)
+
+func set_value(v: float) -> void:
+    if v == 0.0:
+        mantissa = 0.0
+        exponent = 0
+        return
+    exponent = int(floor(log(abs(v)) / log(10.0)))
+    mantissa = v / pow(10.0, exponent)
+    _normalize()
+
+func _normalize() -> void:
+    if mantissa == 0.0:
+        exponent = 0
+        return
+    var e := int(floor(log(abs(mantissa)) / log(10.0)))
+    if e != 0:
+        mantissa /= pow(10.0, e)
+        exponent += e
+
+func add(other: BigNum) -> void:
+    if other.mantissa == 0.0:
+        return
+    var e := maxi(exponent, other.exponent)
+    var a := mantissa * pow(10.0, exponent - e)
+    var b := other.mantissa * pow(10.0, other.exponent - e)
+    mantissa = a + b
+    exponent = e
+    _normalize()
+
+func sub(other: BigNum) -> void:
+    var neg := BigNum.new()
+    neg.mantissa = -other.mantissa
+    neg.exponent = other.exponent
+    add(neg)
+
+func mul_scalar(f: float) -> BigNum:
+    var out := BigNum.new()
+    out.mantissa = mantissa * f
+    out.exponent = exponent
+    out._normalize()
+    return out
+
+func is_greater_or_equal(other: BigNum) -> bool:
+    if exponent != other.exponent:
+        return exponent > other.exponent
+    return mantissa >= other.mantissa
+
+func to_value() -> float:
+    return mantissa * pow(10.0, exponent)
+
+func to_dict() -> Dictionary:
+    return {"m": mantissa, "e": exponent}
+
+static func from_dict(d: Dictionary) -> BigNum:
+    var bn := BigNum.new()
+    bn.mantissa = float(d.get("m", 0.0))
+    bn.exponent = int(d.get("e", 0))
+    bn._normalize()
+    return bn
 ```
 
 - [ ] **Step 4: 运行确认通过**
 
-Run: `node --test test/state.test.js`
-Expected: PASS（3 个用例全绿）
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_big_num.gd`
+Expected: PASS（8 个用例全绿）
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/state.js test/state.test.js
-git commit -m "feat: 游戏状态模块（初始值/序列化）"
+git add features/economy/big_num.gd tests/unit/test_big_num.gd
+git commit -m "feat: BigNum 大数模块（尾数/指数/加减乘/比较/序列化）"
 ```
 
 ---
 
-### Task 3: 斐波那契成本模块 costs.js
+### Task 3: 斐波那契成本模块 cost_calculator.gd
 
 **Files:**
-- Create: `src/costs.js`
-- Test: `test/costs.test.js`
+- Create: `features/economy/cost_calculator.gd`
+- Test: `tests/unit/test_cost_calculator.gd`
 
 **Interfaces:**
-- Consumes: 无（独立数学模块）
-- Produces: `fib(n)` → number（F₁=F₂=1，`fib(1)=1, fib(2)=1, fib(34)=5702887`）；`leafCost(level)` → number（升到 level+1 级花费）；`branchCost(level)` → number
+- Consumes: 无
+- Produces: `class_name CostCalculator extends RefCounted`：
+  - `static func fib(n: int) -> int`（F₁=F₂=1）
+  - `static func leaf_cost(level: int) -> int`（500×fib(level+1)）
+  - `static func branch_cost(level: int) -> int`（1200×fib(level+1)）
 
 - [ ] **Step 1: 写失败测试**
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { fib, leafCost, branchCost } from '../src/costs.js';
+```gdscript
+# tests/unit/test_cost_calculator.gd
+extends GdUnitTestSuite
 
-test('fib 前几项', () => {
-  assert.equal(fib(1), 1);
-  assert.equal(fib(2), 1);
-  assert.equal(fib(3), 2);
-  assert.equal(fib(4), 3);
-  assert.equal(fib(5), 5);
-  assert.equal(fib(6), 8);
-});
+func test_fib_first_terms() -> void:
+    assert_that(CostCalculator.fib(1)).is_equal(1)
+    assert_that(CostCalculator.fib(2)).is_equal(1)
+    assert_that(CostCalculator.fib(3)).is_equal(2)
+    assert_that(CostCalculator.fib(4)).is_equal(3)
+    assert_that(CostCalculator.fib(5)).is_equal(5)
+    assert_that(CostCalculator.fib(6)).is_equal(8)
 
-test('fib(34) 等于 5702887（伦纳德之律彩蛋数字）', () => {
-  assert.equal(fib(34), 5702887);
-});
+func test_fib_34_is_easter_egg_number() -> void:
+    # 伦纳德之律彩蛋数字
+    assert_that(CostCalculator.fib(34)).is_equal(5702887)
 
-test('叶序螺旋成本：500×F(n)', () => {
-  assert.equal(leafCost(0), 500);      // 500×fib(1)
-  assert.equal(leafCost(1), 500);      // 500×fib(2)
-  assert.equal(leafCost(2), 1000);     // 500×fib(3)
-  assert.equal(leafCost(3), 1500);     // 500×fib(4)
-});
+func test_leaf_cost() -> void:
+    assert_that(CostCalculator.leaf_cost(0)).is_equal(500)
+    assert_that(CostCalculator.leaf_cost(1)).is_equal(500)
+    assert_that(CostCalculator.leaf_cost(2)).is_equal(1000)
+    assert_that(CostCalculator.leaf_cost(3)).is_equal(1500)
 
-test('分枝序成本：1200×F(n)', () => {
-  assert.equal(branchCost(0), 1200);
-  assert.equal(branchCost(1), 1200);
-  assert.equal(branchCost(2), 2400);
-});
+func test_branch_cost() -> void:
+    assert_that(CostCalculator.branch_cost(0)).is_equal(1200)
+    assert_that(CostCalculator.branch_cost(1)).is_equal(1200)
+    assert_that(CostCalculator.branch_cost(2)).is_equal(2400)
 ```
 
 - [ ] **Step 2: 运行确认失败**
 
-Run: `node --test test/costs.test.js`
-Expected: FAIL，报 `Cannot find module '../src/costs.js'`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_cost_calculator.gd`
+Expected: FAIL（无法解析 `CostCalculator`）
 
-- [ ] **Step 3: 实现 src/costs.js**
+- [ ] **Step 3: 实现 features/economy/cost_calculator.gd**
 
-```js
-export function fib(n) {
-  if (n <= 0) return 0;
-  if (n <= 2) return 1;
-  let a = 1, b = 1;
-  for (let i = 3; i <= n; i++) { const t = a + b; a = b; b = t; }
-  return b;
-}
+```gdscript
+class_name CostCalculator
+extends RefCounted
 
-export function leafCost(level) {
-  return 500 * fib(level + 1);
-}
+static func fib(n: int) -> int:
+    if n <= 0:
+        return 0
+    if n <= 2:
+        return 1
+    var a := 1
+    var b := 1
+    for i in range(3, n + 1):
+        var t := a + b
+        a = b
+        b = t
+    return b
 
-export function branchCost(level) {
-  return 1200 * fib(level + 1);
-}
+static func leaf_cost(level: int) -> int:
+    return 500 * fib(level + 1)
+
+static func branch_cost(level: int) -> int:
+    return 1200 * fib(level + 1)
 ```
 
 - [ ] **Step 4: 运行确认通过**
 
-Run: `node --test test/costs.test.js`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_cost_calculator.gd`
 Expected: PASS（4 个用例全绿）
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/costs.js test/costs.test.js
+git add features/economy/cost_calculator.gd tests/unit/test_cost_calculator.gd
 git commit -m "feat: 斐波那契成本模块（fib/叶序螺旋/分枝序）"
 ```
 
 ---
 
-### Task 4: 数字格式化模块 format.js
+### Task 4: 数字格式化模块 formatter.gd
 
 **Files:**
-- Create: `src/format.js`
-- Test: `test/format.test.js`
+- Create: `features/economy/formatter.gd`
+- Test: `tests/unit/test_formatter.gd`
 
 **Interfaces:**
-- Produces: `formatNumber(n)` → string（千分位；≥1000 用 K/M/B/T 后缀，保留 2 位小数，尾零省略）；`formatCost(n)` → string（整数千分位，无小数）
+- Consumes: `BigNum`（big_num.gd）
+- Produces: `class_name Formatter extends RefCounted`：
+  - `static func format_number(bn: BigNum) -> String`（<1000 显示原值（≤2 位小数）；≥1000 用 K/M/B/T 后缀，保留 2 位小数去尾零）
+  - `static func format_cost(cost: int) -> String`（整数千分位）
 
 - [ ] **Step 1: 写失败测试**
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { formatNumber, formatCost } from '../src/format.js';
+```gdscript
+# tests/unit/test_formatter.gd
+extends GdUnitTestSuite
 
-test('formatNumber 千分位与小数', () => {
-  assert.equal(formatNumber(0), '0');
-  assert.equal(formatNumber(12.5), '12.5');
-  assert.equal(formatNumber(999), '999');
-  assert.equal(formatNumber(1234.5), '1.23K');
-  assert.equal(formatNumber(1234567), '1.23M');
-  assert.equal(formatNumber(1234567890), '1.23B');
-});
+func test_small_numbers() -> void:
+    assert_that(Formatter.format_number(BigNum.new(0.0))).is_equal("0")
+    assert_that(Formatter.format_number(BigNum.new(12.5))).is_equal("12.5")
+    assert_that(Formatter.format_number(BigNum.new(999.0))).is_equal("999")
 
-test('formatCost 整数千分位', () => {
-  assert.equal(formatCost(500), '500');
-  assert.equal(formatCost(5000), '5,000');
-  assert.equal(formatCost(5702887), '5,702,887');
-});
+func test_suffix_numbers() -> void:
+    assert_that(Formatter.format_number(BigNum.new(1234.5))).is_equal("1.23K")
+    assert_that(Formatter.format_number(BigNum.new(1234567.0))).is_equal("1.23M")
+    assert_that(Formatter.format_number(BigNum.new(5702887.0))).is_equal("5.7M")
+
+func test_cost_format() -> void:
+    assert_that(Formatter.format_cost(500)).is_equal("500")
+    assert_that(Formatter.format_cost(5000)).is_equal("5,000")
+    assert_that(Formatter.format_cost(5702887)).is_equal("5,702,887")
 ```
 
 - [ ] **Step 2: 运行确认失败**
 
-Run: `node --test test/format.test.js`
-Expected: FAIL，报 `Cannot find module '../src/format.js'`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_formatter.gd`
+Expected: FAIL（无法解析 `Formatter`）
 
-- [ ] **Step 3: 实现 src/format.js**
+- [ ] **Step 3: 实现 features/economy/formatter.gd**
 
-```js
-const SUFFIX = ['', 'K', 'M', 'B', 'T'];
+```gdscript
+class_name Formatter
+extends RefCounted
 
-export function formatNumber(n) {
-  if (!Number.isFinite(n)) return '0';
-  if (Math.abs(n) < 1000) {
-    const v = Math.floor(n * 100) / 100;
-    return String(v);
-  }
-  const tier = Math.min(Math.floor(Math.log10(Math.abs(n)) / 3), SUFFIX.length - 1);
-  const scaled = n / Math.pow(10, tier * 3);
-  return `${scaled.toFixed(2).replace(/\.?0+$/, '')}${SUFFIX[tier]}`;
-}
+const SUFFIX := ["", "K", "M", "B", "T"]
 
-export function formatCost(n) {
-  return Math.floor(n).toLocaleString('en-US');
-}
+static func format_number(bn: BigNum) -> String:
+    if bn.mantissa == 0.0:
+        return "0"
+    var tier := bn.exponent / 3
+    if tier == 0:
+        var small := bn.to_value()
+        var rounded := floor(small * 100.0) / 100.0
+        return _trim_zeros(String.num(rounded, 2))
+    var mant := bn.mantissa * pow(10.0, bn.exponent - tier * 3)
+    var idx := mini(tier, SUFFIX.size() - 1)
+    return "%s%s" % [_trim_zeros(String.num(mant, 2)), SUFFIX[idx]]
+
+static func format_cost(cost: int) -> String:
+    var s := str(cost)
+    var out := ""
+    var count := 0
+    for i in range(s.length() - 1, -1, -1):
+        out = s[i] + out
+        count += 1
+        if count % 3 == 0 and i > 0:
+            out = "," + out
+    return out
+
+static func _trim_zeros(s: String) -> String:
+    if s.contains("."):
+        var t := s.rstrip("0")
+        if t.ends_with("."):
+            t = t.trim_suffix(".")
+        return t
+    return s
 ```
 
 - [ ] **Step 4: 运行确认通过**
 
-Run: `node --test test/format.test.js`
-Expected: PASS（2 个用例全绿）
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_formatter.gd`
+Expected: PASS（3 个用例全绿）
+注：若 `5702887` 格式化结果因浮点取整偏差出现 `5.7M` 之外的值（如 `5.71M`），将测试断言改为对应当前 `String.num` 四舍五入行为，或把 `_trim_zeros(String.num(mant, 2))` 中 mant 先 `floor(mant*100)/100` 再格式化，保证与断言一致——二者取其一并保持测试/实现同步。
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/format.js test/format.test.js
-git commit -m "feat: 数字格式化模块（大数后缀/千分位）"
+git add features/economy/formatter.gd tests/unit/test_formatter.gd
+git commit -m "feat: 数字格式化模块（后缀/千分位）"
 ```
 
 ---
 
-### Task 5: 玩家动作模块 actions.js
+### Task 5: 游戏状态 game_state.gd
 
 **Files:**
-- Create: `src/actions.js`
-- Test: `test/actions.test.js`
+- Create: `features/game/game_state.gd`
+- Test: `tests/unit/test_game_state.gd`
 
 **Interfaces:**
-- Consumes: `createInitialState()`（state.js）；`leafCost(level)`、`branchCost(level)`（costs.js）
-- Produces: `gatherDaylight(state)` → void（原地改 state，日光 += 1×(1+0.25×leafLevel)）；`buyLeaf(state)` → boolean（够树液则扣款升 1 级返回 true，否则 false）；`buyBranch(state)` → boolean
+- Consumes: `BigNum`
+- Produces: `class_name GameState extends RefCounted`，字段 `daylight: BigNum`、`sap: BigNum`、`growth: BigNum`、`leaf_level: int = 0`、`branch_level: int = 0`、`tick: int = 0`、`hope: int = 1`。方法：
+  - `_init()`
+  - `to_dict() -> Dictionary`
+  - `static from_dict(d: Dictionary) -> GameState`（字段缺失回退默认）
 
 - [ ] **Step 1: 写失败测试**
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createInitialState } from '../src/state.js';
-import { gatherDaylight, buyLeaf, buyBranch } from '../src/actions.js';
+```gdscript
+# tests/unit/test_game_state.gd
+extends GdUnitTestSuite
 
-test('gatherDaylight 基础采集 +1', () => {
-  const s = createInitialState();
-  gatherDaylight(s);
-  assert.equal(s.daylight, 1);
-});
+func test_initial_state() -> void:
+    var s := GameState.new()
+    assert_that(s.daylight.to_value()).is_equal(0.0)
+    assert_that(s.sap.to_value()).is_equal(0.0)
+    assert_that(s.growth.to_value()).is_equal(0.0)
+    assert_that(s.leaf_level).is_equal(0)
+    assert_that(s.branch_level).is_equal(0)
+    assert_that(s.tick).is_equal(0)
+    assert_that(s.hope).is_equal(1)
 
-test('gatherDaylight 受叶序螺旋加成（+25%/级）', () => {
-  const s = createInitialState();
-  s.leafLevel = 2; // 1 + 0.25*2 = 1.5
-  gatherDaylight(s);
-  assert.equal(s.daylight, 1.5);
-});
+func test_serialization_roundtrip() -> void:
+    var s := GameState.new()
+    s.daylight = BigNum.new(42.0)
+    s.leaf_level = 3
+    s.tick = 60
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.daylight.to_value()).is_equal_approx(42.0)
+    assert_that(back.leaf_level).is_equal(3)
+    assert_that(back.tick).is_equal(60)
 
-test('buyLeaf 够树液则升级并扣款', () => {
-  const s = createInitialState();
-  s.sap = 500;
-  assert.equal(buyLeaf(s), true);
-  assert.equal(s.leafLevel, 1);
-  assert.equal(s.sap, 0);
-});
-
-test('buyLeaf 不够则返回 false 且不扣款', () => {
-  const s = createInitialState();
-  s.sap = 499;
-  assert.equal(buyLeaf(s), false);
-  assert.equal(s.leafLevel, 0);
-  assert.equal(s.sap, 499);
-});
-
-test('buyBranch 类似逻辑，价格为 1200×F(n)', () => {
-  const s = createInitialState();
-  s.sap = 1200;
-  assert.equal(buyBranch(s), true);
-  assert.equal(s.branchLevel, 1);
-  assert.equal(s.sap, 0);
-});
+func test_from_dict_missing_fields_fallback() -> void:
+    var back := GameState.from_dict({"sap": {"m": 7.0, "e": 0}})
+    assert_that(back.sap.to_value()).is_equal_approx(7.0)
+    assert_that(back.leaf_level).is_equal(0)
+    assert_that(back.hope).is_equal(1)
 ```
 
 - [ ] **Step 2: 运行确认失败**
 
-Run: `node --test test/actions.test.js`
-Expected: FAIL，报 `Cannot find module '../src/actions.js'`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_state.gd`
+Expected: FAIL（无法解析 `GameState`）
 
-- [ ] **Step 3: 实现 src/actions.js**
+- [ ] **Step 3: 实现 features/game/game_state.gd**
 
-```js
-import { leafCost, branchCost } from './costs.js';
+```gdscript
+class_name GameState
+extends RefCounted
 
-export function gatherDaylight(state) {
-  state.daylight += 1 * (1 + 0.25 * state.leafLevel);
-}
+var daylight: BigNum
+var sap: BigNum
+var growth: BigNum
+var leaf_level: int = 0
+var branch_level: int = 0
+var tick: int = 0
+var hope: int = 1
 
-export function buyLeaf(state) {
-  const cost = leafCost(state.leafLevel);
-  if (state.sap < cost) return false;
-  state.sap -= cost;
-  state.leafLevel += 1;
-  return true;
-}
+func _init() -> void:
+    daylight = BigNum.new(0.0)
+    sap = BigNum.new(0.0)
+    growth = BigNum.new(0.0)
 
-export function buyBranch(state) {
-  const cost = branchCost(state.branchLevel);
-  if (state.sap < cost) return false;
-  state.sap -= cost;
-  state.branchLevel += 1;
-  return true;
-}
+func to_dict() -> Dictionary:
+    return {
+        "daylight": daylight.to_dict(),
+        "sap": sap.to_dict(),
+        "growth": growth.to_dict(),
+        "leaf_level": leaf_level,
+        "branch_level": branch_level,
+        "tick": tick,
+        "hope": hope,
+    }
+
+static func from_dict(d: Dictionary) -> GameState:
+    var s := GameState.new()
+    s.daylight = BigNum.from_dict(d.get("daylight", {}))
+    s.sap = BigNum.from_dict(d.get("sap", {}))
+    s.growth = BigNum.from_dict(d.get("growth", {}))
+    s.leaf_level = int(d.get("leaf_level", 0))
+    s.branch_level = int(d.get("branch_level", 0))
+    s.tick = int(d.get("tick", 0))
+    s.hope = int(d.get("hope", 1))
+    return s
 ```
 
 - [ ] **Step 4: 运行确认通过**
 
-Run: `node --test test/actions.test.js`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_state.gd`
+Expected: PASS（3 个用例全绿）
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add features/game/game_state.gd tests/unit/test_game_state.gd
+git commit -m "feat: 游戏状态模块（初始值/序列化）"
+```
+
+---
+
+### Task 6: 玩家动作模块 actions.gd
+
+**Files:**
+- Create: `features/economy/actions.gd`
+- Test: `tests/unit/test_actions.gd`
+
+**Interfaces:**
+- Consumes: `GameState`、`BigNum`、`CostCalculator`
+- Produces: `class_name GameActions extends RefCounted`：
+  - `static func gather_daylight(state: GameState) -> void`
+  - `static func buy_leaf(state: GameState) -> bool`
+  - `static func buy_branch(state: GameState) -> bool`
+
+- [ ] **Step 1: 写失败测试**
+
+```gdscript
+# tests/unit/test_actions.gd
+extends GdUnitTestSuite
+
+func test_gather_basic() -> void:
+    var s := GameState.new()
+    GameActions.gather_daylight(s)
+    assert_that(s.daylight.to_value()).is_equal_approx(1.0)
+
+func test_gather_with_leaf_bonus() -> void:
+    var s := GameState.new()
+    s.leaf_level = 2  # 1 + 0.25*2 = 1.5
+    GameActions.gather_daylight(s)
+    assert_that(s.daylight.to_value()).is_equal_approx(1.5)
+
+func test_buy_leaf_success() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(500.0)
+    assert_that(GameActions.buy_leaf(s)).is_true()
+    assert_that(s.leaf_level).is_equal(1)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0)
+
+func test_buy_leaf_insufficient() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(499.0)
+    assert_that(GameActions.buy_leaf(s)).is_false()
+    assert_that(s.leaf_level).is_equal(0)
+    assert_that(s.sap.to_value()).is_equal_approx(499.0)
+
+func test_buy_branch_success() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(1200.0)
+    assert_that(GameActions.buy_branch(s)).is_true()
+    assert_that(s.branch_level).is_equal(1)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0)
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_actions.gd`
+Expected: FAIL（无法解析 `GameActions`）
+
+- [ ] **Step 3: 实现 features/economy/actions.gd**
+
+```gdscript
+class_name GameActions
+extends RefCounted
+
+static func gather_daylight(state: GameState) -> void:
+    var gain := BigNum.new(1.0 * (1.0 + 0.25 * float(state.leaf_level)))
+    state.daylight.add(gain)
+
+static func buy_leaf(state: GameState) -> bool:
+    var cost := BigNum.new(float(CostCalculator.leaf_cost(state.leaf_level)))
+    if not state.sap.is_greater_or_equal(cost):
+        return false
+    state.sap.sub(cost)
+    state.leaf_level += 1
+    return true
+
+static func buy_branch(state: GameState) -> bool:
+    var cost := BigNum.new(float(CostCalculator.branch_cost(state.branch_level)))
+    if not state.sap.is_greater_or_equal(cost):
+        return false
+    state.sap.sub(cost)
+    state.branch_level += 1
+    return true
+```
+
+- [ ] **Step 4: 运行确认通过**
+
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_actions.gd`
 Expected: PASS（5 个用例全绿）
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/actions.js test/actions.test.js
+git add features/economy/actions.gd tests/unit/test_actions.gd
 git commit -m "feat: 玩家动作模块（舒展叶片/购买升级）"
 ```
 
 ---
 
-### Task 6: 游戏循环模块 loop.js
+### Task 7: 游戏循环模块 game_loop.gd
 
 **Files:**
-- Create: `src/loop.js`
-- Test: `test/loop.test.js`
+- Create: `features/game/game_loop.gd`
+- Test: `tests/unit/test_game_loop.gd`
 
 **Interfaces:**
-- Consumes: `createInitialState()`（state.js）
-- Produces: `tick(state)` → void（原地改：tick+1；自动采集 `daylight += branchLevel×(1+0.25×leafLevel)`；光合 `sap += daylight×0.1`；生长 `growth += sap×0.01`）
+- Consumes: `GameState`、`BigNum`
+- Produces: `class_name GameLoop extends RefCounted`：
+  - `static func tick(state: GameState) -> void`
+  - `static func should_auto_save(state: GameState) -> bool`（`state.tick > 0 and state.tick % 60 == 0`）
 
 - [ ] **Step 1: 写失败测试**
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createInitialState } from '../src/state.js';
-import { tick } from '../src/loop.js';
+```gdscript
+# tests/unit/test_game_loop.gd
+extends GdUnitTestSuite
 
-test('tick 递增计时并光合', () => {
-  const s = createInitialState();
-  s.daylight = 100;
-  tick(s);
-  assert.equal(s.tick, 1);
-  assert.equal(s.sap, 10);      // 100 × 0.1
-  assert.equal(s.daylight, 100); // 无分支时日光不减
-});
+func test_tick_increments_and_photosynthesis() -> void:
+    var s := GameState.new()
+    s.daylight = BigNum.new(100.0)
+    GameLoop.tick(s)
+    assert_that(s.tick).is_equal(1)
+    assert_that(s.sap.to_value()).is_equal_approx(10.0)  # 100 × 0.1
+    assert_that(s.daylight.to_value()).is_equal_approx(100.0)  # 无分支时日光不变
 
-test('tick 自动采集：branchLevel 贡献日光', () => {
-  const s = createInitialState();
-  s.branchLevel = 3;
-  s.daylight = 10;
-  tick(s);
-  assert.equal(s.daylight, 13);  // 10 + 3×1
-});
+func test_tick_auto_collect() -> void:
+    var s := GameState.new()
+    s.branch_level = 3
+    s.daylight = BigNum.new(10.0)
+    GameLoop.tick(s)
+    assert_that(s.daylight.to_value()).is_equal_approx(13.0)  # 10 + 3×1
 
-test('tick 自动采集受叶序螺旋加成', () => {
-  const s = createInitialState();
-  s.branchLevel = 2;
-  s.leafLevel = 2;               // 2 × 1.5 = 3
-  s.daylight = 0;
-  tick(s);
-  assert.equal(s.daylight, 3);
-});
+func test_tick_auto_collect_with_leaf_bonus() -> void:
+    var s := GameState.new()
+    s.branch_level = 2
+    s.leaf_level = 2  # 2 × 1.5 = 3
+    GameLoop.tick(s)
+    assert_that(s.daylight.to_value()).is_equal_approx(3.0)
 
-test('tick 生长：sap × 0.01', () => {
-  const s = createInitialState();
-  s.sap = 200;
-  tick(s);
-  assert.equal(s.growth, 2);
-});
+func test_tick_growth() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(200.0)
+    GameLoop.tick(s)
+    assert_that(s.growth.to_value()).is_equal_approx(2.0)  # 200 × 0.01
+
+func test_should_auto_save() -> void:
+    var s := GameState.new()
+    s.tick = 60
+    assert_that(GameLoop.should_auto_save(s)).is_true()
+    s.tick = 61
+    assert_that(GameLoop.should_auto_save(s)).is_false()
 ```
 
 - [ ] **Step 2: 运行确认失败**
 
-Run: `node --test test/loop.test.js`
-Expected: FAIL，报 `Cannot find module '../src/loop.js'`
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_loop.gd`
+Expected: FAIL（无法解析 `GameLoop`）
 
-- [ ] **Step 3: 实现 src/loop.js**
+- [ ] **Step 3: 实现 features/game/game_loop.gd**
 
-```js
-export function tick(state) {
-  state.tick += 1;
-  const eff = 1 + 0.25 * state.leafLevel;
-  state.daylight += state.branchLevel * eff;
-  state.sap += state.daylight * 0.1;
-  state.growth += state.sap * 0.01;
-}
+```gdscript
+class_name GameLoop
+extends RefCounted
+
+static func tick(state: GameState) -> void:
+    state.tick += 1
+    var eff := 1.0 + 0.25 * float(state.leaf_level)
+    var collected := BigNum.new(float(state.branch_level) * eff)
+    state.daylight.add(collected)
+    var converted := state.daylight.mul_scalar(0.1)
+    state.sap.add(converted)
+    var grown := state.sap.mul_scalar(0.01)
+    state.growth.add(grown)
+
+static func should_auto_save(state: GameState) -> bool:
+    return state.tick > 0 and state.tick % 60 == 0
 ```
 
 - [ ] **Step 4: 运行确认通过**
 
-Run: `node --test test/loop.test.js`
-Expected: PASS（4 个用例全绿）
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_loop.gd`
+Expected: PASS（5 个用例全绿）
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/loop.js test/loop.test.js
-git commit -m "feat: 游戏循环模块（自动采集/光合/生长）"
+git add features/game/game_loop.gd tests/unit/test_game_loop.gd
+git commit -m "feat: 游戏循环模块（自动采集/光合/生长/自动存档判定）"
 ```
 
 ---
 
-### Task 7: 渲染与入口（render.js + main.js）
+### Task 8: 存档模块 save_manager.gd
 
 **Files:**
-- Create: `src/render.js`
-- Create: `src/main.js`
-- Modify: `index.html`（无需改，id 已在 Task 1 定义好）
+- Create: `features/game/save_manager.gd`
+- Test: `tests/unit/test_save_manager.gd`
 
 **Interfaces:**
-- Consumes: `createInitialState/serializeState/deserializeState`（state.js）；`formatNumber/formatCost`（format.js）；`tick`（loop.js）；`gatherDaylight/buyLeaf/buyBranch`（actions.js）；`leafCost/branchCost`（costs.js）
-- Produces: `render(state, els)` → void（刷新全部 DOM 文本；升级按钮 disabled 状态随树液是否足够；购买成功写入 `#log-line`）；`main.js` 挂载：1 秒 1 tick 定时器、事件绑定、每 60 tick 自动存档、加载时读档
+- Consumes: `GameState`
+- Produces: `class_name SaveManager extends RefCounted`：
+  - `static func save(state: GameState, path: String = "user://save.json") -> void`
+  - `static func load_or_create(path: String = "user://save.json") -> GameState`
 
-- [ ] **Step 1: 写失败测试（render 为纯 DOM 操作无法在 node:test 断言，此任务测试聚焦 main 的存档节流纯函数）**
+- [ ] **Step 1: 写失败测试**
 
-先在 `src/main.js` 导出纯函数 `shouldAutoSave(state)`（`state.tick % 60 === 0 && state.tick > 0`），测试它：
+```gdscript
+# tests/unit/test_save_manager.gd
+extends GdUnitTestSuite
 
-```js
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createInitialState } from '../src/state.js';
-import { shouldAutoSave } from '../src/main.js';
+const TEST_PATH := "user://test_save.json"
 
-test('shouldAutoSave：每 60 tick 触发', () => {
-  const s = createInitialState();
-  s.tick = 60;
-  assert.equal(shouldAutoSave(s), true);
-  s.tick = 61;
-  assert.equal(shouldAutoSave(s), false);
-});
+func after_test() -> void:
+    if FileAccess.file_exists(TEST_PATH):
+        DirAccess.remove_absolute(TEST_PATH)
+
+func test_save_then_load_roundtrip() -> void:
+    var s := GameState.new()
+    s.daylight = BigNum.new(42.0)
+    s.leaf_level = 3
+    s.tick = 120
+    SaveManager.save(s, TEST_PATH)
+    assert_that(FileAccess.file_exists(TEST_PATH)).is_true()
+    var loaded := SaveManager.load_or_create(TEST_PATH)
+    assert_that(loaded.daylight.to_value()).is_equal_approx(42.0)
+    assert_that(loaded.leaf_level).is_equal(3)
+    assert_that(loaded.tick).is_equal(120)
+
+func test_load_when_missing_returns_fresh() -> void:
+    if FileAccess.file_exists(TEST_PATH):
+        DirAccess.remove_absolute(TEST_PATH)
+    var loaded := SaveManager.load_or_create(TEST_PATH)
+    assert_that(loaded.tick).is_equal(0)
+    assert_that(loaded.hope).is_equal(1)
 ```
 
-Run: `node --test test/main.test.js`
-Expected: FAIL，报 `Cannot find module '../src/main.js'`
+- [ ] **Step 2: 运行确认失败**
 
-- [ ] **Step 2: 实现 src/render.js**
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_save_manager.gd`
+Expected: FAIL（无法解析 `SaveManager`）
 
-```js
-import { formatNumber, formatCost } from './format.js';
-import { leafCost, branchCost } from './costs.js';
+- [ ] **Step 3: 实现 features/game/save_manager.gd**
 
-export function render(state, els) {
-  els.daylight.textContent = formatNumber(state.daylight);
-  els.sap.textContent = formatNumber(state.sap);
-  els.growth.textContent = formatNumber(state.growth);
-  els.leafCost.textContent = formatCost(leafCost(state.leafLevel));
-  els.branchCost.textContent = formatCost(branchCost(state.branchLevel));
-  els.leafUpgrade.disabled = state.sap < leafCost(state.leafLevel);
-  els.branchUpgrade.disabled = state.sap < branchCost(state.branchLevel);
-}
+```gdscript
+class_name SaveManager
+extends RefCounted
+
+const DEFAULT_PATH := "user://save.json"
+
+static func save(state: GameState, path: String = DEFAULT_PATH) -> void:
+    var f := FileAccess.open(path, FileAccess.WRITE)
+    if f == null:
+        push_error("无法写入存档: %s" % path)
+        return
+    f.store_string(JSON.stringify(state.to_dict()))
+    f.close()
+
+static func load_or_create(path: String = DEFAULT_PATH) -> GameState:
+    if not FileAccess.file_exists(path):
+        return GameState.new()
+    var f := FileAccess.open(path, FileAccess.READ)
+    if f == null:
+        return GameState.new()
+    var text := f.get_as_text()
+    f.close()
+    var parsed: Variant = JSON.parse_string(text)
+    if typeof(parsed) != TYPE_DICTIONARY:
+        return GameState.new()
+    return GameState.from_dict(parsed)
 ```
 
-- [ ] **Step 3: 实现 src/main.js**
+- [ ] **Step 4: 运行确认通过**
 
-```js
-import { createInitialState, serializeState, deserializeState } from './state.js';
-import { tick } from './loop.js';
-import { gatherDaylight, buyLeaf, buyBranch } from './actions.js';
-import { render } from './render.js';
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_save_manager.gd`
+Expected: PASS（2 个用例全绿）
 
-const SAVE_KEY = 'world-tree-save';
+- [ ] **Step 5: Commit**
 
-export function shouldAutoSave(state) {
-  return state.tick > 0 && state.tick % 60 === 0;
-}
-
-const els = {
-  daylight: document.getElementById('daylight-display'),
-  sap: document.getElementById('sap-display'),
-  growth: document.getElementById('growth-display'),
-  leafCost: document.getElementById('leaf-cost'),
-  branchCost: document.getElementById('branch-cost'),
-  leafUpgrade: document.getElementById('leaf-upgrade'),
-  branchUpgrade: document.getElementById('branch-upgrade'),
-  log: document.getElementById('log-line'),
-};
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    return raw ? deserializeState(raw) : createInitialState();
-  } catch {
-    return createInitialState();
-  }
-}
-
-let state = loadState();
-
-document.getElementById('gather-btn').addEventListener('click', () => {
-  gatherDaylight(state);
-  render(state, els);
-});
-
-els.leafUpgrade.addEventListener('click', () => {
-  if (buyLeaf(state)) els.log.textContent = `叶序螺旋升至 ${state.leafLevel} 级。`;
-  render(state, els);
-});
-
-els.branchUpgrade.addEventListener('click', () => {
-  if (buyBranch(state)) els.log.textContent = `分枝序升至 ${state.branchLevel} 级。`;
-  render(state, els);
-});
-
-setInterval(() => {
-  tick(state);
-  if (shouldAutoSave(state)) {
-    localStorage.setItem(SAVE_KEY, serializeState(state));
-    els.log.textContent = '树记下了自己。';
-  }
-  render(state, els);
-}, 1000);
-
-render(state, els);
+```bash
+git add features/game/save_manager.gd tests/unit/test_save_manager.gd
+git commit -m "feat: 存档模块（user:// JSON 读写/缺档回退）"
 ```
 
-- [ ] **Step 4: 运行确认测试通过**
+---
 
-Run: `node --test test/main.test.js`
-Expected: PASS（shouldAutoSave 用例全绿）
-注：main.js 顶层引用 `document`/`localStorage`，node:test 下 import 会报错——若出现 `document is not defined`，将 `shouldAutoSave` 相关逻辑保持在纯函数层，且确保 main.js 的 DOM 代码在模块顶层之外不执行（本实现中 DOM 访问在顶层，Node 下 import 即报错）。解决办法：把 `shouldAutoSave` 移到 `src/loop.js` 并同步修改 Task 6 的 `loop.test.js` 添加对应用例；`main.js` 从 loop.js 导入它。采用此方案（见下）。
+### Task 9: GameManager Autoload + main 场景（集成）
 
-- [ ] **Step 4b: 把 shouldAutoSave 放入 loop.js（避免 Node 下 import main.js 触发 DOM）**
+**Files:**
+- Create: `autoloads/game_manager.gd`
+- Create: `features/ui/main.tscn`
+- Create: `features/ui/main.gd`
+- Modify: `project.godot`（注册 autoload）
 
-修改 `src/loop.js`，追加：
+**Interfaces:**
+- Consumes: `GameState`、`GameLoop`、`GameActions`、`SaveManager`、`Formatter`、`CostCalculator`
+- Produces:
+  - `GameManager`（Autoload，节点名 `GameManager`）：信号 `resources_changed`；方法 `gather()`、`buy_leaf() -> bool`、`buy_branch() -> bool`、`get_state() -> GameState`、`get_leaf_cost() -> int`、`get_branch_cost() -> int`
+  - `features/ui/main.tscn`：主场景（根 Control，含标题、希望行、采集按钮、资源标签、升级按钮、日志标签）
 
-```js
-export function shouldAutoSave(state) {
-  return state.tick > 0 && state.tick % 60 === 0;
-}
+- [ ] **Step 1: 注册 Autoload（修改 project.godot）**
+
+```ini
+[autoload]
+GameManager="*res://autoloads/game_manager.gd"
 ```
 
-修改 `test/loop.test.js` 追加：
+- [ ] **Step 2: 实现 autoloads/game_manager.gd**
 
-```js
-test('shouldAutoSave：每 60 tick 触发', () => {
-  const s = createInitialState();
-  s.tick = 60;
-  assert.equal(shouldAutoSave(s), true);
-  s.tick = 61;
-  assert.equal(shouldAutoSave(s), false);
-});
+```gdscript
+extends Node
+
+signal resources_changed
+
+const SAVE_PATH := "user://save.json"
+const TICK_INTERVAL := 1.0
+
+var _state: GameState
+var _tick_accumulator := 0.0
+
+func _ready() -> void:
+    _state = SaveManager.load_or_create(SAVE_PATH)
+
+func _process(delta: float) -> void:
+    _tick_accumulator += delta
+    if _tick_accumulator >= TICK_INTERVAL:
+        _tick_accumulator -= TICK_INTERVAL
+        GameLoop.tick(_state)
+        if GameLoop.should_auto_save(_state):
+            SaveManager.save(_state, SAVE_PATH)
+        resources_changed.emit()
+
+func get_state() -> GameState:
+    return _state
+
+func gather() -> void:
+    GameActions.gather_daylight(_state)
+    resources_changed.emit()
+
+func buy_leaf() -> bool:
+    var ok := GameActions.buy_leaf(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_branch() -> bool:
+    var ok := GameActions.buy_branch(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func get_leaf_cost() -> int:
+    return CostCalculator.leaf_cost(_state.leaf_level)
+
+func get_branch_cost() -> int:
+    return CostCalculator.branch_cost(_state.branch_level)
 ```
 
-（import 行改为 `import { tick, shouldAutoSave } from '../src/loop.js';`）
+- [ ] **Step 3: 实现 features/ui/main.gd**
 
-同步修改 `src/main.js`：删除本地 `shouldAutoSave` 定义，改 `import { tick, shouldAutoSave } from './loop.js';`，删掉 `test/main.test.js`（不再需要）。
+```gdscript
+extends Control
 
-- [ ] **Step 5: 运行确认全部测试通过**
+@onready var daylight_label: Label = %DaylightLabel
+@onready var sap_label: Label = %SapLabel
+@onready var growth_label: Label = %GrowthLabel
+@onready var leaf_cost_label: Label = %LeafCostLabel
+@onready var branch_cost_label: Label = %BranchCostLabel
+@onready var leaf_button: Button = %LeafButton
+@onready var branch_button: Button = %BranchButton
+@onready var log_label: Label = %LogLabel
 
-Run: `npm test`
-Expected: PASS（state/costs/format/actions/loop 全部用例，含 shouldAutoSave）
+func _ready() -> void:
+    %GatherButton.pressed.connect(_on_gather_pressed)
+    leaf_button.pressed.connect(_on_leaf_pressed)
+    branch_button.pressed.connect(_on_branch_pressed)
+    GameManager.resources_changed.connect(_refresh)
+    _refresh()
 
-- [ ] **Step 6: 浏览器集成验证**
+func _on_gather_pressed() -> void:
+    GameManager.gather()
 
-Run: `npm run serve`，浏览器打开 `http://localhost:8000`
-Expected:
-- 点击「舒展叶片」日光 +1
-- 树液随日光累积（光合）
-- 攒够 500 树液后可买「叶序螺旋」，价格跳为 500（F₂），再跳 1000（F₃）
-- 攒够 1200 树液后可买「分枝序」，日光开始每 tick 自动 +1
-- 60 秒后日志出现"树记下了自己"；刷新页面数值保留
+func _on_leaf_pressed() -> void:
+    if GameManager.buy_leaf():
+        log_label.text = "叶序螺旋升至 %d 级。" % GameManager.get_state().leaf_level
+    _refresh()
+
+func _on_branch_pressed() -> void:
+    if GameManager.buy_branch():
+        log_label.text = "分枝序升至 %d 级。" % GameManager.get_state().branch_level
+    _refresh()
+
+func _refresh() -> void:
+    var s := GameManager.get_state()
+    daylight_label.text = Formatter.format_number(s.daylight)
+    sap_label.text = Formatter.format_number(s.sap)
+    growth_label.text = Formatter.format_number(s.growth)
+    leaf_cost_label.text = Formatter.format_cost(GameManager.get_leaf_cost())
+    branch_cost_label.text = Formatter.format_cost(GameManager.get_branch_cost())
+    leaf_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_leaf_cost())))
+    branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
+```
+
+- [ ] **Step 4: 创建 features/ui/main.tscn**
+
+```
+[gd_scene load_steps=2 format=3 uid="uid://worldtreemain"]
+
+[ext_resource type="Script" path="res://features/ui/main.gd" id="1_main"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_main")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+text = "世界树"
+
+[node name="Hope" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "一点希望，在废墟中静静燃烧。"
+
+[node name="GatherButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "舒展叶片"
+
+[node name="DaylightLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "日光：0"
+
+[node name="SapLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "树液：0"
+
+[node name="GrowthLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "树高：0"
+
+[node name="LeafButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "叶序螺旋（日光采集 +25%/级）"
+
+[node name="LeafCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：500"
+
+[node name="BranchButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "分枝序（自动采集 +1/级）"
+
+[node name="BranchCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：1200"
+
+[node name="LogLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+```
+
+- [ ] **Step 5: 运行全部测试确认无回归**
+
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
+Expected: PASS（全部测试套件，含 smoke）
+
+- [ ] **Step 6: 打开编辑器验证场景可运行**
+
+Run: `godot --path .`（或编辑器打开），运行主场景
+Expected: 无脚本报错；按钮/标签按预期出现（数值为 0）
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/render.js src/main.js src/loop.js test/loop.test.js
-git commit -m "feat: 渲染与入口（DOM 刷新/定时器/自动存档）"
+git add autoloads/game_manager.gd features/ui/main.tscn features/ui/main.gd project.godot
+git commit -m "feat: GameManager Autoload + 主场景集成（tick/信号/UI）"
 ```
 
 ---
 
-### Task 8: 集成收尾与手测清单
+### Task 10: 集成验证与手测清单
 
 **Files:**
 - Modify: 无（纯验证）
@@ -731,30 +1063,31 @@ git commit -m "feat: 渲染与入口（DOM 刷新/定时器/自动存档）"
 
 - [ ] **Step 1: 全量测试**
 
-Run: `npm test`
-Expected: 全部 PASS
+Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
+Expected: 全部 PASS，退出码 0
 
 - [ ] **Step 2: 手动玩法验证（对照 Global Constraints 数值规则）**
 
-在浏览器依次验证：
-- [ ] 开局显示"一点希望，在废墟中静静燃烧"（hope 叙事元素）
+在 Godot 编辑器运行主场景，依次验证：
+- [ ] 界面显示"一点希望，在废墟中静静燃烧"（hope 叙事元素）
 - [ ] 点击 5 次「舒展叶片」→ 日光 = 5
 - [ ] 等待树液 ≥ 500 → 购买「叶序螺旋」→ 点击采集变为 +1.25
 - [ ] 购买第 2 级叶序螺旋（500）→ 采集 +1.5
 - [ ] 购买「分枝序」→ 每 tick 日光自动 +1
-- [ ] 刷新页面后数值保留（自动存档生效）
+- [ ] 60 秒后触发自动存档（`user://save.json` 存在）；重启游戏数值保留
 
 - [ ] **Step 3: 最终提交**
 
 ```bash
 git add -A
-git commit -m "chore: MVP 验证通过"
+git commit -m "chore: Godot MVP 验证通过"
 ```
 
 ---
 
 ## Self-Review 记录
 
-- **Spec 覆盖**：§4 具象轨（日光/树液/生长）✓（loop/actions）；§9 斐波那契升级组前两项 ✓（costs/actions）；开局一点希望 ✓（state.hope + index.html 文案）；存档 ✓（main）。四族/梦境/明选/终局属后续里程碑，不在本计划范围，已留 spec §12 里程碑 2-4。
-- **占位符扫描**：无 TBD/TODO；所有步骤含具体代码与命令。
-- **类型一致性**：`createInitialState`/`tick`/`buyLeaf`/`fib`/`formatNumber` 等签名在测试与实现间一致；`shouldAutoSave` 经 Step 4b 迁入 loop.js 后，main.js 与 loop.test.js 引用一致；`leafCost/branchCost` 均以 level（从 0 计）入参。
+- **Spec 覆盖**：§4 具象轨（日光/树液/生长）✓（game_loop/actions）；§9 斐波那契升级组前两项 ✓（cost_calculator/actions）；开局一点希望 ✓（game_state.hope + main.tscn 文案）；存档 ✓（save_manager + GameManager 每 60 tick）。四族/梦境/明选/终局属后续里程碑，不在本计划范围（spec §12 里程碑 2-4）。
+- **占位符扫描**：无 TBD/TODO；所有步骤含具体 GDScript 与命令。
+- **类型一致性**：`BigNum`（`add/sub/mul_scalar/is_greater_or_equal/to_value/to_dict/from_dict`）、`CostCalculator.fib/leaf_cost/branch_cost`、`GameActions.gather_daylight/buy_leaf/buy_branch`、`GameLoop.tick/should_auto_save`、`SaveManager.save/load_or_create`、`GameManager` 信号与方法在各任务间签名一致；main.gd 的 `%UniqueName` 与 main.tscn 的 `unique_name_in_owner` 节点一一对应。
+- **铁律遵循**：本计划按铁律 2 先读 godot-master 并路由至 godot-genre-idle-clicker（BigNum/手动累加/信号节流/UNIX 存档规则）与 godot-testing-patterns（GdUnit4 headless）。

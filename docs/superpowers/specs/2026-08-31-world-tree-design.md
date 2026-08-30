@@ -291,14 +291,17 @@
 
 ## 12. 技术方案与里程碑
 
-- **呈现形式**：文字原型先行（终端或网页纯文字），把玩法与叙事跑通后再决定是否上画面。
-- 技术栈倾向：纯 HTML/JS/CSS 浏览器游戏（零安装、快速迭代、易分享），最终以主人确认为准。
+- **引擎**：Godot 4.7（已装 `C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\`，`godot` 命令在 PATH）——主人确认由 HTML/JS 改为 Godot（2026-08-31）。
+- **呈现形式**：文字原型先行——先以纯文字 UI（Control/Label/Button）跑通玩法与叙事，后期再升级画面/动画/音效。
+- **架构**（按 godot-master Layer Cake）：`GameState`（RefCounted 数据）、纯逻辑类（`GameLoop`/`GameActions`/`CostCalculator`/`BigNum`/`Formatter`）、`GameManager`（Autoload，`_process` 手动累加 tick + `resources_changed` 信号）、`main.tscn`（Presentation 只监听信号）。
+- **测试**：GdUnit4 插件 + `godot --headless` 命令行跑测（CI 可复用）。
+- **数值**：资源一律 `BigNum`（尾数+指数）防 1e308 INF；升级成本用斐波那契（spec §9）。
 - 里程碑框架：
-  1. 文字原型 MVP（点击/生长/基础资源循环）
+  1. 文字原型 MVP（点击/生长/基础资源循环/存档）——实施计划：`docs/superpowers/plans/2026-08-31-mvp-text-prototype.md`（Godot 版）
   2. 双轨资源 + 四族 + 梦境系统
   3. 明选事件 + 叙事文本
   4. 终局闭环 + 三结局 + 多周目
-  5. （可选）画面与音效升级
+  5. 画面与音效升级
 
 ---
 
