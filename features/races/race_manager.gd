@@ -86,7 +86,10 @@ static func tick_races(state: GameState) -> Array[Dictionary]:
 		var pop := float(state.races[race.id]["population"])
 		state.faith.add(BigNum.new(pop * race.devotion * FAITH_EFF))
 		if race.produce_memory:
-			state.memory.add(BigNum.new(pop * MEMORY_EFF))
+			state.memory.add(BigNum.new(pop * MEMORY_EFF * (1.0 + 0.1 * float(state.root_eff_level))))
 		if race.craft_sap > 0.0:
 			state.sap.add(BigNum.new(pop * race.craft_sap))
+	# 花盘：独立信仰产出（与人口无关）
+	if state.sunflower_level > 0:
+		state.faith.add(BigNum.new(0.5 * float(state.sunflower_level)))
 	return events

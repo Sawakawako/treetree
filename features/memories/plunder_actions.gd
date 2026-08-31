@@ -33,7 +33,9 @@ static func plunder(state: GameState, race_id: StringName) -> Dictionary:
 	var before := reveal_stage(state, race_id)
 	# 石裔无梦：不涨 counter、无产出
 	if yield_mem > 0.0:
-		state.memory.add(BigNum.new(yield_mem))
+		var boosted := yield_mem * (1.0 + 0.1 * float(state.root_eff_level))
+		yield_mem = boosted
+		state.memory.add(BigNum.new(boosted))
 		state.plundered[race_id] = count(state, race_id) + 1
 	var after := reveal_stage(state, race_id)
 	var revealed := after > before

@@ -93,3 +93,11 @@ func test_plunder_reveals_set_semantics() -> void:
 	for i in 9:
 		PlunderActions.plunder(s, &"human")
 	assert_that(s.plunder_reveals.size()).is_equal(1)
+
+func test_root_eff_boosts_plunder() -> void:
+	var s := GameState.new()
+	_awaken(s, &"human")
+	s.root_eff_level = 1
+	var r := PlunderActions.plunder(s, &"human")
+	assert_that(float(r.get("memory", 0.0))).is_equal_approx(1.1, 1e-4)  # 1.0×1.1
+	assert_that(s.memory.to_value()).is_equal_approx(1.1, 1e-4)

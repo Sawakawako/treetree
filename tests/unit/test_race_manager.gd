@@ -142,3 +142,21 @@ func test_non_frozen_race_grows() -> void:
 	s.sap = BigNum.new(1000.0)
 	RaceManager.tick_races(s)
 	assert_that(float(s.races["human"]["population"])).is_greater(50.0)  # 正常增长
+
+func test_sunflower_faith_production() -> void:
+	# 花盘独立信仰产出（与人口无关）
+	var s := GameState.new()
+	s.sunflower_level = 2
+	s.sap = BigNum.new(1000.0)
+	RaceManager.tick_races(s)
+	assert_that(s.faith.to_value()).is_equal_approx(1.0, 1e-4)  # 0.5×2
+
+func test_root_eff_boosts_human_memory() -> void:
+	var s := GameState.new()
+	_awaken(s, &"human")
+	s.root_eff_level = 1
+	s.sap = BigNum.new(1000.0)
+	RaceManager.tick_races(s)
+	# 人族梦产：50×0.001×1.1 = 0.055（增长后 pop 略有变化，用容差区间）
+	assert_that(s.memory.to_value()).is_greater(0.05)
+	assert_that(s.memory.to_value()).is_less(0.06)
