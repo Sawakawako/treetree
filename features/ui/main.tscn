@@ -145,3 +145,27 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "领悟：0"
+
+[node name="InteractHumanButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与人族围火"
+
+[node name="InteractForestButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与林地民听歌"
+
+[node name="InteractStoneButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与石裔看地基"
+
+[node name="InteractWildButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与野民看壁画"

@@ -6,6 +6,14 @@ const RACE_ROWS := {
     &"stoneborn": "石裔",
     &"wildfolk": "野民",
 }
+const RELATION_LABELS := {
+    -3: "敌意", -2: "敌意", -1: "冷淡", 0: "平常",
+    1: "友善", 2: "亲近", 3: "挚友",
+}
+const RELATION_COLORS := {
+    -3: Color("#7a8a99"), -2: Color("#7a8a99"), -1: Color("#9aa5ad"),
+    0: Color.WHITE, 1: Color("#c9a25c"), 2: Color("#e6a23c"), 3: Color("#f0b64e"),
+}
 
 @onready var daylight_label: Label = %DaylightLabel
 @onready var sap_label: Label = %SapLabel
@@ -28,6 +36,10 @@ const RACE_ROWS := {
 @onready var totem_label: Label = %TotemLabel
 @onready var totem_button: Button = %TotemInterpretButton
 @onready var insight_label: Label = %InsightLabel
+@onready var interact_human_button: Button = %InteractHumanButton
+@onready var interact_forest_button: Button = %InteractForestButton
+@onready var interact_stone_button: Button = %InteractStoneButton
+@onready var interact_wild_button: Button = %InteractWildButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -35,6 +47,10 @@ func _ready() -> void:
     branch_button.pressed.connect(_on_branch_pressed)
     root_button.pressed.connect(_on_root_pressed)
     totem_button.pressed.connect(_on_totem_pressed)
+    interact_human_button.pressed.connect(func(): _on_interact_pressed(&"human"))
+    interact_forest_button.pressed.connect(func(): _on_interact_pressed(&"forestfolk"))
+    interact_stone_button.pressed.connect(func(): _on_interact_pressed(&"stoneborn"))
+    interact_wild_button.pressed.connect(func(): _on_interact_pressed(&"wildfolk"))
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
@@ -85,6 +101,7 @@ func _refresh() -> void:
     root_button.disabled = not RootActions.can_explore(s)
     _refresh_race_rows()
     _refresh_totem()
+    _refresh_interact_buttons()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -100,9 +117,12 @@ func _refresh_race_rows() -> void:
             continue
         if s.races.has(id) and bool(s.races[id].get("awakened", false)):
             var pop := float(s.races[id].get("population", 0.0))
-            label.text = "%s：人口 %d" % [RACE_ROWS[id], int(pop)]
+            var rel := RelationActions.get_relation(s, id)
+            label.text = "%s：人口 %d · %s" % [RACE_ROWS[id], int(pop), RELATION_LABELS.get(rel, "平常")]
+            label.add_theme_color_override("font_color", RELATION_COLORS.get(rel, Color.WHITE))
         else:
             label.text = "%s：%s 时苏醒" % [RACE_ROWS[id], _awaken_hint(data)]
+            label.add_theme_color_override("font_color", Color.WHITE)
 
 func _awaken_hint(data: RaceData) -> String:
     if data == null:
@@ -142,3 +162,23 @@ func _on_totem_pressed() -> void:
 
 func _on_totem_interpreted(totem_id: int, interpret_text: String) -> void:
     race_event_label.text = interpret_text + "\n（领悟 +1）"
+
+func _refresh_interact_buttons() -> void:
+    var s := GameManager.get_state()
+    var pairs := [
+        [&"human", interact_human_button],
+        [&"forestfolk", interact_forest_button],
+        [&"stoneborn", interact_stone_button],
+        [&"wildfolk", interact_wild_button],
+    ]
+    for p in pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = RelationActions.can_interact(s, rid)
+
+func _on_interact_pressed(race_id: StringName) -> void:
+    var result: Dictionary = GameManager.interact_relation(race_id)
+    if result.get("ok", false):
+        race_event_label.text = str(result.get("text", ""))
+        log_label.text = "关系 · 亲近了一分。"
+    _refresh()
