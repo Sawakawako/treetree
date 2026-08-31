@@ -1,0 +1,37 @@
+extends GdUnitTestSuite
+
+func test_explore_first_relic() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(200.0)
+    var result := RootActions.explore(s)
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(s.root_depth).is_equal(1)
+    assert_that(s.memory.to_value()).is_equal_approx(1.0, 1e-4)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
+    assert_that(s.relics_found.size()).is_equal(1)
+
+func test_explore_insufficient_sap() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(199.0)
+    var result := RootActions.explore(s)
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(s.root_depth).is_equal(0)
+
+func test_explore_all_relics_then_blocked() -> void:
+    var s := GameState.new()
+    for i in RelicLibrary.relic_count():
+        s.sap = BigNum.new(200.0)
+        var result := RootActions.explore(s)
+        assert_that(result.get("ok", false)).is_true()
+    # 第 5 次应被阻止（遗迹耗尽）
+    s.sap = BigNum.new(200.0)
+    var blocked := RootActions.explore(s)
+    assert_that(blocked.get("ok", false)).is_false()
+    assert_that(s.root_depth).is_equal(RelicLibrary.relic_count())
+
+func test_can_explore() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(200.0)
+    assert_that(RootActions.can_explore(s)).is_true()
+    s.sap = BigNum.new(199.0)
+    assert_that(RootActions.can_explore(s)).is_false()
