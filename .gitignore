@@ -1,0 +1,15 @@
+# Godot 4 cache & generated files
+.godot/
+
+# GdUnit4 test reports
+/reports/
+
+# Imported translations (automatically generated from CSV)
+*.translation
+
+# Windows / macOS
+Thumbs.db
+.DS_Store
+
+# Editor data
+*.tmp

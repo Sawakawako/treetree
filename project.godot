@@ -1,0 +1,16 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+
+config/name="世界树"
+run/main_scene="res://features/ui/main.tscn"
+
+[display]
+
+window/size/viewport_width=420
+window/size/viewport_height=640
+
+[editor_plugins]
+
+enabled=PackedStringArray("gdUnit4")
