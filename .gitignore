@@ -13,3 +13,6 @@ Thumbs.db
 
 # Editor data
 *.tmp
+
+# SDD 工作区（实施文档，不入库）
+.superpowers/
