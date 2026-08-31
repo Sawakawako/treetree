@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/races/race_data.gd" id="1_race"]
+
+[resource]
+script = ExtResource("1_race")
+id = &"wildfolk"
+display_name = "野民"
+awaken_condition = "faith>=100"
+awaken_pop = 80.0
+growth_rate = 0.02
+support_cost = 0.001
+devotion = 0.3
+produce_memory = false
+craft_sap = 0.0
+awaken_text = "夜里，石壁前多了一圈眼睛。\n半蹲在月光与阴影之间，毛发覆体，兽瞳发亮。\n不靠近，也不离开。\n只是在看。\n\n你忽然发现，石壁上多了一幅画。\n线条很旧，像画了很久。\n画的是一棵树——\n树冠遮天，根须伸进河流。\n河在变浅。\n\n它们在画你。\n它们从第一天就在画你。"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/races/race_data.gd" id="1_race"]
+
+[resource]
+script = ExtResource("1_race")
+id = &"human"
+display_name = "人族"
+awaken_condition = "memory>=2"
+awaken_pop = 50.0
+growth_rate = 0.01
+support_cost = 0.002
+devotion = 1.0
+produce_memory = true
+craft_sap = 0.0
+awaken_text = "土里传来一个苍老的声音：\n「你在听吗？……我是最后一个说梦的人。我梦见你很多年了。」"

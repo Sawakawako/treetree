@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/races/race_data.gd" id="1_race"]
+
+[resource]
+script = ExtResource("1_race")
+id = &"stoneborn"
+display_name = "石裔"
+awaken_condition = "faith>=60"
+awaken_pop = 20.0
+growth_rate = 0.005
+support_cost = 0.003
+devotion = 0.6
+produce_memory = false
+craft_sap = 0.01
+awaken_text = "你听见地底传来闷响。\n一下，一下，有节奏。\n不是心跳。\n是锤。\n\n他们从岩层里起身，指节粗大如卵石，眼睛像淬火的炭。\n不唱歌，不祈祷。\n打量你的年轮，像打量一块料。\n\n「树。」\n他们没有再说第二句。\n锤声落进土里，把地夯实。\n他们不献梦。\n他们献的是——手，和接下来的日子。"

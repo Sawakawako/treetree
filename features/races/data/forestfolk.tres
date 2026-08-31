@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/races/race_data.gd" id="1_race"]
+
+[resource]
+script = ExtResource("1_race")
+id = &"forestfolk"
+display_name = "林地民"
+awaken_condition = "faith>=30"
+awaken_pop = 30.0
+growth_rate = 0.006
+support_cost = 0.001
+devotion = 1.8
+produce_memory = false
+craft_sap = 0.0
+awaken_text = "林子深处，先有一声。\n不是鸟。\n不是风。\n是很多年以前，有人把歌种进土里，如今发了芽。\n\n他们从树根上醒来，浑身是苔，指尖是叶脉。\n看见你，他们先是一愣，然后笑了——\n开口，就是一整座森林的合唱。\n\n「母树。我们梦见你很久了。\n我们唱歌，你就不孤单。」"
