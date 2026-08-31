@@ -97,3 +97,25 @@ func test_interpret_totem_blocked_no_signal() -> void:
     var result: Dictionary = gm.interpret_totem(1)
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
+
+func test_interact_relation_signal() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    gm._state.memory = BigNum.new(4.0)
+    var got := {"ok": false, "rel": -99}
+    gm.relation_changed.connect(func(id: StringName, rel: int) -> void:
+        got["ok"] = true
+        got["rel"] = rel)
+    var result: Dictionary = gm.interact_relation(&"human")
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(int(got["rel"])).is_equal(1)
+    assert_that(gm.get_state().relations["human"]).is_equal(1)
+
+func test_interact_relation_blocked_no_signal() -> void:
+    gm._state = GameState.new()  # 人族未醒
+    var got := {"ok": false}
+    gm.relation_changed.connect(func(id: StringName, rel: int) -> void: got["ok"] = true)
+    var result: Dictionary = gm.interact_relation(&"human")
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()

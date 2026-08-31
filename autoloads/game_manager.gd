@@ -4,6 +4,7 @@ signal resources_changed
 signal relic_discovered(relic_name: String, dream_text: String)
 signal race_awakened(race_id: StringName, race_name: String, awaken_text: String)
 signal totem_interpreted(totem_id: int, interpret_text: String)
+signal relation_changed(race_id: StringName, relation: int)
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -78,5 +79,12 @@ func interpret_totem(totem_id: int) -> Dictionary:
     var result := TotemActions.interpret(_state, totem_id)
     if result.get("ok", false):
         totem_interpreted.emit(totem_id, str(result.get("text", "")))
+        resources_changed.emit()
+    return result
+
+func interact_relation(race_id: StringName) -> Dictionary:
+    var result := RelationActions.interact(_state, race_id)
+    if result.get("ok", false):
+        relation_changed.emit(race_id, int(result.get("relation", 0)))
         resources_changed.emit()
     return result
