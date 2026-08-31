@@ -2,6 +2,35 @@
 
 > 新会话/新代理接手本项目的入口文档。先读本文件，再读 `AGENTS.md`（铁律），再读设计规格（权威）。
 
+## 〇、接手必加载的 Skill 清单（2026-09-01 主人定稿）
+
+> 新会话动工前，按任务类型**必须加载**对应 skill（技能先行，铁律 1/2/4）：
+
+**总入口与流程**：
+- `using-superpowers`（会话起点——skill 使用规则）
+- `brainstorming`（任何创作/新系统动手前——设计先行）
+- `writing-plans`（设计定稿后写实施计划）
+- `executing-plans` / `subagent-driven-development`（计划执行：主代理 inline 或子代 inline / 每任务 subagent+审查）
+- `verification-before-completion`（声称完成前：跑真验证、给证据）
+- `systematic-debugging`（任何 bug/测试失败——先找根因）
+- `requesting-code-review` / `receiving-code-review`（审查与接收反馈——外部反馈先核实再实施）
+
+**Godot 开发（铁律 2）**：
+- `godot-master`（Godot 4.7+ 专家库总入口，Master Decision Matrix 路由）
+- 按需：`godot-gdscript-mastery`（GDScript 审查）/ `godot-auditor`（never-list）/ 领域 skill（idle: `godot-genre-idle-clicker`、经济: `godot-economy-system` 等）
+
+**写作/叙事（铁律 1，中文）**：
+- `webnovel-writing` / `novel-worldbuilding`（网文/小说架构）
+- `cw-prose-writing` / `cw-brainstorming` / `cw-story-critique` / `creative-writing-craft` / `creative-writing-modes`（正文写作工作流）
+- `humanize-ai`（文风铁律的执行保障——写作任务完成后自检）
+- `voice-dissolver` / `editor-revisor` / `chinese-write-checker`（声音校准/改稿/内容体检）
+- `worldbuilding` / `narrative-design` / `gat-story`（世界观/叙事系统）
+
+**执行约定（本会话沉淀）**：
+- 计划执行优先「子代 inline」（一次 dispatch 跑全计划，省主代理上下文）——M5b/M5c/M5d 验证过的模式
+- 子代发现计划缺陷 → BLOCKED 协议（停、取证、报主代裁决），按「设计文档权威优先」修正
+- 新增 class_name 脚本后 `.uid` 确认入库；测试断言与设计公式三方自洽
+
 ## 一、项目是什么
 
 **《世界树》**——西幻末世增量游戏：玩家是仅存的一棵世界树，在废墟中复苏生命、采集记忆，最终发现自己既是吞噬者，也是旧世界最后的一个梦。
