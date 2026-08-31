@@ -58,7 +58,8 @@
 | **里程碑 5b** | ✅ 完成（夺梦系统：延迟代价/分级揭示 3-6-9/各族差异化/伪装文案，144 测试全绿 + M5B E2E PASSED，2026-09-01 实施） |
 | **里程碑 5d** | ✅ 完成（增量深度：升级总表 5 类/消耗端/sap 宽裕上限，163 测试全绿 + M5D E2E PASSED，2026-09-01 实施——方向审视后插入） |
 | **里程碑 5c** | ✅ 完成（意志漂移+化身：drift 暗线/化身观感 4 档=漂移镜子/亲密事件对坐，184 测试全绿 + M5C E2E PASSED，2026-09-01 实施） |
-| **里程碑 5e/5f** | 📝 设计完成（树语科技+资源分层 / 灵魂系统）——实施待排 |
+| **里程碑 5e** | 📝 设计完成（树语科技+资源分层）——实施待排 |
+| **里程碑 5f** | ✅ 完成（灵魂系统：河底守恒 100/复活/夺魂，201 测试全绿 + M5F E2E PASSED，2026-09-01 实施） |
 | **里程碑 5g+** | ⏳ 待定（明选引擎→终局，见 `docs/world-tree/ROADMAP.md`） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
@@ -102,11 +103,11 @@ features/economy/           # BigNum（大数）/ CostCalculator（斐波那契+
 features/game/              # GameState（状态：memory/faith/root_depth/races/relics/totem/relations/plundered/升级等级）/ GameLoop（tick 逻辑：光合/生长/储量 clamp）/ SaveManager
 features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
 features/memories/          # TotemLibrary+TotemActions（图腾）/ PlunderData+PlunderActions（夺梦）/ DriftActions+AvatarTiers+IntimateEvents（意志漂移+化身）
-features/soul/              # SoulActions（灵魂：河底守恒/复活/夺魂）——M5f 设计就绪待实施
+features/soul/              # SoulActions（灵魂：河底守恒/复活/夺魂）——M5f 已完成（2026-09-01）
 features/relations/         # RelationEvents（4 族仪式互动）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
 features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮）
-tests/unit/                 # GdUnit4 测试（144 个，20 套件）
+tests/unit/                 # GdUnit4 测试（201 个，23 套件）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -193,14 +194,26 @@ tests/unit/                 # GdUnit4 测试（144 个，20 套件）
 ## 六·十一、里程碑 5e/5f 设计就绪（2026-09-01，待实施）
 
 - **M5e 树语科技+资源分层**（`2026-08-31-world-tree-m5e-economy-tree-design.md`）：三层资源架构（一级树液可再生/二级信仰记忆可再生可增殖/三级灵魂希望不可再生关键选择）+ 点击式兑换（100 树液→1 信仰、500→1 记忆）+ 二级引擎（信仰/记忆引擎「用信仰买信仰」）+ 树语科技完整框架（三主枝×3 层节点清单，能力解锁型；树语等级=专属二级资源）——**主 spec §14.6 已回填**（d6db660）
-- **M5f 灵魂系统**（`2026-08-31-world-tree-m5f-soul-design.md`）：河底存量守恒模型（100 恒，UI 可见=河变浅读数）+ 复活（1 灵魂+500 growth→人口+10，消耗树高联动承载「救得越多自己越矮」）+ 夺魂（需夺梦揭示→河底+1+人口-3+关系-2，偷记忆到抽灵魂的暗线递进）
+- **M5f 灵魂系统**（`2026-08-31-world-tree-m5f-soul-design.md`）：河底存量守恒模型（100 恒，UI 可见=河变浅读数）+ 复活（1 灵魂+500 growth→人口+10，消耗树高联动承载「救得越多自己越矮」）+ 夺魂（需夺梦揭示→河底+1+人口-3+关系-2，偷记忆到抽灵魂的暗线递进）——**已实施完成（2026-09-01，见六·十二）**
 - **说书人彩蛋「小溪与激流」**：待落地（人族关系≥+2 火塘故事位，小牛匿名寓言——下次内容里程碑一起）
 
-**下一步**：实施 M5e（树语批 1：三层架构+生命之语初阶）或 M5f（灵魂）——或回主线明选引擎（M5g）。
+**下一步**：明选引擎（M5g）——七卡按依赖逐张落地（M5f 夺魂机制已就绪，哲学僵尸明选可复用）；M5e 树语科技批 1 亦可择机插入。
 
-**下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
+## 六·十二、里程碑 5f 完成记录（2026-09-01）
 
-**下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
+**内容**：灵魂系统（三级资源·守恒闭环）→ `features/soul/soul_actions.gd`（`RIVER_TOTAL=100` 河底守恒 / 复活 1 灵魂 + 500 growth → 该族人口 +10「唤回…的人」/ 夺魂=夺梦揭示后可抽，人口 -3 + 关系 -2「让它沉回河底」）；`GameState.soul_river` 序列化（缺省/损坏回退 100，旧档不损坏）；`GameManager` 两入口三信号（`revive_race`/`plunder_soul_race` + `soul_changed`/`soul_revived`/`soul_plundered`）；UI 灵魂存量「灵魂：X / 100」+ 复活按钮 ×4 + 夺魂按钮 ×4（夺梦揭示后才可见，文案文风六则）。
+
+**设计要点**（决策记录见 M5f 设计文档 §六）：河底存量守恒可见（UI=亡者之河变浅暗线的机制读数）；生机=映射 growth（复活消耗树高，承载联动「救得越多，自己越矮」）；夺魂门槛=夺梦揭示（偷记忆→抽灵魂的暗线递进，哲学僵尸伏笔「没有灵魂的人还算人吗」）；守恒不变式 `river + 已复活 = 100` 恒（实现保证 + 测试验证）。
+
+**验证**：201 单测全绿（23 套件 = 基线 184 + 17 新增，0 失败 0 orphan）+ M5F E2E 11 项检查全 PASS（唤醒→复活人口 60/河底 99→夺梦揭示 1 级→夺魂回 100/人口 57/关系 -3→存档往返→旧档回退，脚本已删）+ 冒烟通过。
+
+**实施教训**：
+1. **2 处计划缺陷经 BLOCKED 协议修正**：#1 Task 3 `soul_revived` 的 pop_gain 在 `SoulActions.revive` 已更新人口后计算恒为 0——裁决 R1 改发常量 `REVIVE_POP_GAIN`（与 `plunder_soul_race` 发 `PLUNDER_SOUL_POP_LOSS` 对称，SoulActions/GameState 不动）；#2 Task 5 E2E 关系断言简化值 -2 的前提忽略夺梦第 3 次揭示 -1，实测 -3 为准（运行期探针取证），裁决确认 `== -3`——**写计划时信号语义要与 state 变更时序自洽，E2E 断言要过一遍完整流程数学**。
+2. **文案善恶不对称**：夺魂按钮「让它沉回河底」与夺梦「把梦收进年轮」形成不对称——夺梦伪装、夺魂诚实（夺梦揭示后玩家已知代价，按钮不再伪装）。
+3. `soul_river` 为 **int** 非 BigNum（守恒计数器非资源量，设计 §3.1 明示）；growth/关系操作走既有 BigNum/RelationActions 接口。
+4. E2E 脚本 `load(...).new()` 返回值无静态类型，`var gm :=` 推断失败（已知坑，M2 教训 #4）——用无类型 var + 显式 `var x: Dictionary`。
+
+**下一步**：明选引擎（M5g）——灵魂夺魂机制已供复用（哲学僵尸明选）；M5e 树语科技批 1 亦可择机插入。
 
 ## 七、下一步：里程碑 5c+（按路线图推进，待主人确认）
 
