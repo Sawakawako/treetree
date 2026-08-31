@@ -49,6 +49,14 @@ func mul_scalar(f: float) -> BigNum:
     return out
 
 func is_greater_or_equal(other: BigNum) -> bool:
+    var self_neg := mantissa < 0.0
+    var other_neg := other.mantissa < 0.0
+    if self_neg != other_neg:
+        return other_neg
+    if self_neg:
+        if exponent != other.exponent:
+            return exponent < other.exponent
+        return mantissa <= other.mantissa
     if exponent != other.exponent:
         return exponent > other.exponent
     return mantissa >= other.mantissa

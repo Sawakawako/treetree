@@ -42,3 +42,15 @@ func test_serialization_roundtrip() -> void:
     var bn := BigNum.new(5702887.0)
     var back := BigNum.from_dict(bn.to_dict())
     assert_that(back.to_value()).is_equal_approx(5702887.0, 1e-4)
+
+func test_compare_negative() -> void:
+    assert_that(BigNum.new(-500.0).is_greater_or_equal(BigNum.new(-90.0))).is_false()
+    assert_that(BigNum.new(-500.0).is_greater_or_equal(BigNum.new(10.0))).is_false()
+    assert_that(BigNum.new(-90.0).is_greater_or_equal(BigNum.new(-500.0))).is_true()
+
+func test_no_inf_storage() -> void:
+    var a := BigNum.new(1e308)
+    var b := BigNum.new(1e308)
+    a.add(b)
+    assert_that(is_inf(a.mantissa)).is_false()
+    assert_that(a.exponent).is_equal(308)
