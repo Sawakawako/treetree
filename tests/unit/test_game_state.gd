@@ -202,3 +202,19 @@ func test_from_dict_filters_invalid_intimate_events() -> void:
     var back := GameState.from_dict({"intimate_events": ["human", 1, {"a": 1}]})
     assert_that(back.intimate_events.size()).is_equal(1)
     assert_that(back.intimate_events).contains(&"human")
+
+func test_soul_river_roundtrip() -> void:
+    var s := GameState.new()
+    s.soul_river = 88
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.soul_river).is_equal(88)
+
+func test_soul_river_missing_fallback() -> void:
+    # M5f 之前旧档无 soul_river —— 回退 100 不损坏
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.soul_river).is_equal(100)
+
+func test_soul_river_corrupt_fallback() -> void:
+    # 损坏存档：soul_river 非数字 → 回退 100 不崩溃
+    var back := GameState.from_dict({"soul_river": "corrupt"})
+    assert_that(back.soul_river).is_equal(100)

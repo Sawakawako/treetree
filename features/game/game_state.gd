@@ -25,6 +25,7 @@ var root_eff_level: int = 0
 var plundered: Dictionary = {}
 var plunder_reveals: Array[StringName] = []
 var intimate_events: Array[StringName] = []
+var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -54,6 +55,7 @@ func to_dict() -> Dictionary:
         "plundered": plundered,
         "plunder_reveals": plunder_reveals,
         "intimate_events": intimate_events,
+        "soul_river": soul_river,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
         "sunflower_level": sunflower_level,
@@ -141,4 +143,9 @@ static func from_dict(d: Dictionary) -> GameState:
     s.sunflower_level = int(d.get("sunflower_level", 0))
     s.nautilus_level = int(d.get("nautilus_level", 0))
     s.root_eff_level = int(d.get("root_eff_level", 0))
+    var sr: Variant = d.get("soul_river", 100)
+    if typeof(sr) == TYPE_INT or typeof(sr) == TYPE_FLOAT:
+        s.soul_river = int(sr)
+    else:
+        s.soul_river = 100  # 损坏防御（同 relations 防御模式）
     return s
