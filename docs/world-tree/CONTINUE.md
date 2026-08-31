@@ -19,7 +19,9 @@
 | **里程碑 5a** | ✅ 完成（关系值系统：±3 对称/四族仪式互动/颜色表达/亲密级接口预留，122 测试全绿 + M5A E2E PASSED，2026-09-01 实施） |
 | **里程碑 5b** | ✅ 完成（夺梦系统：延迟代价/分级揭示 3-6-9/各族差异化/伪装文案，144 测试全绿 + M5B E2E PASSED，2026-09-01 实施） |
 | **里程碑 5d** | ✅ 完成（增量深度：升级总表 5 类/消耗端/sap 宽裕上限，163 测试全绿 + M5D E2E PASSED，2026-09-01 实施——方向审视后插入） |
-| **里程碑 5c+** | ⏳ 待定（意志漂移+化身 → 灵魂生机 → 明选 → 终局，见 `docs/world-tree/ROADMAP.md`） |
+| **里程碑 5c** | ✅ 完成（意志漂移+化身：drift 暗线/化身观感 4 档=漂移镜子/亲密事件对坐，184 测试全绿 + M5C E2E PASSED，2026-09-01 实施） |
+| **里程碑 5e/5f** | 📝 设计完成（树语科技+资源分层 / 灵魂系统）——实施待排 |
+| **里程碑 5g+** | ⏳ 待定（明选引擎→终局，见 `docs/world-tree/ROADMAP.md`） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -61,7 +63,8 @@ autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契+指数+线性成本：叶序/分枝/叶绿体/木质部/花盘/螺舱/根须）/ Formatter（格式化）/ actions（GameActions 购买动作）
 features/game/              # GameState（状态：memory/faith/root_depth/races/relics/totem/relations/plundered/升级等级）/ GameLoop（tick 逻辑：光合/生长/储量 clamp）/ SaveManager
 features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
-features/memories/          # TotemLibrary（5 幅图腾）/ TotemActions（浮现/解读/领悟）/ PlunderData+PlunderActions（夺梦：延迟代价/分级揭示/各族差异化）
+features/memories/          # TotemLibrary+TotemActions（图腾）/ PlunderData+PlunderActions（夺梦）/ DriftActions+AvatarTiers+IntimateEvents（意志漂移+化身）
+features/soul/              # SoulActions（灵魂：河底守恒/复活/夺魂）——M5f 设计就绪待实施
 features/relations/         # RelationEvents（4 族仪式互动）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
 features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮）
@@ -140,6 +143,22 @@ tests/unit/                 # GdUnit4 测试（144 个，20 套件）
 **验证**：163 单测全绿 + M5D E2E PASS（五类购买/公式/clamp/产出/存档往返/旧档回退）+ 冒烟通过。
 
 **实施教训**：本轮 3 处计划缺陷（#1 plunder 返回值漏加成——已裁决 `yield_mem=boosted`；#2 Task 6 测试 sap_cap 笔误 10000→15000；#3 E2E section 数学互斥拆状态）——**写计划时测试断言要与实现语义、设计公式三方自洽**；子代按「设计权威优先」修正并取证，BLOCKED 协议两次正常触发。
+
+## 六·十、里程碑 5c 完成记录（2026-09-01）
+
+**内容**：意志漂移 + 化身 → `features/memories/`：`AvatarTiers`（化身观感 4 档=漂移镜子）+ `IntimateEvents`（4 族亲密事件：树以人形对坐）+ `DriftActions`（drift=Σplundered×0.5+max(0,memory−30)×0.02 clamp 0-10 / 档位 / 记忆≥30 觉醒 / can_intimate=intimate+觉醒+未触发）；`GameState` 增 `intimate_events`；`GameManager` 增 `intimate_race` + 信号；UI 化身区 + 亲密按钮。
+
+**验证**：184 单测全绿（22 套件）+ M5C E2E PASS + 冒烟通过；无缺陷（仅缩进适配）。
+
+**主题引擎落地**：化身=漂移镜子（清醒→微漂→深漂→迷失「你忽然想不起，它叫什么名字」）——「神性→人性→牺牲」弧线的中间段成型；亲密事件=人性层面关系（说书人「我一直以为你是一棵树」/林地民「你……暖和」/石裔造船之问/野民「一只脚踩在影子里」）。
+
+## 六·十一、里程碑 5e/5f 设计就绪（2026-09-01，待实施）
+
+- **M5e 树语科技+资源分层**（`2026-08-31-world-tree-m5e-economy-tree-design.md`）：三层资源架构（一级树液可再生/二级信仰记忆可再生可增殖/三级灵魂希望不可再生关键选择）+ 点击式兑换（100 树液→1 信仰、500→1 记忆）+ 二级引擎（信仰/记忆引擎「用信仰买信仰」）+ 树语科技完整框架（三主枝×3 层节点清单，能力解锁型；树语等级=专属二级资源）——**主 spec §14.6 已回填**（d6db660）
+- **M5f 灵魂系统**（`2026-08-31-world-tree-m5f-soul-design.md`）：河底存量守恒模型（100 恒，UI 可见=河变浅读数）+ 复活（1 灵魂+500 growth→人口+10，消耗树高联动承载「救得越多自己越矮」）+ 夺魂（需夺梦揭示→河底+1+人口-3+关系-2，偷记忆到抽灵魂的暗线递进）
+- **说书人彩蛋「小溪与激流」**：待落地（人族关系≥+2 火塘故事位，小牛匿名寓言——下次内容里程碑一起）
+
+**下一步**：实施 M5e（树语批 1：三层架构+生命之语初阶）或 M5f（灵魂）——或回主线明选引擎（M5g）。
 
 **下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
 
