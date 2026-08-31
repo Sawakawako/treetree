@@ -13,6 +13,8 @@ var tick: int = 0
 var hope: int = 1
 var races: Dictionary = {}
 var relics_found: Array[int] = []
+var totem_interpreted: Array[int] = []
+var insight: int = 0
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -35,6 +37,8 @@ func to_dict() -> Dictionary:
         "hope": hope,
         "races": races,
         "relics_found": relics_found,
+        "totem_interpreted": totem_interpreted,
+        "insight": insight,
     }
 
 static func from_dict(d: Dictionary) -> GameState:
@@ -71,4 +75,11 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_INT or typeof(x) == TYPE_FLOAT:
             cleaned.append(int(x))
     s.relics_found.assign(cleaned)
+    var ti: Array = d.get("totem_interpreted", [])
+    var ti_cleaned: Array = []
+    for x in ti:
+        if typeof(x) == TYPE_INT or typeof(x) == TYPE_FLOAT:
+            ti_cleaned.append(int(x))
+    s.totem_interpreted.assign(ti_cleaned)
+    s.insight = int(d.get("insight", 0))
     return s

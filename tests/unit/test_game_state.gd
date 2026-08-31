@@ -65,6 +65,27 @@ func test_from_dict_filters_invalid_relic_ids() -> void:
     assert_that(back.relics_found).contains(1)
     assert_that(back.relics_found).contains(3)
 
+func test_totem_fields_roundtrip() -> void:
+    var s := GameState.new()
+    s.totem_interpreted.assign([1, 3])
+    s.insight = 2
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.totem_interpreted).contains(1)
+    assert_that(back.totem_interpreted).contains(3)
+    assert_that(back.insight).is_equal(2)
+
+func test_totem_fields_missing_fallback() -> void:
+    # M2/M3 旧档无 totem 字段——回退默认不损坏
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.totem_interpreted).is_empty()
+    assert_that(back.insight).is_equal(0)
+
+func test_from_dict_filters_invalid_totem_ids() -> void:
+    var back := GameState.from_dict({"totem_interpreted": [1, "x", {"a": 1}, 3.0]})
+    assert_that(back.totem_interpreted.size()).is_equal(2)
+    assert_that(back.totem_interpreted).contains(1)
+    assert_that(back.totem_interpreted).contains(3)
+
 func test_races_serialization_roundtrip() -> void:
     var s := GameState.new()
     s.races["human"] = {"awakened": true, "population": 58.5}
