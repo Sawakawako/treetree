@@ -12,8 +12,8 @@
 增量游戏的内核循环（点击采集 + 升级 + 经济）在 M1/M3 已立，但 M2-M5b 的重心偏向一次性内容事件——主循环缺乏新的可重复购买目标（树液/信仰/记忆攒多了没处花）。本里程碑：
 
 1. 扩展升级总表 5 类（叶绿体/木质部/花盘/螺舱/根须等级），补足可重复循环；
-2. 引入**树液储量上限**（资源管理张力，增量游戏核心）；
-3. 各资源找到**消耗端**（树液→叶绿体/木质部/螺舱、信仰→花盘、树液/记忆→根须等级）；
+2. 引入**宽裕的树液储量上限**（初始 10000——正常玩法几乎碰不到的「宽墙」，保留长线投资意义）；
+3. 各资源找到**消耗端**（树液→叶绿体/木质部/螺舱/根须等级、信仰→花盘）；
 4. 按 spec §14.3 四型曲线落地成本（斐波那契/线性/指数）。
 
 ## 二、范围与边界
@@ -21,7 +21,7 @@
 ### 2.1 包含
 
 - 5 类新升级：叶绿体/木质部/花盘/螺舱/根须等级（效果、成本、UI、存档）
-- sap 储量上限（初始 2000，螺舱 +500/级）与 clamp
+- sap 储量上限（初始 10000，螺舱 +5000/级）与 clamp——宽裕版（主人拍板：保留螺舱、上限放宽）
 - GameLoop/GameActions/CostCalculator/RaceManager 公式接入
 - GameState 5 个等级字段 + 序列化回退
 
@@ -41,7 +41,7 @@
 var chloroplast_level: int = 0   # 叶绿体（光合效率）
 var xylem_level: int = 0         # 木质部（生长效率）
 var sunflower_level: int = 0     # 花盘（信仰产出）
-var nautilus_level: int = 0      # 螺舱（树液储量）
+var nautilus_level: int = 0      # 螺舱（树液储量上限）
 var root_eff_level: int = 0      # 根须等级（记忆产出）
 ```
 
@@ -53,7 +53,7 @@ var root_eff_level: int = 0      # 根须等级（记忆产出）
 static func chloroplast_cost(level: int) -> int  # 800 × 1.6^level（指数）
 static func xylem_cost(level: int) -> int        # 50 × (level + 1)（线性）
 static func sunflower_cost(level: int) -> int    # 斐波那契 base 2000
-static func nautilus_cost(level: int) -> int     # 斐波那契 base 500
+static func nautilus_cost(level: int) -> int     # 斐波那契 base 2000
 static func root_eff_cost(level: int) -> int     # 1000 × 1.8^level（指数）
 ```
 
@@ -69,7 +69,6 @@ static func buy_nautilus(state) -> bool
 static func buy_root_eff(state) -> bool
 # 统一模式：sap >= cost → sap 扣减 + level+1 → true；否则 false
 ```
-
 ### 3.4 GameLoop 公式接入（spec §14.1）
 
 ```gdscript
@@ -78,18 +77,19 @@ static func buy_root_eff(state) -> bool
 var converted := state.daylight.mul_scalar(0.1 + 0.01 * float(state.chloroplast_level))
 # 生长（树高转化）——木质部：0.01 × (1 + 0.05×L)
 var grown := state.sap.mul_scalar(0.01 * (1.0 + 0.05 * float(state.xylem_level)))
-# tick 末尾：树液 clamp 到储量上限
+# tick 末尾：树液 clamp 到储量上限（宽裕版——正常玩法几乎碰不到）
 state.sap = BigNum.new(minf(state.sap.to_value(), sap_cap(state)))
 ```
 
-### 3.5 储量上限（sap_cap）
+### 3.5 储量上限（sap_cap，宽裕版）
 
 ```gdscript
-static func sap_cap(state) -> float  # 2000 + 500 × nautilus_level
+static func sap_cap(state) -> float  # 10000 + 5000 × nautilus_level
 ```
 
 - 引入位置：GameLoop.tick 末尾 clamp（旧档 sap 超 cap 时首个 tick 自动收敛，不破坏存档）
 - 探索/供养只减 sap，不涉及 clamp
+- **宽裕标准**：初始 10000 树液 ≈ 50 次探索（200/次）或长线供养——正常玩法碰不到，仅防极端挂机与为九界/奇迹蓄水
 
 ### 3.6 RaceManager 产出接入
 
@@ -116,8 +116,8 @@ func get_sap_cap() -> float
 ### 3.9 UI
 
 - 5 个新按钮（`%ChloroplastButton` 等）+ 成本/效果显示（沿用叶序/分枝模式：按钮 + 成本标签）
-- 效果文案：叶绿体「光合 +0.01/级」、木质部「生长 +5%/级」、花盘「信仰 +0.5/tick/级」、螺舱「储量 +500/级」、根须「记忆 +10%/级」
-- sap 显示追加「树液：X / 上限」
+- 效果文案：叶绿体「光合 +0.01/级」、木质部「生长 +5%/级」、花盘「信仰 +0.5/tick/级」、螺舱「储量 +5000/级」、根须「记忆 +10%/级」
+- sap 显示追加「树液：X / 上限」（上限 10000 起步）
 
 ## 四、数值模型（spec §14.3 骨架 + M5 节奏调整）
 
@@ -126,13 +126,13 @@ func get_sap_cap() -> float
 | 叶绿体 | 光合 +0.01 | 指数 1.6ⁿ | 800 | GameLoop |
 | 木质部 | 生长 +5% | 线性 | 50×(L+1) | GameLoop |
 | 花盘 | 信仰 +0.5/tick | 斐波那契 | 2000 | RaceManager |
-| 螺舱 | 储量 +500 | 斐波那契 | 500 | GameLoop clamp |
+| 螺舱 | 储量 +5000 | 斐波那契 | 2000 | GameLoop clamp |
 | 根须等级 | 记忆 +10% | 指数 1.8ⁿ | 1000 | RaceManager + Plunder |
 
 节奏验证：
 - 叶绿体 L1 成本 800（指数 800×1.6ⁿ：800/1280/2048/...）——M1 分枝 1200 同级，玩家中期可买
 - 花盘 L1 成本 2000，产出 +0.5/tick → 回本 4000 tick ≈ 1 小时（长线投资）
-- 螺舱 L1 成本 500，cap 2000→2500——前期即买得起，鼓励资源管理
+- 螺舱 L1 成本 2000，cap 10000→15000——宽裕墙，为九界/奇迹蓄水；正常玩法碰不到
 - 根须 L1 成本 1000（1000×1.8ⁿ），记忆 +10%——记忆是稀缺资源，回报显著
 
 **数值偏离记录（回填 spec）**：spec §14.3 花盘 50000/螺舱 200000 为完整版数值（回本 138 小时失衡）；M5 用节奏调整值（2000/500 基准），试玩调优后回填 spec。
@@ -155,8 +155,8 @@ func get_sap_cap() -> float
 1. **先补增量深度**（主人拍板）：项目方向审视——内容偏多、增量骨架缺扩展段；本里程碑补可重复循环与消耗端。
 2. **5 类升级选择**：贴 spec §14.1（叶绿体/木质部）+ §14.3（花盘/螺舱）+ 根须等级（记忆效率）——覆盖 光合/生长/信仰/储量/记忆 五条资源线。
 3. **根须等级 = 记忆产出**（非探索成本）：4 遗迹一次性挖完后探索成本无意义；记忆效率有实际效果，且为九界探索层铺垫。
-4. **螺舱引入 sap 上限**：初始 2000（够 10 次探索），+500/级——资源管理张力；tick 末尾 clamp 兼容旧档（首个 tick 自动收敛）。
-5. **数值偏离（花盘/螺舱成本调低）**：spec 完整版数值回本失衡，M5 用节奏值，试玩调优后回填 spec。
+4. **螺舱保留、上限放宽裕**（主人拍板）：初始 cap 10000（≈50 次探索）+ 每级 +5000——「宽墙」防极端挂机、为九界/奇迹蓄水，正常玩法碰不到；tick 末尾 clamp 兼容旧档（首个 tick 自动收敛）。
+5. **数值偏离（花盘/螺舱成本调低）**：spec 完整版数值（50000/200000）回本失衡，M5 用节奏值（base 2000），试玩调优后回填 spec。
 6. **斐波那契/线性/指数四型曲线落地**：spec §14.3 从示例变实现——三类曲线各司其职（主题/教学/功能）。
 
 ## 七、路线图衔接
