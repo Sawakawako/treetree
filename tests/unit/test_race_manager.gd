@@ -124,3 +124,21 @@ func test_tick_returns_awaken_events() -> void:
 	assert_that(events.size()).is_equal(3)  # 林地民/石裔/野民同 tick 苏醒
 	assert_that(events[0].has("race_name")).is_true()
 	assert_that(str(events[0]["awaken_text"]).length()).is_greater(10)
+
+func test_frozen_race_does_not_grow() -> void:
+	# 夺梦揭示后（plundered >= 3）该族人口冻结
+	var s := GameState.new()
+	_awaken(s, &"human")
+	s.races["human"]["population"] = 50.0
+	s.plundered["human"] = 3  # 揭示 1 级 → 冻结
+	s.sap = BigNum.new(1000.0)
+	RaceManager.tick_races(s)
+	assert_that(float(s.races["human"]["population"])).is_equal_approx(50.0, 1e-4)  # 不增长
+
+func test_non_frozen_race_grows() -> void:
+	var s := GameState.new()
+	_awaken(s, &"human")
+	s.races["human"]["population"] = 50.0
+	s.sap = BigNum.new(1000.0)
+	RaceManager.tick_races(s)
+	assert_that(float(s.races["human"]["population"])).is_greater(50.0)  # 正常增长

@@ -74,6 +74,8 @@ static func tick_races(state: GameState) -> Array[Dictionary]:
 		for race in all_races():
 			if not _is_awakened(state, race.id):
 				continue
+			if PlunderActions.is_frozen(state, race.id):
+				continue  # 夺梦揭示后人口冻结
 			var pop := float(state.races[race.id]["population"])
 			var growth := pop * race.growth_rate * (1.0 - pop / cap)
 			state.races[race.id]["population"] = minf(pop + growth, cap)
