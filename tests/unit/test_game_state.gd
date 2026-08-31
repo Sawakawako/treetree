@@ -31,7 +31,7 @@ func test_new_fields_initial() -> void:
     assert_that(s.memory.to_value()).is_equal(0.0)
     assert_that(s.faith.to_value()).is_equal(0.0)
     assert_that(s.root_depth).is_equal(0)
-    assert_that(s.human_awakened).is_false()
+    assert_that(s.races.is_empty()).is_true()
     assert_that(s.relics_found).is_empty()
 
 func test_new_fields_serialization_roundtrip() -> void:
@@ -39,13 +39,13 @@ func test_new_fields_serialization_roundtrip() -> void:
     s.memory = BigNum.new(3.0)
     s.faith = BigNum.new(7.0)
     s.root_depth = 2
-    s.human_awakened = true
+    s.races["human"] = {"awakened": true, "population": 50.0}
     s.relics_found.assign([1, 2])
     var back := GameState.from_dict(s.to_dict())
     assert_that(back.memory.to_value()).is_equal_approx(3.0, 1e-4)
     assert_that(back.faith.to_value()).is_equal_approx(7.0, 1e-4)
     assert_that(back.root_depth).is_equal(2)
-    assert_that(back.human_awakened).is_true()
+    assert_that(back.races["human"]["awakened"]).is_true()
     assert_that(back.relics_found).contains(1)
 
 func test_old_save_fallback() -> void:
@@ -54,7 +54,7 @@ func test_old_save_fallback() -> void:
     assert_that(back.memory.to_value()).is_equal(0.0)
     assert_that(back.faith.to_value()).is_equal(0.0)
     assert_that(back.root_depth).is_equal(0)
-    assert_that(back.human_awakened).is_false()
+    assert_that(back.races.is_empty()).is_true()
     assert_that(back.relics_found).is_empty()
     assert_that(back.tick).is_equal(5)
 
