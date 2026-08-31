@@ -119,3 +119,23 @@ func test_interact_relation_blocked_no_signal() -> void:
     var result: Dictionary = gm.interact_relation(&"human")
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
+
+func test_plunder_race_signal() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    var got := {"ok": false, "revealed": false}
+    gm.plunder_done.connect(func(id: StringName, text: String, revealed: bool) -> void:
+        got["ok"] = true
+        got["revealed"] = revealed)
+    var result: Dictionary = gm.plunder_race(&"human")
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(gm.get_state().memory.to_value()).is_equal_approx(1.0, 1e-4)
+
+func test_plunder_race_blocked_no_signal() -> void:
+    gm._state = GameState.new()  # 人族未醒
+    var got := {"ok": false}
+    gm.plunder_done.connect(func(id: StringName, text: String, revealed: bool) -> void: got["ok"] = true)
+    var result: Dictionary = gm.plunder_race(&"human")
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()
