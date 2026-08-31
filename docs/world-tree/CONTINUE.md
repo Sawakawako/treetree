@@ -15,7 +15,8 @@
 | **MVP（里程碑 1）** | ✅ 完成（可玩文字原型，36 测试全绿） |
 | **里程碑 2** | ✅ 完成（记忆/信仰/人族/遗迹梦境；2026-08-31 实施 + 当日审查修复，61 测试全绿） |
 | **里程碑 3** | ✅ 完成（四族 + 人口 S 曲线，82 测试全绿 + M3 E2E PASSED，2026-08-31 实施） |
-| **里程碑 4+** | ⏳ 待定（记忆图书馆/图腾线/夺梦/明选/奇迹/终局）——**下一步从这里挑**（见 §七） |
+| **里程碑 4** | ✅ 完成（图腾线：野民漂移探针 5 幅渐进/解读得领悟，102 测试全绿 + M4 E2E PASSED，2026-09-01 实施） |
+| **里程碑 5+** | ⏳ 待定（记忆图书馆/夺梦/明选/奇迹/终局）——**下一步从这里挑**（见 §七） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -27,6 +28,8 @@
 | 里程碑 2 实施计划 | `docs/superpowers/plans/2026-08-31-milestone2-memory-races-dreams.md`（7 任务 TDD，33 步全勾选 ✅） |
 | M3 设计文档 | `docs/superpowers/specs/2026-08-31-world-tree-m3-races-population-design.md`（四族+人口：RaceManager 数据驱动 .tres/唤醒条件/数值公式/承载/决策记录） |
 | M3 实施计划 | `docs/superpowers/plans/2026-08-31-m3-races-population.md`（8 任务 TDD，含 3 处数值断言修正与 T4 `_awaken` 缺陷勘误） |
+| M4 设计文档 | `docs/superpowers/specs/2026-08-31-world-tree-m4-totem-design.md`（图腾线：记忆驱动 5 幅渐进/解读零消耗/领悟值边界/五幅全文） |
+| M4 实施计划 | `docs/superpowers/plans/2026-08-31-m4-totem.md`（6 任务 TDD，Inline 执行） |
 | 项目铁律 | `AGENTS.md`（铁律 1 读写作 skill / 铁律 2 读 godot-master / 铁律 5 文风 / 铁律 6 本文件） |
 | SDD 审查记录（M1） | `.superpowers/sdd/2026-08-31-mvp-text-prototype/`（每任务 brief/report/review，含全部 ruling） |
 
@@ -55,9 +58,10 @@ autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契成本）/ Formatter（格式化）/ GameActions（动作）
 features/game/              # GameState（状态：含 memory/faith/root_depth/races/relics_found）/ GameLoop（tick 逻辑）/ SaveManager
 features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
+features/memories/          # TotemLibrary（5 幅图腾数据）/ TotemActions（浮现阶段/解读/领悟/next_interpretable）——领悟值之家（spec §15）
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
-features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/种族事件）
-tests/unit/                 # GdUnit4 测试（82 个，13 套件）
+features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件）
+tests/unit/                 # GdUnit4 测试（102 个，15 套件）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -93,16 +97,25 @@ tests/unit/                 # GdUnit4 测试（82 个，13 套件）
 
 **数值**：四族系数 100% 对齐 spec §14.4（50/30/20/80 人口，0.010/0.006/0.005/0.020 增长，虔诚 1.0/1.8/0.6/0.3）；效率系数（0.002/0.001/0.01）与树繁茂阈值（100/300）为节奏估值，待试玩调优（spec §14 标注）。
 
-## 七、下一步：里程碑 4+ 候选（待主人挑选）
+## 六·六、里程碑 4 完成记录（2026-09-01）
 
-从 CONTINUE.md 原范围与 spec §14 出发，按依赖顺序建议（M3 已完成四族+人口）：
+**内容**：图腾线机制化（野民漂移探针）→ `features/memories/`：`TotemLibrary`（5 幅数据：threshold/reveal_text/interpret_text）+ `TotemActions`（visible_stage/can_interpret/interpret/next_interpretable，纯静态）；`GameState` 增 `totem_interpreted`/`insight`（沿 relics_found 过滤防御）；`GameManager` 增 `interpret_totem` + `totem_interpreted` 信号；UI 图腾区（浮现文本/解读按钮/领悟显示，纯文本无美术）。
+
+**设计要点**（决策记录见 M4 设计文档 §七）：记忆驱动 5 幅渐进（阈值 0/4/10/20/35——采梦量=河变浅暗线读数）；每幅一次零消耗解读 +1 领悟（知识奖励非交易）；领悟值入存档（好结局门槛 ≥10 的前置，M5 明选接入）；五幅真相渐进（证据→人→事实→眼睛→同一个，文风六则）。
+
+**验证**：102 单测全绿（15 套件，0 失败 0 orphan）+ M4 E2E 6 项检查 PASS（未醒 stage 0/记忆 35 五幅/解读 5 次领悟 5/幂等/存档往返/旧档回退）+ 冒烟通过。
+
+**实施备注**：Inline 执行（executing-plans）6 任务；新增 class_name 脚本的 `.uid` 需确认入库（T1/T3 各漏一次，已补 chore commit）；TDD 全程 RED（105/100 退出码）→ GREEN 闭环。
+
+## 七、下一步：里程碑 5+ 候选（待主人挑选）
+
+从 CONTINUE.md 原范围与 spec §14 出发，按依赖顺序建议（M4 已完成图腾线/领悟值雏形）：
 
 | 候选 | 内容 | 依赖 | 建议 |
 |---|---|---|---|
-| **记忆图书馆** | 已发现的遗迹/梦境碎片可回看（遗迹 4 个后没内容了，需要消耗口） | 遗迹系统 | 低成本、补内容缺口，可先做 |
-| **图腾线（野民探针）** | 野民图腾随采梦量变化（探针读数）+ 解读得领悟值——M3 只做了唤醒第一信号 | 野民系统（已有） | 探索暗线机制化，推荐 |
+| **记忆图书馆** | 已发现的遗迹/梦境碎片/图腾可回看（收藏文本回看，补内容缺口） | 遗迹/图腾系统 | 低成本，可先做 |
 | **夺梦系统** | 采梦/夺梦暗代价（人族伤神/林地民枯萎）——石裔献工的机制级对照 | 四族系统 | 成树→巨树过渡核心 |
-| **明选** | 玩家明面选择（代价/收益可见） | 四族+人口 | 中后期 |
+| **明选** | 玩家明面选择（代价/收益可见）——领悟值消费（好结局门槛 ≥10 缺口由环形废墟/说书人补） | 四族+人口+领悟值 | 中后期 |
 | **奇迹/绿地扩容** | 信仰消耗改造地貌，进入承载公式（cap 100×(1+繁茂+绿地 0-3)） | 信仰系统 | 扩承载第二来源 |
 | **饥荒/迁徙危机** | 供养不足从「冻结增长」升级为减员/迁徙事件 | 人口系统 | 跟随夺梦 |
 
