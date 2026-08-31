@@ -1,5 +1,12 @@
 extends Control
 
+const RACE_ROWS := {
+    &"human": "人族",
+    &"forestfolk": "林地民",
+    &"stoneborn": "石裔",
+    &"wildfolk": "野民",
+}
+
 @onready var daylight_label: Label = %DaylightLabel
 @onready var sap_label: Label = %SapLabel
 @onready var growth_label: Label = %GrowthLabel
@@ -13,6 +20,10 @@ extends Control
 @onready var root_button: Button = %RootExploreButton
 @onready var dream_text_label: Label = %DreamTextLabel
 @onready var race_event_label: Label = %RaceEventLabel
+@onready var race_human_label: Label = %RaceHumanLabel
+@onready var race_forest_label: Label = %RaceForestLabel
+@onready var race_stone_label: Label = %RaceStoneLabel
+@onready var race_wild_label: Label = %RaceWildLabel
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -65,3 +76,22 @@ func _refresh() -> void:
     leaf_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_leaf_cost())))
     branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
     root_button.disabled = not RootActions.can_explore(s)
+    _refresh_race_rows()
+
+func _refresh_race_rows() -> void:
+    var s := GameManager.get_state()
+    for id: StringName in RACE_ROWS:
+        var data := GameManager.get_race(id)
+        var label: Label = null
+        match id:
+            &"human": label = race_human_label
+            &"forestfolk": label = race_forest_label
+            &"stoneborn": label = race_stone_label
+            &"wildfolk": label = race_wild_label
+        if label == null:
+            continue
+        if s.races.has(id) and bool(s.races[id].get("awakened", false)):
+            var pop := float(s.races[id].get("population", 0.0))
+            label.text = "%s：人口 %d" % [RACE_ROWS[id], int(pop)]
+        else:
+            label.text = "%s：未苏醒" % RACE_ROWS[id]

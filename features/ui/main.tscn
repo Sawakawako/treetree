@@ -102,3 +102,23 @@ autowrap_mode = 3
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
+
+[node name="RaceHumanLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "人族：未苏醒（记忆 2）"
+
+[node name="RaceForestLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "林地民：未苏醒（信仰 30）"
+
+[node name="RaceStoneLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "石裔：未苏醒（信仰 60）"
+
+[node name="RaceWildLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "野民：未苏醒（信仰 100）"
