@@ -401,6 +401,14 @@ func test_suffix_numbers() -> void:
     assert_that(Formatter.format_number(BigNum.new(1234567.0))).is_equal("1.23M")
     assert_that(Formatter.format_number(BigNum.new(5702887.0))).is_equal("5.7M")
 
+func test_small_fraction() -> void:
+    assert_that(Formatter.format_number(BigNum.new(0.5))).is_equal("0.5")
+    assert_that(Formatter.format_number(BigNum.new(0.005))).is_equal("0.005")
+
+func test_carry_rounding() -> void:
+    assert_that(Formatter.format_number(BigNum.new(999999.0))).is_equal("1M")
+    assert_that(Formatter.format_number(BigNum.new(999999999.0))).is_equal("1B")
+
 func test_cost_format() -> void:
     assert_that(Formatter.format_cost(500)).is_equal("500")
     assert_that(Formatter.format_cost(5000)).is_equal("5,000")
@@ -424,11 +432,15 @@ static func format_number(bn: BigNum) -> String:
     if bn.mantissa == 0.0:
         return "0"
     var tier := bn.exponent / 3
-    if tier == 0:
+    if tier <= 0:
+        # 绝对值 < 1 的小数：直接显示原值（≤6 位有效小数，去尾零）
         var small := bn.to_value()
-        var rounded := floor(small * 100.0) / 100.0
-        return _trim_zeros(String.num(rounded, 2))
+        return _trim_zeros(String.num(small, 6))
     var mant := bn.mantissa * pow(10.0, bn.exponent - tier * 3)
+    if mant >= 1000.0:
+        # 舍入进位（如 999.999 → 1000）：升一档重算
+        tier += 1
+        mant = bn.mantissa * pow(10.0, bn.exponent - tier * 3)
     var idx := mini(tier, SUFFIX.size() - 1)
     return "%s%s" % [_trim_zeros(String.num(mant, 2)), SUFFIX[idx]]
 
