@@ -19,3 +19,18 @@ static func leaf_cost(level: int) -> int:
 
 static func branch_cost(level: int) -> int:
 	return 1200 * fib(level + 1)
+
+static func chloroplast_cost(level: int) -> int:
+	return int(800.0 * pow(1.6, float(level)))
+
+static func xylem_cost(level: int) -> int:
+	return 50 * (level + 1)
+
+static func sunflower_cost(level: int) -> int:
+	return 2000 * fib(level + 1)
+
+static func nautilus_cost(level: int) -> int:
+	return 2000 * fib(level + 1)
+
+static func root_eff_cost(level: int) -> int:
+	return int(1000.0 * pow(1.8, float(level)))
