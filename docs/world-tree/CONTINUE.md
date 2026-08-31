@@ -18,7 +18,8 @@
 | **里程碑 4** | ✅ 完成（图腾线：野民漂移探针 5 幅渐进/解读得领悟，102 测试全绿 + M4 E2E PASSED，2026-09-01 实施） |
 | **里程碑 5a** | ✅ 完成（关系值系统：±3 对称/四族仪式互动/颜色表达/亲密级接口预留，122 测试全绿 + M5A E2E PASSED，2026-09-01 实施） |
 | **里程碑 5b** | ✅ 完成（夺梦系统：延迟代价/分级揭示 3-6-9/各族差异化/伪装文案，144 测试全绿 + M5B E2E PASSED，2026-09-01 实施） |
-| **里程碑 5c+** | ⏳ 待定（意志漂移+化身→灵魂生机→明选→终局，见 `docs/world-tree/ROADMAP.md`） |
+| **里程碑 5d** | ✅ 完成（增量深度：升级总表 5 类/消耗端/sap 宽裕上限，163 测试全绿 + M5D E2E PASSED，2026-09-01 实施——方向审视后插入） |
+| **里程碑 5c+** | ⏳ 待定（意志漂移+化身 → 灵魂生机 → 明选 → 终局，见 `docs/world-tree/ROADMAP.md`） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -57,8 +58,8 @@
 
 ```
 autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）+ resources_changed/race_awakened 信号 + 60tick 存档 + explore_relic 入口 + RaceManager.tick_races
-features/economy/           # BigNum（大数）/ CostCalculator（斐波那契成本）/ Formatter（格式化）/ GameActions（动作）
-features/game/              # GameState（状态：含 memory/faith/root_depth/races/relics_found）/ GameLoop（tick 逻辑）/ SaveManager
+features/economy/           # BigNum（大数）/ CostCalculator（斐波那契+指数+线性成本：叶序/分枝/叶绿体/木质部/花盘/螺舱/根须）/ Formatter（格式化）/ actions（GameActions 购买动作）
+features/game/              # GameState（状态：memory/faith/root_depth/races/relics/totem/relations/plundered/升级等级）/ GameLoop（tick 逻辑：光合/生长/储量 clamp）/ SaveManager
 features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
 features/memories/          # TotemLibrary（5 幅图腾）/ TotemActions（浮现/解读/领悟）/ PlunderData+PlunderActions（夺梦：延迟代价/分级揭示/各族差异化）
 features/relations/         # RelationEvents（4 族仪式互动）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
@@ -130,18 +131,32 @@ tests/unit/                 # GdUnit4 测试（144 个，20 套件）
 
 **实施教训**：计划缺陷（`plunder_reveals` 集合语义 vs 实现无条件 append）由 E2E 抓住、T3 单测 `.contains` 掩盖——**单测要断言集合 size 而非仅 contains**；Inline 子代执行模式（一次 dispatch 跑全计划）省主代理上下文，BLOCKED 协议正常触发。
 
+## 六·九、里程碑 5d 完成记录（2026-09-01，方向审视后插入）
+
+**背景**：项目方向审视——诊断「增量骨架缺扩展段（内容偏多）」，主人拍板先补增量深度（M5c 意志漂移押后）。
+
+**内容**：升级总表 5 类可重复升级 → `CostCalculator` 加 5 类成本（指数 800×1.6ⁿ 叶绿体 / 线性 50×(L+1) 木质部 / 斐波那契 2000 花盘·螺舱 / 指数 1000×1.8ⁿ 根须等级）；`GameActions` 加 5 类购买；`GameLoop` 光合（0.1+0.01×L）与生长（0.01×(1+0.05×L)）公式 + **sap 宽裕储量上限**（初始 10000，螺舱 +5000/级，tick clamp 兼容旧档）；`RaceManager` 花盘信仰产出（0.5×L/tick）+ 人族梦产×根须系数；`PlunderActions` 夺梦产出×根须系数；`GameManager` 5 入口 + UI 5 按钮/sap 上限显示。
+
+**验证**：163 单测全绿 + M5D E2E PASS（五类购买/公式/clamp/产出/存档往返/旧档回退）+ 冒烟通过。
+
+**实施教训**：本轮 3 处计划缺陷（#1 plunder 返回值漏加成——已裁决 `yield_mem=boosted`；#2 Task 6 测试 sap_cap 笔误 10000→15000；#3 E2E section 数学互斥拆状态）——**写计划时测试断言要与实现语义、设计公式三方自洽**；子代按「设计权威优先」修正并取证，BLOCKED 协议两次正常触发。
+
+**下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
+
 **下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
 
 ## 七、下一步：里程碑 5c+（按路线图推进，待主人确认）
 
-从路线图 `docs/world-tree/ROADMAP.md` 依赖拓扑出发（M5a 关系值已完成）：
+从路线图 `docs/world-tree/ROADMAP.md` 依赖拓扑出发（M5a 关系值 / M5b 夺梦 / M5d 增量深度 已完成）：
 
 | 步 | 系统 | 内容 | 解锁 |
 |---|---|---|---|
-| **M5c 意志漂移 + 化身** | CEV 污染值 + 视觉化（人称漂移/心语渐变）+ 化身系统（巨树觉醒=漂移镜子）+ 亲密级关系事件（is_intimate 填充） | 卡片②⑤ + 人性觉醒 |
-| **M5d 灵魂生机** | 灵魂资源（守恒/夺魂/归河）+ 生机（树生命力/复活/献根须） | 卡片③② 灵魂拷问 |
-| **M5e 明选引擎 + 卡片** | 数据驱动卡片容器 + 七卡按依赖逐张落地（①人族噩梦⑤忒修斯已可行，④菟丝子复用夺梦代价） | 明选全开 |
+| **M5c 意志漂移 + 化身** | CEV 污染值 + 视觉化（化身观感 4 档=漂移镜子）+ 化身系统（记忆≥30 觉醒）+ 亲密级关系事件（is_intimate 填充，树以人形对坐） | 卡片②⑤ + 人性觉醒 |
+| **M5e 灵魂生机** | 灵魂资源（守恒/夺魂/归河）+ 生机（树生命力/复活/献根须） | 卡片③② 灵魂拷问 |
+| **M5f 明选引擎 + 卡片** | 数据驱动卡片容器 + 七卡按依赖逐张落地（①人族噩梦⑤忒修斯已可行，④菟丝子复用夺梦代价） | 明选全开 |
 | **M6 终局 + 多周目** | 终局状态机/四结局/归还序列 | ⑦ + 牺牲之选 |
+
+**后续增量候选**（M5d 之后）：垂直九界探索层（根须层深化）/ 离线进度（UNIX 时间戳）/ 科技树三主枝。
 
 **文本归档**（可随时做）：把已产出的五阶段文本落成 `docs/world-tree/narrative/` 文档。
 
