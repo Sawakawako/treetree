@@ -17,7 +17,8 @@
 | **里程碑 3** | ✅ 完成（四族 + 人口 S 曲线，82 测试全绿 + M3 E2E PASSED，2026-08-31 实施） |
 | **里程碑 4** | ✅ 完成（图腾线：野民漂移探针 5 幅渐进/解读得领悟，102 测试全绿 + M4 E2E PASSED，2026-09-01 实施） |
 | **里程碑 5a** | ✅ 完成（关系值系统：±3 对称/四族仪式互动/颜色表达/亲密级接口预留，122 测试全绿 + M5A E2E PASSED，2026-09-01 实施） |
-| **里程碑 5b+** | ⏳ 待定（夺梦→意志漂移+化身→灵魂生机→明选→终局，见 `docs/world-tree/ROADMAP.md`） |
+| **里程碑 5b** | ✅ 完成（夺梦系统：延迟代价/分级揭示 3-6-9/各族差异化/伪装文案，144 测试全绿 + M5B E2E PASSED，2026-09-01 实施） |
+| **里程碑 5c+** | ⏳ 待定（意志漂移+化身→灵魂生机→明选→终局，见 `docs/world-tree/ROADMAP.md`） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -59,11 +60,11 @@ autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契成本）/ Formatter（格式化）/ GameActions（动作）
 features/game/              # GameState（状态：含 memory/faith/root_depth/races/relics_found）/ GameLoop（tick 逻辑）/ SaveManager
 features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
-features/memories/          # TotemLibrary（5 幅图腾数据）/ TotemActions（浮现阶段/解读/领悟/next_interpretable）——领悟值之家（spec §15）
+features/memories/          # TotemLibrary（5 幅图腾）/ TotemActions（浮现/解读/领悟）/ PlunderData+PlunderActions（夺梦：延迟代价/分级揭示/各族差异化）
 features/relations/         # RelationEvents（4 族仪式互动）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
-features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮）
-tests/unit/                 # GdUnit4 测试（122 个，17 套件）
+features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮）
+tests/unit/                 # GdUnit4 测试（144 个，20 套件）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -119,16 +120,27 @@ tests/unit/                 # GdUnit4 测试（122 个，17 套件）
 
 **主题引擎落地**：关系值是「神性→人性→牺牲」弧线的承载层（ROADMAP §〇）——关系从数值变成人与人的温度，终局告别差分的基础。
 
-## 七、下一步：里程碑 5b+（按路线图推进，待主人确认）
+## 六·八、里程碑 5b 完成记录（2026-09-01）
+
+**内容**：夺梦系统（主动暗代价）→ `features/memories/`：`PlunderData`（各族产出/信号池/分级揭示文本）+ `PlunderActions`（plunder/reveal_stage/is_frozen，延迟代价机制）；`GameState` 增 `plundered`（隐藏计数器）/`plunder_reveals`（集合语义）；`RaceManager` 增长冻结（揭示后人口冻结）；`GameManager` 增 `plunder_race` + `plunder_done` 信号；UI「把梦收进年轮」伪装按钮 ×4。
+
+**设计要点**（决策记录见 M5b 设计文档 §七）：**延迟代价**（夺梦只显示产出，代价隐藏累积）；**分级揭示 3/6/9**（§13.11 结算时刻——豁然开朗+后悔）；**各族差异化**（人 +1 伤神/林地 +1.2 枯萎/野民 +2 惊扰·人口 -20%/石裔 0 无梦可夺——「不采梦也能有信仰」日常化）；**伪装文案**（按钮级明线伪装，与图腾诚实文案形成善恶不对称）；关系每级 -1 累计 -3（9 次日常夺梦 ≈ 菟丝子等价）。
+
+**验证**：144 单测全绿（20 套件）+ M5B E2E 5 项 PASS + 冒烟通过。
+
+**实施教训**：计划缺陷（`plunder_reveals` 集合语义 vs 实现无条件 append）由 E2E 抓住、T3 单测 `.contains` 掩盖——**单测要断言集合 size 而非仅 contains**；Inline 子代执行模式（一次 dispatch 跑全计划）省主代理上下文，BLOCKED 协议正常触发。
+
+**下一步**：M5c 意志漂移 + 化身（plundered 总量为 drift 注入源；is_intimate 亲密级事件填充）——见 ROADMAP。
+
+## 七、下一步：里程碑 5c+（按路线图推进，待主人确认）
 
 从路线图 `docs/world-tree/ROADMAP.md` 依赖拓扑出发（M5a 关系值已完成）：
 
 | 步 | 系统 | 内容 | 解锁 |
 |---|---|---|---|
-| **M5b 夺梦** | 采梦/夺梦动作（梦珀/记忆产出 vs 生灵代价：伤神/枯萎）+ 惊扰 | 卡片④ 菟丝子 |
 | **M5c 意志漂移 + 化身** | CEV 污染值 + 视觉化（人称漂移/心语渐变）+ 化身系统（巨树觉醒=漂移镜子）+ 亲密级关系事件（is_intimate 填充） | 卡片②⑤ + 人性觉醒 |
 | **M5d 灵魂生机** | 灵魂资源（守恒/夺魂/归河）+ 生机（树生命力/复活/献根须） | 卡片③② 灵魂拷问 |
-| **M5e 明选引擎 + 卡片** | 数据驱动卡片容器 + 七卡按依赖逐张落地 | 明选全开 |
+| **M5e 明选引擎 + 卡片** | 数据驱动卡片容器 + 七卡按依赖逐张落地（①人族噩梦⑤忒修斯已可行，④菟丝子复用夺梦代价） | 明选全开 |
 | **M6 终局 + 多周目** | 终局状态机/四结局/归还序列 | ⑦ + 牺牲之选 |
 
 **文本归档**（可随时做）：把已产出的五阶段文本落成 `docs/world-tree/narrative/` 文档。
