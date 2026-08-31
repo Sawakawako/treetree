@@ -44,11 +44,26 @@ const RELATION_COLORS := {
 @onready var plunder_forest_button: Button = %PlunderForestButton
 @onready var plunder_stone_button: Button = %PlunderStoneButton
 @onready var plunder_wild_button: Button = %PlunderWildButton
+@onready var chloroplast_button: Button = %ChloroplastButton
+@onready var chloroplast_cost_label: Label = %ChloroplastCostLabel
+@onready var xylem_button: Button = %XylemButton
+@onready var xylem_cost_label: Label = %XylemCostLabel
+@onready var sunflower_button: Button = %SunflowerButton
+@onready var sunflower_cost_label: Label = %SunflowerCostLabel
+@onready var nautilus_button: Button = %NautilusButton
+@onready var nautilus_cost_label: Label = %NautilusCostLabel
+@onready var root_eff_button: Button = %RootEffButton
+@onready var root_eff_cost_label: Label = %RootEffCostLabel
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
     leaf_button.pressed.connect(_on_leaf_pressed)
     branch_button.pressed.connect(_on_branch_pressed)
+    chloroplast_button.pressed.connect(_on_chloroplast_pressed)
+    xylem_button.pressed.connect(_on_xylem_pressed)
+    sunflower_button.pressed.connect(_on_sunflower_pressed)
+    nautilus_button.pressed.connect(_on_nautilus_pressed)
+    root_eff_button.pressed.connect(_on_root_eff_pressed)
     root_button.pressed.connect(_on_root_pressed)
     totem_button.pressed.connect(_on_totem_pressed)
     interact_human_button.pressed.connect(func(): _on_interact_pressed(&"human"))
@@ -87,6 +102,31 @@ func _on_branch_pressed() -> void:
         log_label.text = "分枝序升至 %d 级。" % GameManager.get_state().branch_level
     _refresh()
 
+func _on_chloroplast_pressed() -> void:
+    if GameManager.buy_chloroplast():
+        log_label.text = "叶绿体升至 %d 级。" % GameManager.get_state().chloroplast_level
+    _refresh()
+
+func _on_xylem_pressed() -> void:
+    if GameManager.buy_xylem():
+        log_label.text = "木质部升至 %d 级。" % GameManager.get_state().xylem_level
+    _refresh()
+
+func _on_sunflower_pressed() -> void:
+    if GameManager.buy_sunflower():
+        log_label.text = "花盘升至 %d 级。" % GameManager.get_state().sunflower_level
+    _refresh()
+
+func _on_nautilus_pressed() -> void:
+    if GameManager.buy_nautilus():
+        log_label.text = "螺舱升至 %d 级。" % GameManager.get_state().nautilus_level
+    _refresh()
+
+func _on_root_eff_pressed() -> void:
+    if GameManager.buy_root_eff():
+        log_label.text = "根须等级升至 %d 级。" % GameManager.get_state().root_eff_level
+    _refresh()
+
 func _on_root_pressed() -> void:
     var result: Dictionary = GameManager.explore_relic()
     if not result.get("ok", false):
@@ -99,14 +139,24 @@ func _on_relic_discovered(relic_name: String, dream_text: String) -> void:
 func _refresh() -> void:
     var s := GameManager.get_state()
     daylight_label.text = Formatter.format_number(s.daylight)
-    sap_label.text = Formatter.format_number(s.sap)
+    sap_label.text = "树液：%s / %s" % [Formatter.format_number(s.sap), Formatter.format_cost(int(GameManager.get_sap_cap()))]
     growth_label.text = Formatter.format_number(s.growth)
     memory_label.text = "记忆：" + Formatter.format_number(GameManager.get_memory())
     faith_label.text = "信仰：" + Formatter.format_number(GameManager.get_faith())
     leaf_cost_label.text = Formatter.format_cost(GameManager.get_leaf_cost())
     branch_cost_label.text = Formatter.format_cost(GameManager.get_branch_cost())
+    chloroplast_cost_label.text = "价格：" + Formatter.format_cost(GameManager.get_chloroplast_cost())
+    xylem_cost_label.text = "价格：" + Formatter.format_cost(GameManager.get_xylem_cost())
+    sunflower_cost_label.text = "价格：" + Formatter.format_cost(GameManager.get_sunflower_cost())
+    nautilus_cost_label.text = "价格：" + Formatter.format_cost(GameManager.get_nautilus_cost())
+    root_eff_cost_label.text = "价格：" + Formatter.format_cost(GameManager.get_root_eff_cost())
     leaf_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_leaf_cost())))
     branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
+    chloroplast_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_chloroplast_cost())))
+    xylem_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_xylem_cost())))
+    sunflower_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_sunflower_cost())))
+    nautilus_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_nautilus_cost())))
+    root_eff_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_root_eff_cost())))
     root_button.disabled = not RootActions.can_explore(s)
     _refresh_race_rows()
     _refresh_totem()

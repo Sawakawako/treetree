@@ -139,3 +139,21 @@ func test_plunder_race_blocked_no_signal() -> void:
     var result: Dictionary = gm.plunder_race(&"human")
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
+
+func test_buy_upgrade_entrances() -> void:
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(10000.0)
+    assert_that(gm.buy_chloroplast()).is_true()
+    assert_that(gm.buy_xylem()).is_true()
+    assert_that(gm.buy_sunflower()).is_true()
+    assert_that(gm.buy_nautilus()).is_true()
+    assert_that(gm.buy_root_eff()).is_true()
+    assert_that(gm.get_chloroplast_cost()).is_greater(0)
+    # 买螺舱后 nautilus_level=1 → cap = 10000 + 5000×1 = 15000（计划原文 10000 与设计 §3.4 公式冲突，按设计权威修正）
+    assert_that(gm.get_sap_cap()).is_equal_approx(15000.0, 1e-4)
+
+func test_buy_upgrade_insufficient() -> void:
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(1.0)
+    assert_that(gm.buy_sunflower()).is_false()
+    assert_that(gm.get_state().sunflower_level).is_equal(0)

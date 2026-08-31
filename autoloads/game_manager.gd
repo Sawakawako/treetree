@@ -47,6 +47,54 @@ func buy_branch() -> bool:
         resources_changed.emit()
     return ok
 
+func buy_chloroplast() -> bool:
+    var ok := GameActions.buy_chloroplast(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_xylem() -> bool:
+    var ok := GameActions.buy_xylem(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_sunflower() -> bool:
+    var ok := GameActions.buy_sunflower(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_nautilus() -> bool:
+    var ok := GameActions.buy_nautilus(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_root_eff() -> bool:
+    var ok := GameActions.buy_root_eff(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func get_chloroplast_cost() -> int:
+    return CostCalculator.chloroplast_cost(_state.chloroplast_level)
+
+func get_xylem_cost() -> int:
+    return CostCalculator.xylem_cost(_state.xylem_level)
+
+func get_sunflower_cost() -> int:
+    return CostCalculator.sunflower_cost(_state.sunflower_level)
+
+func get_nautilus_cost() -> int:
+    return CostCalculator.nautilus_cost(_state.nautilus_level)
+
+func get_root_eff_cost() -> int:
+    return CostCalculator.root_eff_cost(_state.root_eff_level)
+
+func get_sap_cap() -> float:
+    return GameLoop.sap_cap(_state)
+
 func get_leaf_cost() -> int:
     return CostCalculator.leaf_cost(_state.leaf_level)
 

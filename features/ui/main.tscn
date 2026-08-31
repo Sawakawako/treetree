@@ -68,6 +68,56 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "价格：1200"
 
+[node name="ChloroplastButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "叶绿体（光合 +0.01/级）"
+
+[node name="ChloroplastCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：800"
+
+[node name="XylemButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "木质部（生长 +5%/级）"
+
+[node name="XylemCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：50"
+
+[node name="SunflowerButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "花盘（信仰 +0.5/tick/级）"
+
+[node name="SunflowerCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：2000"
+
+[node name="NautilusButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "螺舱（储量 +5000/级）"
+
+[node name="NautilusCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：2000"
+
+[node name="RootEffButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "根须等级（记忆 +10%/级）"
+
+[node name="RootEffCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：1000"
+
 [node name="LogLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
