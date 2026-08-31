@@ -186,3 +186,19 @@ func test_upgrade_levels_missing_fallback() -> void:
     assert_that(back.sunflower_level).is_equal(0)
     assert_that(back.nautilus_level).is_equal(0)
     assert_that(back.root_eff_level).is_equal(0)
+
+func test_intimate_events_roundtrip() -> void:
+    var s := GameState.new()
+    s.intimate_events.assign([&"human", &"wildfolk"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.intimate_events).contains(&"human")
+    assert_that(back.intimate_events).contains(&"wildfolk")
+
+func test_intimate_events_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.intimate_events).is_empty()
+
+func test_from_dict_filters_invalid_intimate_events() -> void:
+    var back := GameState.from_dict({"intimate_events": ["human", 1, {"a": 1}]})
+    assert_that(back.intimate_events.size()).is_equal(1)
+    assert_that(back.intimate_events).contains(&"human")

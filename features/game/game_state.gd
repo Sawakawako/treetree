@@ -24,6 +24,7 @@ var nautilus_level: int = 0
 var root_eff_level: int = 0
 var plundered: Dictionary = {}
 var plunder_reveals: Array[StringName] = []
+var intimate_events: Array[StringName] = []
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -52,6 +53,7 @@ func to_dict() -> Dictionary:
         "relation_events": relation_events,
         "plundered": plundered,
         "plunder_reveals": plunder_reveals,
+        "intimate_events": intimate_events,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
         "sunflower_level": sunflower_level,
@@ -128,6 +130,12 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             pr_cleaned.append(StringName(x))
     s.plunder_reveals.assign(pr_cleaned)
+    var ie: Array = d.get("intimate_events", [])
+    var ie_cleaned: Array = []
+    for x in ie:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            ie_cleaned.append(StringName(x))
+    s.intimate_events.assign(ie_cleaned)
     s.chloroplast_level = int(d.get("chloroplast_level", 0))
     s.xylem_level = int(d.get("xylem_level", 0))
     s.sunflower_level = int(d.get("sunflower_level", 0))
