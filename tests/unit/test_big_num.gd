@@ -54,3 +54,8 @@ func test_no_inf_storage() -> void:
     a.add(b)
     assert_that(is_inf(a.mantissa)).is_false()
     assert_that(a.exponent).is_equal(308)
+
+func test_compare_negative_same_exp() -> void:
+    assert_that(BigNum.new(-50.0).is_greater_or_equal(BigNum.new(-90.0))).is_true()
+    assert_that(BigNum.new(-90.0).is_greater_or_equal(BigNum.new(-50.0))).is_false()
+    assert_that(BigNum.new(-2e10).is_greater_or_equal(BigNum.new(-9e10))).is_true()

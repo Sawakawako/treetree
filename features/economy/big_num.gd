@@ -56,7 +56,7 @@ func is_greater_or_equal(other: BigNum) -> bool:
     if self_neg:
         if exponent != other.exponent:
             return exponent < other.exponent
-        return mantissa <= other.mantissa
+        return mantissa >= other.mantissa
     if exponent != other.exponent:
         return exponent > other.exponent
     return mantissa >= other.mantissa
