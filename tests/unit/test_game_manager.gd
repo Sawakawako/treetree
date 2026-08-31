@@ -33,3 +33,39 @@ func test_getters() -> void:
     assert_that(gm.get_faith().to_value()).is_equal_approx(3.0, 1e-4)
     assert_that(gm.get_root_depth()).is_equal(2)
     assert_that(gm.is_human_awakened()).is_true()
+
+func test_human_awakens_during_play() -> void:
+    # C1 回归：游戏中记忆≥2 后，tick 链路必须触发唤醒（不能只靠读档 _ready）
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    assert_that(gm.get_memory().to_value()).is_equal_approx(2.0, 1e-4)
+    assert_that(gm.is_human_awakened()).is_false()
+    gm._process(1.0)
+    assert_that(gm.is_human_awakened()).is_true()
+
+func test_human_awakened_signal_emitted() -> void:
+    # I4：唤醒时须发出 human_awakened 信号（UI 靠信号而非轮询）
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    var got := {"awakened": false}
+    gm.human_awakened.connect(func() -> void: got["awakened"] = true)
+    gm._process(1.0)
+    assert_that(got["awakened"]).is_true()
+
+func test_human_produces_faith_after_awaken() -> void:
+    # C1 回归：唤醒后 tick=10 边界产信仰（集成链路，非单测直调）
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    gm._state.sap = BigNum.new(200.0)
+    gm.explore_relic()
+    gm._state.tick = 9
+    gm._process(1.0)
+    assert_that(gm.is_human_awakened()).is_true()
+    assert_that(gm.get_faith().to_value()).is_equal_approx(1.0, 1e-4)

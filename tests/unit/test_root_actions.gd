@@ -35,3 +35,14 @@ func test_can_explore() -> void:
     assert_that(RootActions.can_explore(s)).is_true()
     s.sap = BigNum.new(199.0)
     assert_that(RootActions.can_explore(s)).is_false()
+
+func test_explore_picks_next_unexplored_relic() -> void:
+    # I1：遗迹选择必须以 relics_found 为准，不能假定 id == root_depth+1
+    var s := GameState.new()
+    s.sap = BigNum.new(200.0)
+    s.relics_found.assign([1, 3, 4])
+    var result := RootActions.explore(s)
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(int(result.get("relic", {}).get("id", 0))).is_equal(2)
+    assert_that(s.relics_found).contains(2)
+    assert_that(s.root_depth).is_equal(1)

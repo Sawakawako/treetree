@@ -14,8 +14,6 @@ extends Control
 @onready var dream_text_label: Label = %DreamTextLabel
 @onready var human_event_label: Label = %HumanEventLabel
 
-var _human_announced := false
-
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
     leaf_button.pressed.connect(_on_leaf_pressed)
@@ -23,7 +21,14 @@ func _ready() -> void:
     root_button.pressed.connect(_on_root_pressed)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
+    GameManager.human_awakened.connect(_on_human_awakened)
+    # 读档恢复的唤醒发生在 autoload _ready（早于本场景），信号已发出——此处兜底播报
+    if GameManager.is_human_awakened():
+        _on_human_awakened()
     _refresh()
+
+func _on_human_awakened() -> void:
+    human_event_label.text = "土里传来一个苍老的声音：\n「你在听吗？……我是最后一个说梦的人。我梦见你很多年了。」"
 
 func _on_gather_pressed() -> void:
     GameManager.gather()
@@ -52,14 +57,10 @@ func _refresh() -> void:
     daylight_label.text = Formatter.format_number(s.daylight)
     sap_label.text = Formatter.format_number(s.sap)
     growth_label.text = Formatter.format_number(s.growth)
-    memory_label.text = "记忆：" + Formatter.format_number(s.memory)
-    faith_label.text = "信仰：" + Formatter.format_number(s.faith)
+    memory_label.text = "记忆：" + Formatter.format_number(GameManager.get_memory())
+    faith_label.text = "信仰：" + Formatter.format_number(GameManager.get_faith())
     leaf_cost_label.text = Formatter.format_cost(GameManager.get_leaf_cost())
     branch_cost_label.text = Formatter.format_cost(GameManager.get_branch_cost())
     leaf_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_leaf_cost())))
     branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
     root_button.disabled = not RootActions.can_explore(s)
-    # 人族唤醒事件（一次性）
-    if GameManager.is_human_awakened() and not _human_announced:
-        _human_announced = true
-        human_event_label.text = "土里传来一个苍老的声音：\n「你在听吗？……我是最后一个说梦的人。我梦见你很多年了。」"

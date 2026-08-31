@@ -14,7 +14,7 @@ static func check_awaken(state: GameState) -> bool:
     return true
 
 static func tick_human(state: GameState) -> void:
-    if not state.human_awakened:
+    if not state.human_awakened or state.tick <= 0:
         return
     if state.tick % 10 == 0:
         state.faith.add(BigNum.new(FAITH_PER_10_TICKS))

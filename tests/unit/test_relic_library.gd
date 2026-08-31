@@ -20,3 +20,12 @@ func test_all_relics_have_unique_ids() -> void:
         var id: int = r.get("id", 0)
         assert_that(ids.has(id)).is_false()
         ids.append(id)
+
+func test_returns_copies_not_shared() -> void:
+    # M3：get_relic/all_relics 应返回副本，调用方篡改不得污染 const 数据表
+    var r := RelicLibrary.get_relic(1)
+    r["name"] = "被篡改"
+    assert_that(RelicLibrary.get_relic(1).get("name", "")).is_equal("城市废墟")
+    var all := RelicLibrary.all_relics()
+    all[0]["name"] = "被篡改"
+    assert_that(RelicLibrary.get_relic(1).get("name", "")).is_equal("城市废墟")

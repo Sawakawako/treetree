@@ -51,5 +51,9 @@ static func from_dict(d: Dictionary) -> GameState:
     s.hope = int(d.get("hope", 1))
     s.human_awakened = bool(d.get("human_awakened", false))
     var rf: Array = d.get("relics_found", [])
-    s.relics_found.assign(rf.map(func(x): return int(x)))
+    var cleaned: Array = []
+    for x in rf:
+        if typeof(x) == TYPE_INT or typeof(x) == TYPE_FLOAT:
+            cleaned.append(int(x))
+    s.relics_found.assign(cleaned)
     return s

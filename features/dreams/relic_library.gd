@@ -11,7 +11,7 @@ const RELICS: Array[Dictionary] = [
 	{
 		"id": 2,
 		"name": "陵墓",
-		"dream_text": "石板下有棺。\n棺里有骨。\n骨上有指纹——\n是有人把手按在泥土上留下的。\n\n你第一次意识到：\n这些\"它\"，曾经是\"他们\"。",
+		"dream_text": "石板下有棺。\n棺里有骨。\n骨上有指纹——\n是有人把手按在泥土上留下的。\n\n这些\"它\"，曾经是\"他们\"。",
 		"reward_memory": 1.0,
 	},
 	{
@@ -29,12 +29,15 @@ const RELICS: Array[Dictionary] = [
 ]
 
 static func all_relics() -> Array[Dictionary]:
-	return RELICS
+	var out: Array[Dictionary] = []
+	for r in RELICS:
+		out.append(r.duplicate(true))
+	return out
 
 static func get_relic(id: int) -> Dictionary:
 	for r in RELICS:
 		if r.get("id", 0) == id:
-			return r
+			return r.duplicate(true)
 	return {}
 
 static func relic_count() -> int:

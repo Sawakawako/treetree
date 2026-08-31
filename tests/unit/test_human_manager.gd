@@ -34,3 +34,12 @@ func test_no_production_before_awaken() -> void:
     HumanManager.tick_human(s)
     assert_that(s.faith.to_value()).is_equal(0.0)
     assert_that(s.memory.to_value()).is_equal(0.0)
+
+func test_no_production_at_tick_zero() -> void:
+    # M1：tick=0 不是 10/20 的合法产出边界，不应白送信仰
+    var s := GameState.new()
+    s.human_awakened = true
+    s.tick = 0
+    HumanManager.tick_human(s)
+    assert_that(s.faith.to_value()).is_equal(0.0)
+    assert_that(s.memory.to_value()).is_equal(0.0)

@@ -57,3 +57,10 @@ func test_old_save_fallback() -> void:
     assert_that(back.human_awakened).is_false()
     assert_that(back.relics_found).is_empty()
     assert_that(back.tick).is_equal(5)
+
+func test_from_dict_filters_invalid_relic_ids() -> void:
+    # M2：损坏存档中的非数字 relics_found 元素应被过滤而非报错/静默变 0
+    var back := GameState.from_dict({"relics_found": [1, "x", {"a": 1}, 3.0]})
+    assert_that(back.relics_found.size()).is_equal(2)
+    assert_that(back.relics_found).contains(1)
+    assert_that(back.relics_found).contains(3)

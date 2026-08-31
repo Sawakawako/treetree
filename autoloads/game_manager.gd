@@ -2,6 +2,7 @@ extends Node
 
 signal resources_changed
 signal relic_discovered(relic_name: String, dream_text: String)
+signal human_awakened
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -11,17 +12,22 @@ var _tick_accumulator := 0.0
 
 func _ready() -> void:
     _state = SaveManager.load_or_create(SAVE_PATH)
-    HumanManager.check_awaken(_state)
+    _try_awaken()
 
 func _process(delta: float) -> void:
     _tick_accumulator += delta
     if _tick_accumulator >= TICK_INTERVAL:
         _tick_accumulator -= TICK_INTERVAL
         GameLoop.tick(_state)
+        _try_awaken()
         HumanManager.tick_human(_state)
         if GameLoop.should_auto_save(_state):
             SaveManager.save(_state, SAVE_PATH)
         resources_changed.emit()
+
+func _try_awaken() -> void:
+    if HumanManager.check_awaken(_state):
+        human_awakened.emit()
 
 func get_state() -> GameState:
     return _state
