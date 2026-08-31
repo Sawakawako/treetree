@@ -179,3 +179,50 @@ func test_intimate_race_blocked_no_signal() -> void:
     var result: Dictionary = gm.intimate_race(&"human")
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
+
+func test_revive_race_signal() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    gm._state.growth = BigNum.new(600.0)
+    var got := {"ok": false, "pop": -1, "river": -1}
+    gm.soul_revived.connect(func(id: StringName, pop_gain: int) -> void:
+        got["ok"] = true
+        got["pop"] = pop_gain)
+    gm.soul_changed.connect(func(r: int) -> void: got["river"] = r)
+    var result: Dictionary = gm.revive_race(&"human")
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(int(got["pop"])).is_equal(10)
+    assert_that(int(got["river"])).is_equal(99)
+    assert_that(gm.get_state().soul_river).is_equal(99)
+
+func test_revive_race_blocked_no_signal() -> void:
+    gm._state = GameState.new()  # 未唤醒
+    var got := {"ok": false}
+    gm.soul_revived.connect(func(id: StringName, pop_gain: int) -> void: got["ok"] = true)
+    var result: Dictionary = gm.revive_race(&"human")
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()
+
+func test_plunder_soul_race_signal() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    gm._state.plundered["human"] = 3  # 先夺梦揭示（人口冻结但可夺魂）
+    gm._state.soul_river = 99
+    var got := {"ok": false, "loss": -1}
+    gm.soul_plundered.connect(func(id: StringName, pop_loss: int) -> void:
+        got["ok"] = true
+        got["loss"] = pop_loss)
+    var result: Dictionary = gm.plunder_soul_race(&"human")
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(int(got["loss"])).is_equal(3)
+    assert_that(gm.get_state().soul_river).is_equal(100)
+
+func test_plunder_soul_race_blocked_no_signal() -> void:
+    gm._state = GameState.new()  # 未唤醒
+    var got := {"ok": false}
+    gm.soul_plundered.connect(func(id: StringName, pop_loss: int) -> void: got["ok"] = true)
+    var result: Dictionary = gm.plunder_soul_race(&"human")
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()
