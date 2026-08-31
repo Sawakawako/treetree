@@ -22,3 +22,6 @@ func test_small_fraction() -> void:
 func test_carry_rounding() -> void:
 	assert_that(Formatter.format_number(BigNum.new(999999.0))).is_equal("1M")
 	assert_that(Formatter.format_number(BigNum.new(999999999.0))).is_equal("1B")
+
+func test_negative_carry_rounding() -> void:
+	assert_that(Formatter.format_number(BigNum.new(-999999.0))).is_equal("-1M")

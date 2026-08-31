@@ -13,8 +13,8 @@ static func format_number(bn: BigNum) -> String:
 		return _trim_zeros(String.num(small, 6))
 	var mant := bn.mantissa * pow(10.0, bn.exponent - tier * 3)
 	var text := String.num(mant, 2)
-	if text.begins_with("1000"):
-		# 四舍五入进位（如 999.999 → "1000.00"）：升一档重算
+	if text.lstrip("-").begins_with("1000"):
+		# 四舍五入进位（如 999.999 → "1000.00"、-999.999 → "-1000.00"）：升一档重算
 		tier += 1
 		mant = bn.mantissa * pow(10.0, bn.exponent - tier * 3)
 		text = String.num(mant, 2)
