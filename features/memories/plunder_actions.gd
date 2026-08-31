@@ -38,7 +38,8 @@ static func plunder(state: GameState, race_id: StringName) -> Dictionary:
 	var after := reveal_stage(state, race_id)
 	var revealed := after > before
 	if revealed:
-		state.plunder_reveals.append(race_id)
+		if not state.plunder_reveals.has(race_id):
+			state.plunder_reveals.append(race_id)
 		RelationActions.apply_change(state, race_id, -1)
 		if race_id == &"wildfolk" and after == 1:
 			# 惊扰：1 级揭示时人口 -20%（一次性，由 plunder_reveals 保证不重复）

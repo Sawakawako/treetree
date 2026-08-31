@@ -85,3 +85,11 @@ func test_memory_yield_varied() -> void:
 	_awaken(s2, &"forestfolk")
 	PlunderActions.plunder(s2, &"forestfolk")
 	assert_that(s2.memory.to_value()).is_equal_approx(1.2, 1e-4)  # 林地民 +1.2
+
+func test_plunder_reveals_set_semantics() -> void:
+	# 防回归：夺梦 9 次触发 3 级揭示，plunder_reveals 每族至多一条（集合语义）
+	var s := GameState.new()
+	_awaken(s, &"human")
+	for i in 9:
+		PlunderActions.plunder(s, &"human")
+	assert_that(s.plunder_reveals.size()).is_equal(1)
