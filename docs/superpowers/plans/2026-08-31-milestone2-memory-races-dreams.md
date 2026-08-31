@@ -1,6 +1,6 @@
 # 世界树 里程碑 2（记忆/信仰/人族/遗迹梦境）Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 在 MVP 具象轨之上加入抽象轨：记忆（梦珀）资源、根须探索遗迹系统、信仰资源、人族（说书人）唤醒与献梦，以及梦境碎片文本——完成"双轨资源 + 第一族 + 梦境"的 MVP-2 里程碑。
 
@@ -43,7 +43,7 @@
   - `tick` 已有
 - 序列化：`to_dict`/`from_dict` 含全部新字段，缺失回退默认。
 
-- [ ] **Step 1: 补失败测试**（test_game_state.gd 追加）
+- [x] **Step 1: 补失败测试**（test_game_state.gd 追加）
 
 ```gdscript
 func test_new_fields_initial() -> void:
@@ -79,12 +79,12 @@ func test_old_save_fallback() -> void:
     assert_that(back.tick).is_equal(5)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 先 `godot --headless --path . --import`，再 `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode --add res://tests/unit/test_game_state.gd`
 Expected: FAIL（新字段不存在）
 
-- [ ] **Step 3: 扩展 features/game/game_state.gd**
+- [x] **Step 3: 扩展 features/game/game_state.gd**
 
 ```gdscript
 var memory: BigNum
@@ -113,12 +113,12 @@ var rf: Array = d.get("relics_found", [])
 s.relics_found = rf.map(func(x): return int(x))
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Run: 同 Step 2 命令（或 `-a res://tests/unit` 全量）
 Expected: PASS（新 3 用例 + 旧用例无回归）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add features/game/game_state.gd tests/unit/test_game_state.gd
@@ -143,7 +143,7 @@ git commit -m "feat: GameState 扩展（记忆/信仰/根须/人族状态 + 序�
 
 **文风铁律**：`dream_text` 必须遵循诗歌化·柔和六则（见 spec §11.1）。
 
-- [ ] **Step 1: 写失败测试**（test_relic_library.gd）
+- [x] **Step 1: 写失败测试**（test_relic_library.gd）
 
 ```gdscript
 extends GdUnitTestSuite
@@ -170,12 +170,12 @@ func test_all_relics_have_unique_ids() -> void:
         ids.append(id)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 `godot --headless --path . --import` 后跑 `--add res://tests/unit/test_relic_library.gd`
 Expected: FAIL（无法解析 RelicLibrary）
 
-- [ ] **Step 3: 实现 features/dreams/relic_library.gd**
+- [x] **Step 3: 实现 features/dreams/relic_library.gd**
 
 ```gdscript
 class_name RelicLibrary
@@ -221,11 +221,11 @@ static func relic_count() -> int:
     return RELICS.size()
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Expected: PASS（4 用例）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add features/dreams/relic_library.gd tests/unit/test_relic_library.gd
@@ -246,7 +246,7 @@ git commit -m "feat: 遗迹数据模块（4 遗迹梦境文本）"
   - `static func can_explore(state: GameState) -> bool`（`state.root_depth < RelicLibrary.relic_count() and state.sap.is_greater_or_equal(BigNum.new(200.0))`）
   - `static func explore(state: GameState) -> Dictionary`（返回 `{"relic": Dictionary, "text": String, "ok": bool}`；探索：消耗 200 树液、root_depth+1、memory+1、标记 relics_found；不可探索返回 `{"ok": false}`）
 
-- [ ] **Step 1: 写失败测试**（test_root_actions.gd）
+- [x] **Step 1: 写失败测试**（test_root_actions.gd）
 
 ```gdscript
 extends GdUnitTestSuite
@@ -288,12 +288,12 @@ func test_can_explore() -> void:
     assert_that(RootActions.can_explore(s)).is_false()
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 `godot --headless --path . --import` 后跑 `--add res://tests/unit/test_root_actions.gd`
 Expected: FAIL（无法解析 RootActions）
 
-- [ ] **Step 3: 实现 features/dreams/root_actions.gd**
+- [x] **Step 3: 实现 features/dreams/root_actions.gd**
 
 ```gdscript
 class_name RootActions
@@ -317,11 +317,11 @@ static func explore(state: GameState) -> Dictionary:
     return {"ok": true, "relic": relic, "text": str(relic.get("dream_text", ""))}
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Expected: PASS（4 用例）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add features/dreams/root_actions.gd tests/unit/test_root_actions.gd
@@ -343,7 +343,7 @@ git commit -m "feat: 根须探索逻辑（遗迹解锁/树液消耗/记忆奖励
   - `static func check_awaken(state: GameState) -> bool`（`not state.human_awakened and state.memory.is_greater_or_equal(BigNum.new(HUMAN_AWAKEN_MEMORY))` 时置 true 返回 true；否则 false）
   - `static func tick_human(state: GameState) -> void`（人族已唤醒时：每 10 tick 信仰 +1（`state.tick % 10 == 0`）、每 20 tick 记忆 +1（`state.tick % 20 == 0`）——人族是记忆引擎）
 
-- [ ] **Step 1: 写失败测试**（test_human_manager.gd）
+- [x] **Step 1: 写失败测试**（test_human_manager.gd）
 
 ```gdscript
 extends GdUnitTestSuite
@@ -384,12 +384,12 @@ func test_no_production_before_awaken() -> void:
     assert_that(s.memory.to_value()).is_equal(0.0)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 `godot --headless --path . --import` 后跑 `--add res://tests/unit/test_human_manager.gd`
 Expected: FAIL（无法解析 HumanManager）
 
-- [ ] **Step 3: 实现 features/races/human_manager.gd**
+- [x] **Step 3: 实现 features/races/human_manager.gd**
 
 ```gdscript
 class_name HumanManager
@@ -416,11 +416,11 @@ static func tick_human(state: GameState) -> void:
         state.memory.add(BigNum.new(MEMORY_PER_20_TICKS))
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Expected: PASS（5 用例）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add features/races/human_manager.gd tests/unit/test_human_manager.gd
@@ -444,7 +444,7 @@ git commit -m "feat: 人族系统（记忆唤醒/献梦产信仰/梦产记忆）
   - `_process` 中调 `HumanManager.tick_human(_state)`（在人族唤醒判定后）
   - `_ready` 后调 `HumanManager.check_awaken(_state)`（读档后恢复唤醒状态）
 
-- [ ] **Step 1: 写失败测试**（test_game_manager.gd）
+- [x] **Step 1: 写失败测试**（test_game_manager.gd）
 
 ```gdscript
 extends GdUnitTestSuite
@@ -482,12 +482,12 @@ func test_getters() -> void:
     assert_that(gm.is_human_awakened()).is_true()
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 `godot --headless --path . --import` 后跑 `--add res://tests/unit/test_game_manager.gd`
 Expected: FAIL（explore_relic 等方法不存在；注意 GameManager 是 autoload，`GameManager.new()` 创建独立实例可测）
 
-- [ ] **Step 3: 修改 autoloads/game_manager.gd**
+- [x] **Step 3: 修改 autoloads/game_manager.gd**
 
 ```gdscript
 signal resources_changed
@@ -521,11 +521,11 @@ func is_human_awakened() -> bool:
     return _state.human_awakened
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [x] **Step 4: 运行确认通过**
 
 Expected: PASS（2 用例）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add autoloads/game_manager.gd tests/unit/test_game_manager.gd
@@ -549,7 +549,7 @@ git commit -m "feat: GameManager 集成（根须探索入口/人族 tick/信号�
   - `DreamPanel` / `DreamTextLabel`（梦境文本展示，探索后显示 3-5 秒或常驻）
   - `HumanEventLabel`（人族唤醒事件文本，一次性）
 
-- [ ] **Step 1: 扩展 main.tscn**（在 `%GrowthLabel` 后追加）
+- [x] **Step 1: 扩展 main.tscn**（在 `%GrowthLabel` 后追加）
 
 ```
 [node name="MemoryLabel" type="Label" parent="VBox"]
@@ -583,7 +583,7 @@ layout_mode = 2
 text = ""
 ```
 
-- [ ] **Step 2: 扩展 main.gd**
+- [x] **Step 2: 扩展 main.gd**
 
 ```gdscript
 @onready var memory_label: Label = %MemoryLabel
@@ -618,11 +618,11 @@ func _refresh() -> void:
 
 （main.gd 顶部加 `var _human_announced := false`）
 
-- [ ] **Step 3: 验证**
+- [x] **Step 3: 验证**
 
 `godot --headless --path . --import`（无 ERROR）→ 全量测试（无回归）→ `godot --headless --path . --quit-after 5`（无脚本报错）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add features/ui/main.tscn features/ui/main.gd
@@ -636,16 +636,16 @@ git commit -m "feat: UI 扩展（记忆/信仰/根须探索/梦境文本/人族�
 **Files:**
 - Modify: 无（验证）
 
-- [ ] **Step 1: 全量测试**
+- [x] **Step 1: 全量测试**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode`
 Expected: 全部 PASS、0 failures、退出码 0
 
-- [ ] **Step 2: 端到端玩法验证（临时脚本，验证后删除）**
+- [x] **Step 2: 端到端玩法验证（临时脚本，验证后删除）**
 
 脚本（`extends SceneTree`）验证：点击采集 → 攒树液 → 探索 4 遗迹（记忆 4）→ 人族唤醒 → tick 产信仰/记忆 → 存档往返含新字段。Expected: 输出 `M2 E2E VERIFY PASSED`。
 
-- [ ] **Step 3: 清理 + 提交**
+- [x] **Step 3: 清理 + 提交**
 
 临时脚本删除、`user://` 无残留、工作区干净；如有修复则提交。
 
