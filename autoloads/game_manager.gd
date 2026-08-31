@@ -6,6 +6,7 @@ signal race_awakened(race_id: StringName, race_name: String, awaken_text: String
 signal totem_interpreted(totem_id: int, interpret_text: String)
 signal relation_changed(race_id: StringName, relation: int)
 signal plunder_done(race_id: StringName, text: String, revealed: bool)
+signal intimate_done(race_id: StringName, text: String)
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -142,5 +143,12 @@ func plunder_race(race_id: StringName) -> Dictionary:
     var result := PlunderActions.plunder(_state, race_id)
     if result.get("ok", false):
         plunder_done.emit(race_id, str(result.get("text", "")), bool(result.get("revealed", false)))
+        resources_changed.emit()
+    return result
+
+func intimate_race(race_id: StringName) -> Dictionary:
+    var result := DriftActions.intimate(_state, race_id)
+    if result.get("ok", false):
+        intimate_done.emit(race_id, str(result.get("text", "")))
         resources_changed.emit()
     return result

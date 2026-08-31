@@ -157,3 +157,25 @@ func test_buy_upgrade_insufficient() -> void:
     gm._state.sap = BigNum.new(1.0)
     assert_that(gm.buy_sunflower()).is_false()
     assert_that(gm.get_state().sunflower_level).is_equal(0)
+
+func test_intimate_race_signal() -> void:
+    gm._state = GameState.new()
+    gm._state.memory = BigNum.new(40.0)
+    gm._state.relations["human"] = 2
+    var got := {"ok": false, "text": ""}
+    gm.intimate_done.connect(func(id: StringName, text: String) -> void:
+        got["ok"] = true
+        got["text"] = text)
+    var result: Dictionary = gm.intimate_race(&"human")
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(str(got["text"]).length()).is_greater(20)
+    assert_that(gm.get_state().intimate_events).contains(&"human")
+
+func test_intimate_race_blocked_no_signal() -> void:
+    gm._state = GameState.new()  # 未觉醒
+    var got := {"ok": false}
+    gm.intimate_done.connect(func(id: StringName, text: String) -> void: got["ok"] = true)
+    var result: Dictionary = gm.intimate_race(&"human")
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()
