@@ -72,3 +72,33 @@ text = "价格：1200"
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
+
+[node name="MemoryLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "记忆：0"
+
+[node name="FaithLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "信仰：0"
+
+[node name="RootExploreButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "根须探索（200 树液）"
+
+[node name="DreamPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DreamTextLabel" type="Label" parent="VBox/DreamPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="HumanEventLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
