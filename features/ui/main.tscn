@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://rfuhnpd0sagth"]
+[gd_scene load_steps=2 format=3 uid="uid://worldtreemain"]
 
 [ext_resource type="Script" path="res://features/ui/main.gd" id="1_main"]
 
