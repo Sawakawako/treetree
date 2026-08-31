@@ -142,3 +142,25 @@ func test_races_corrupt_type_fallback() -> void:
     assert_that(back.races.is_empty()).is_true()
     var back2 := GameState.from_dict({"races": {"human": "corrupt"}})
     assert_that(back2.races.is_empty()).is_true()
+
+func test_plundered_roundtrip() -> void:
+    var s := GameState.new()
+    s.plundered["human"] = 3
+    s.plundered["wildfolk"] = 1
+    s.plunder_reveals.assign([&"human"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(int(back.plundered["human"])).is_equal(3)
+    assert_that(int(back.plundered["wildfolk"])).is_equal(1)
+    assert_that(back.plunder_reveals).contains(&"human")
+
+func test_plundered_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.plundered.is_empty()).is_true()
+    assert_that(back.plunder_reveals).is_empty()
+
+func test_from_dict_guards_corrupt_plundered() -> void:
+    var back := GameState.from_dict({"plundered": "corrupt"})
+    assert_that(back.plundered.is_empty()).is_true()
+    var back2 := GameState.from_dict({"plundered": {"human": "x", "wildfolk": 2.5}})
+    assert_that(int(back2.plundered.get("human", 0))).is_equal(0)
+    assert_that(int(back2.plundered["wildfolk"])).is_equal(2)

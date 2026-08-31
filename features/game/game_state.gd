@@ -17,6 +17,8 @@ var totem_interpreted: Array[int] = []
 var insight: int = 0
 var relations: Dictionary = {}
 var relation_events: Array[StringName] = []
+var plundered: Dictionary = {}
+var plunder_reveals: Array[StringName] = []
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -43,6 +45,8 @@ func to_dict() -> Dictionary:
         "insight": insight,
         "relations": relations,
         "relation_events": relation_events,
+        "plundered": plundered,
+        "plunder_reveals": plunder_reveals,
     }
 
 static func from_dict(d: Dictionary) -> GameState:
@@ -100,4 +104,18 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             re_cleaned.append(StringName(x))
     s.relation_events.assign(re_cleaned)
+    var pl: Variant = d.get("plundered", {})
+    if typeof(pl) != TYPE_DICTIONARY:
+        pl = {}
+    s.plundered = {}
+    for pid: Variant in pl:
+        var pv: Variant = pl[pid]
+        if typeof(pv) == TYPE_INT or typeof(pv) == TYPE_FLOAT:
+            s.plundered[pid] = int(pv)
+    var pr: Array = d.get("plunder_reveals", [])
+    var pr_cleaned: Array = []
+    for x in pr:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            pr_cleaned.append(StringName(x))
+    s.plunder_reveals.assign(pr_cleaned)
     return s
