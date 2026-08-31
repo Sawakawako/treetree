@@ -79,16 +79,16 @@ static func tick_races(state: GameState) -> Array[Dictionary]
 #   1) 唤醒判定（人族 memory>=2 即时；三族信仰门槛）→ 命中者收集进返回数组
 #   2) 供养：sap -= Σ(pop × support_cost)，clamp ≥ 0
 #   3) 人口增长：sap > 0 时 pop += pop × growth_rate × (1 − pop/capacity)，clamp ≤ capacity
-#   4) 产出：信仰 += Σ(pop × devotion × FAITH_EFF)；记忆 += 人族 pop × MEMORY_EFF；树液 += 石裔 pop × CRAFT_EFF
+#   4) 产出：信仰 += Σ(pop × devotion × FAITH_EFF)；记忆 += 人族 pop × MEMORY_EFF；树液 += Σ(pop × craft_sap)
 # 返回本次唤醒事件列表：[{"race_id", "race_name", "awaken_text"}, ...]（保持纯函数可测，GameManager 转发信号）
 ```
 
 常量（RaceManager 内定义，数值见 §4.2）：
 
 ```gdscript
-const FAITH_EFF := 0.002
-const MEMORY_EFF := 0.001
-const CRAFT_EFF := 0.01
+const FAITH_EFF := 0.002   # 信仰效率（四族共享）
+const MEMORY_EFF := 0.001  # 记忆效率（仅人族）
+# 石裔献工系数直接存于 RaceData.craft_sap（0.01），无独立常量——单一数据源
 ```
 
 `HumanManager.gd` 删除，人族数据迁入 `human.tres`。旧存档兼容见 §3.3。
@@ -141,7 +141,7 @@ for ev in awaken_events:
 | 供养 | `sap -= Σ(pop × support_cost)`，clamp ≥ 0；sap ≤ 0 时人口增长冻结 |
 | 信仰 | `信仰 += Σ(pop × devotion × 0.002)` |
 | 记忆 | `记忆 += 人族人口 × 0.001`（人族记忆引擎） |
-| 石裔献工 | `树液 += 石裔人口 × 0.01`（生产力引擎 §13.9） |
+| 石裔献工 | `树液 += 石裔人口 × 0.01`（craft_sap 字段存 0.01，生产力引擎 §13.9） |
 
 ### 4.2 四族系数（spec §14.4 表 + M3 定稿）
 
