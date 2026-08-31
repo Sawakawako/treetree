@@ -25,3 +25,35 @@ func test_from_dict_missing_fields_fallback() -> void:
     assert_that(back.sap.to_value()).is_equal_approx(7.0, 1e-4)
     assert_that(back.leaf_level).is_equal(0)
     assert_that(back.hope).is_equal(1)
+
+func test_new_fields_initial() -> void:
+    var s := GameState.new()
+    assert_that(s.memory.to_value()).is_equal(0.0)
+    assert_that(s.faith.to_value()).is_equal(0.0)
+    assert_that(s.root_depth).is_equal(0)
+    assert_that(s.human_awakened).is_false()
+    assert_that(s.relics_found).is_empty()
+
+func test_new_fields_serialization_roundtrip() -> void:
+    var s := GameState.new()
+    s.memory = BigNum.new(3.0)
+    s.faith = BigNum.new(7.0)
+    s.root_depth = 2
+    s.human_awakened = true
+    s.relics_found.assign([1, 2])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.memory.to_value()).is_equal_approx(3.0, 1e-4)
+    assert_that(back.faith.to_value()).is_equal_approx(7.0, 1e-4)
+    assert_that(back.root_depth).is_equal(2)
+    assert_that(back.human_awakened).is_true()
+    assert_that(back.relics_found).contains(1)
+
+func test_old_save_fallback() -> void:
+    # 旧档无新字段——from_dict 应回退默认不损坏
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.memory.to_value()).is_equal(0.0)
+    assert_that(back.faith.to_value()).is_equal(0.0)
+    assert_that(back.root_depth).is_equal(0)
+    assert_that(back.human_awakened).is_false()
+    assert_that(back.relics_found).is_empty()
+    assert_that(back.tick).is_equal(5)
