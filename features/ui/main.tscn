@@ -196,6 +196,41 @@ visible = false
 layout_mode = 2
 text = "领悟：0"
 
+[node name="AvatarPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="AvatarLabel" type="Label" parent="VBox/AvatarPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="IntimateHumanButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与她促膝"
+
+[node name="IntimateForestButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与她对坐"
+
+[node name="IntimateStoneButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "与他谈船"
+
+[node name="IntimateWildButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "随它们看画"
+
 [node name="InteractHumanButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 visible = false

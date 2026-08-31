@@ -44,6 +44,12 @@ const RELATION_COLORS := {
 @onready var plunder_forest_button: Button = %PlunderForestButton
 @onready var plunder_stone_button: Button = %PlunderStoneButton
 @onready var plunder_wild_button: Button = %PlunderWildButton
+@onready var avatar_panel: PanelContainer = %AvatarPanel
+@onready var avatar_label: Label = %AvatarLabel
+@onready var intimate_human_button: Button = %IntimateHumanButton
+@onready var intimate_forest_button: Button = %IntimateForestButton
+@onready var intimate_stone_button: Button = %IntimateStoneButton
+@onready var intimate_wild_button: Button = %IntimateWildButton
 @onready var chloroplast_button: Button = %ChloroplastButton
 @onready var chloroplast_cost_label: Label = %ChloroplastCostLabel
 @onready var xylem_button: Button = %XylemButton
@@ -75,6 +81,11 @@ func _ready() -> void:
     plunder_stone_button.pressed.connect(func(): _on_plunder_pressed(&"stoneborn"))
     plunder_wild_button.pressed.connect(func(): _on_plunder_pressed(&"wildfolk"))
     GameManager.plunder_done.connect(_on_plunder_done)
+    intimate_human_button.pressed.connect(func(): _on_intimate_pressed(&"human"))
+    intimate_forest_button.pressed.connect(func(): _on_intimate_pressed(&"forestfolk"))
+    intimate_stone_button.pressed.connect(func(): _on_intimate_pressed(&"stoneborn"))
+    intimate_wild_button.pressed.connect(func(): _on_intimate_pressed(&"wildfolk"))
+    GameManager.intimate_done.connect(_on_intimate_done)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
@@ -162,6 +173,8 @@ func _refresh() -> void:
     _refresh_totem()
     _refresh_interact_buttons()
     _refresh_plunder_buttons()
+    _refresh_avatar()
+    _refresh_intimate_buttons()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -266,3 +279,36 @@ func _on_plunder_done(race_id: StringName, text: String, revealed: bool) -> void
     race_event_label.text = text
     if revealed:
         log_label.text = "（你忽然意识到什么。）"
+
+func _refresh_avatar() -> void:
+    var s := GameManager.get_state()
+    if not DriftActions.is_avatar_awakened(s):
+        avatar_panel.visible = false
+        return
+    avatar_panel.visible = true
+    var tier := DriftActions.drift_tier(s)
+    var tier_names := ["清醒", "微漂", "深漂", "迷失"]
+    avatar_label.text = "化身 · %s\n%s" % [tier_names[tier], DriftActions.avatar_tier_text(s)]
+
+func _refresh_intimate_buttons() -> void:
+    var s := GameManager.get_state()
+    var pairs := [
+        [&"human", intimate_human_button],
+        [&"forestfolk", intimate_forest_button],
+        [&"stoneborn", intimate_stone_button],
+        [&"wildfolk", intimate_wild_button],
+    ]
+    for p in pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = DriftActions.can_intimate(s, rid)
+
+func _on_intimate_pressed(race_id: StringName) -> void:
+    var result: Dictionary = GameManager.intimate_race(race_id)
+    if not result.get("ok", false):
+        log_label.text = "它还不想说。"
+    # 成功显示由 _on_intimate_done 处理
+
+func _on_intimate_done(race_id: StringName, text: String) -> void:
+    race_event_label.text = text
+    log_label.text = "（你以「人」的样子，坐在了它身边。）"
