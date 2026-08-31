@@ -122,3 +122,26 @@ text = "石裔：未苏醒（信仰 60）"
 unique_name_in_owner = true
 layout_mode = 2
 text = "野民：未苏醒（信仰 100）"
+
+[node name="TotemPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="TotemLabel" type="Label" parent="VBox/TotemPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="TotemInterpretButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "解读图腾"
+
+[node name="InsightLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "领悟：0"

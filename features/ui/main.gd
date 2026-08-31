@@ -24,15 +24,21 @@ const RACE_ROWS := {
 @onready var race_forest_label: Label = %RaceForestLabel
 @onready var race_stone_label: Label = %RaceStoneLabel
 @onready var race_wild_label: Label = %RaceWildLabel
+@onready var totem_panel: PanelContainer = %TotemPanel
+@onready var totem_label: Label = %TotemLabel
+@onready var totem_button: Button = %TotemInterpretButton
+@onready var insight_label: Label = %InsightLabel
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
     leaf_button.pressed.connect(_on_leaf_pressed)
     branch_button.pressed.connect(_on_branch_pressed)
     root_button.pressed.connect(_on_root_pressed)
+    totem_button.pressed.connect(_on_totem_pressed)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
+    GameManager.totem_interpreted.connect(_on_totem_interpreted)
     # 读档恢复的唤醒发生在 autoload _ready（早于本场景），信号已发出——此处兜底播报
     if GameManager.is_human_awakened():
         var human := GameManager.get_race(&"human")
@@ -78,6 +84,7 @@ func _refresh() -> void:
     branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
     root_button.disabled = not RootActions.can_explore(s)
     _refresh_race_rows()
+    _refresh_totem()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -105,3 +112,33 @@ func _awaken_hint(data: RaceData) -> String:
     if data.awaken_condition.begins_with("faith>="):
         return "信仰 " + data.awaken_condition.get_slice(">=", 1)
     return data.awaken_condition
+
+func _refresh_totem() -> void:
+    var s := GameManager.get_state()
+    var stage := TotemActions.visible_stage(s)
+    if stage <= 0:
+        totem_panel.visible = false
+        totem_button.visible = false
+        insight_label.visible = false
+        return
+    totem_panel.visible = true
+    totem_button.visible = true
+    insight_label.visible = true
+    var totem := TotemLibrary.get_totem(stage)
+    totem_label.text = "图腾·第 %d 幅\n%s" % [stage, str(totem.get("reveal_text", ""))]
+    insight_label.text = "领悟：%d" % s.insight
+    var next_id := TotemActions.next_interpretable(s)
+    totem_button.disabled = next_id <= 0
+
+func _on_totem_pressed() -> void:
+    var s := GameManager.get_state()
+    var next_id := TotemActions.next_interpretable(s)
+    if next_id <= 0:
+        return
+    var result: Dictionary = GameManager.interpret_totem(next_id)
+    if not result.get("ok", false):
+        log_label.text = "画还看不清。再等等。"
+    # 成功播报由 _on_totem_interpreted 处理
+
+func _on_totem_interpreted(totem_id: int, interpret_text: String) -> void:
+    race_event_label.text = interpret_text + "\n（领悟 +1）"
