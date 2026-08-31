@@ -6,6 +6,10 @@ config_version=5
 config/name="世界树"
 run/main_scene="res://features/ui/main.tscn"
 
+[autoload]
+
+GameManager="*res://autoloads/game_manager.gd"
+
 [display]
 
 window/size/viewport_width=420

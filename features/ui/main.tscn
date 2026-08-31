@@ -1,9 +1,74 @@
-[gd_scene format=3]
+[gd_scene load_steps=2 format=3 uid="uid://rfuhnpd0sagth"]
+
+[ext_resource type="Script" path="res://features/ui/main.gd" id="1_main"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+text = "世界树"
+
+[node name="Hope" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "一点希望，在废墟中静静燃烧。"
+
+[node name="GatherButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "舒展叶片"
+
+[node name="DaylightLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "日光：0"
+
+[node name="SapLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "树液：0"
+
+[node name="GrowthLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "树高：0"
+
+[node name="LeafButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "叶序螺旋（日光采集 +25%/级）"
+
+[node name="LeafCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：500"
+
+[node name="BranchButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "分枝序（自动采集 +1/级）"
+
+[node name="BranchCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：1200"
+
+[node name="LogLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
