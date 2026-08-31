@@ -64,3 +64,29 @@ func test_from_dict_filters_invalid_relic_ids() -> void:
     assert_that(back.relics_found.size()).is_equal(2)
     assert_that(back.relics_found).contains(1)
     assert_that(back.relics_found).contains(3)
+
+func test_races_serialization_roundtrip() -> void:
+    var s := GameState.new()
+    s.races["human"] = {"awakened": true, "population": 58.5}
+    s.races["forestfolk"] = {"awakened": false, "population": 0.0}
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.races.has("human")).is_true()
+    assert_that(back.races["human"]["awakened"]).is_true()
+    assert_that(float(back.races["human"]["population"])).is_equal_approx(58.5, 1e-4)
+    assert_that(back.races["forestfolk"]["awakened"]).is_false()
+
+func test_old_save_human_awakened_migrates() -> void:
+    # M2 旧档：无 races 但有 human_awakened —— 迁移人族状态
+    var back := GameState.from_dict({"human_awakened": true, "tick": 5})
+    assert_that(back.races.has("human")).is_true()
+    assert_that(back.races["human"]["awakened"]).is_true()
+    assert_that(float(back.races["human"]["population"])).is_equal_approx(50.0, 1e-4)
+
+func test_races_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 1})
+    assert_that(back.races.is_empty()).is_true()
+
+func test_races_partial_entry_fallback() -> void:
+    # races 条目缺 population —— 回退默认 0 不损坏
+    var back := GameState.from_dict({"races": {"human": {"awakened": true}}})
+    assert_that(float(back.races["human"]["population"])).is_equal_approx(0.0, 1e-4)

@@ -12,6 +12,7 @@ var root_depth: int = 0
 var tick: int = 0
 var hope: int = 1
 var human_awakened: bool = false
+var races: Dictionary = {}
 var relics_found: Array[int] = []
 
 func _init() -> void:
@@ -34,6 +35,8 @@ func to_dict() -> Dictionary:
         "tick": tick,
         "hope": hope,
         "human_awakened": human_awakened,
+        # (human_awakened 行保留到 T6)
+        "races": races,
         "relics_found": relics_found,
     }
 
@@ -50,6 +53,18 @@ static func from_dict(d: Dictionary) -> GameState:
     s.tick = int(d.get("tick", 0))
     s.hope = int(d.get("hope", 1))
     s.human_awakened = bool(d.get("human_awakened", false))
+    # M2 旧档迁移：无 races 但有 human_awakened —— 迁移人族状态
+    var rd: Dictionary = d.get("races", {})
+    if rd.is_empty() and d.has("human_awakened"):
+        rd = {"human": {"awakened": bool(d.get("human_awakened", false)),
+                "population": 50.0 if bool(d.get("human_awakened", false)) else 0.0}}
+    s.races = {}
+    for race_id: Variant in rd:
+        var entry: Dictionary = rd[race_id]
+        s.races[race_id] = {
+            "awakened": bool(entry.get("awakened", false)),
+            "population": float(entry.get("population", 0.0)),
+        }
     var rf: Array = d.get("relics_found", [])
     var cleaned: Array = []
     for x in rf:
