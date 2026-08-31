@@ -72,3 +72,28 @@ func test_human_produces_faith_after_awaken() -> void:
     gm._process(1.0)
     assert_that(gm.is_human_awakened()).is_true()
     assert_that(gm.get_faith().to_value()).is_equal_approx(0.1, 1e-4)
+
+func test_interpret_totem_signal() -> void:
+    # 野民唤醒 + 记忆达标 → 解读 → 信号 + 领悟 +1
+    gm._state = GameState.new()
+    gm._state.races["wildfolk"] = {"awakened": true, "population": 80.0}
+    gm._state.memory = BigNum.new(4.0)
+    var got := {"ok": false, "text": ""}
+    gm.totem_interpreted.connect(func(id: int, text: String) -> void:
+        got["ok"] = true
+        got["text"] = text)
+    var result: Dictionary = gm.interpret_totem(2)
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(str(got["text"]).length()).is_greater(5)
+    assert_that(gm.get_state().insight).is_equal(1)
+
+func test_interpret_totem_blocked_no_signal() -> void:
+    # 野民未醒 → 不可解读 → ok:false 且不发信号
+    gm._state = GameState.new()
+    gm._state.memory = BigNum.new(50.0)
+    var got := {"ok": false}
+    gm.totem_interpreted.connect(func(id: int, text: String) -> void: got["ok"] = true)
+    var result: Dictionary = gm.interpret_totem(1)
+    assert_that(result.get("ok", false)).is_false()
+    assert_that(got["ok"]).is_false()
