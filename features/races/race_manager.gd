@@ -14,8 +14,10 @@ static func _ensure_registry() -> void:
 	_registry.clear()
 	for id in ["human", "forestfolk", "stoneborn", "wildfolk"]:
 		var data := load("res://features/races/data/%s.tres" % id) as RaceData
-		if data != null:
-			_registry[data.id] = data
+		if data == null:
+			push_error("无法加载种族数据: %s" % id)
+			continue
+		_registry[data.id] = data
 
 static func get_race(id: StringName) -> RaceData:
 	_ensure_registry()

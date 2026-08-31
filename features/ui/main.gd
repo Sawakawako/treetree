@@ -36,7 +36,8 @@ func _ready() -> void:
     # 读档恢复的唤醒发生在 autoload _ready（早于本场景），信号已发出——此处兜底播报
     if GameManager.is_human_awakened():
         var human := GameManager.get_race(&"human")
-        _on_race_awakened(human.id, human.display_name, human.awaken_text)
+        if human != null:
+            _on_race_awakened(human.id, human.display_name, human.awaken_text)
     _refresh()
 
 func _on_race_awakened(race_id: StringName, race_name: String, awaken_text: String) -> void:
@@ -94,4 +95,13 @@ func _refresh_race_rows() -> void:
             var pop := float(s.races[id].get("population", 0.0))
             label.text = "%s：人口 %d" % [RACE_ROWS[id], int(pop)]
         else:
-            label.text = "%s：未苏醒" % RACE_ROWS[id]
+            label.text = "%s：%s 时苏醒" % [RACE_ROWS[id], _awaken_hint(data)]
+
+func _awaken_hint(data: RaceData) -> String:
+    if data == null:
+        return "条件缺失"
+    if data.awaken_condition == "memory>=2":
+        return "记忆 2"
+    if data.awaken_condition.begins_with("faith>="):
+        return "信仰 " + data.awaken_condition.get_slice(">=", 1)
+    return data.awaken_condition
