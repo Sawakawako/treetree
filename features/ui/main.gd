@@ -60,6 +60,15 @@ const RELATION_COLORS := {
 @onready var nautilus_cost_label: Label = %NautilusCostLabel
 @onready var root_eff_button: Button = %RootEffButton
 @onready var root_eff_cost_label: Label = %RootEffCostLabel
+@onready var soul_label: Label = %SoulLabel
+@onready var revive_human_button: Button = %ReviveHumanButton
+@onready var revive_forest_button: Button = %ReviveForestButton
+@onready var revive_stone_button: Button = %ReviveStoneButton
+@onready var revive_wild_button: Button = %ReviveWildButton
+@onready var plunder_soul_human_button: Button = %PlunderSoulHumanButton
+@onready var plunder_soul_forest_button: Button = %PlunderSoulForestButton
+@onready var plunder_soul_stone_button: Button = %PlunderSoulStoneButton
+@onready var plunder_soul_wild_button: Button = %PlunderSoulWildButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -86,6 +95,16 @@ func _ready() -> void:
     intimate_stone_button.pressed.connect(func(): _on_intimate_pressed(&"stoneborn"))
     intimate_wild_button.pressed.connect(func(): _on_intimate_pressed(&"wildfolk"))
     GameManager.intimate_done.connect(_on_intimate_done)
+    revive_human_button.pressed.connect(func(): _on_revive_pressed(&"human"))
+    revive_forest_button.pressed.connect(func(): _on_revive_pressed(&"forestfolk"))
+    revive_stone_button.pressed.connect(func(): _on_revive_pressed(&"stoneborn"))
+    revive_wild_button.pressed.connect(func(): _on_revive_pressed(&"wildfolk"))
+    plunder_soul_human_button.pressed.connect(func(): _on_plunder_soul_pressed(&"human"))
+    plunder_soul_forest_button.pressed.connect(func(): _on_plunder_soul_pressed(&"forestfolk"))
+    plunder_soul_stone_button.pressed.connect(func(): _on_plunder_soul_pressed(&"stoneborn"))
+    plunder_soul_wild_button.pressed.connect(func(): _on_plunder_soul_pressed(&"wildfolk"))
+    GameManager.soul_revived.connect(_on_soul_revived)
+    GameManager.soul_plundered.connect(_on_soul_plundered)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
@@ -175,6 +194,7 @@ func _refresh() -> void:
     _refresh_plunder_buttons()
     _refresh_avatar()
     _refresh_intimate_buttons()
+    _refresh_soul()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -312,3 +332,49 @@ func _on_intimate_pressed(race_id: StringName) -> void:
 func _on_intimate_done(race_id: StringName, text: String) -> void:
     race_event_label.text = text
     log_label.text = "（你以「人」的样子，坐在了它身边。）"
+
+func _refresh_soul() -> void:
+    var s := GameManager.get_state()
+    soul_label.text = "灵魂：%d / %d" % [s.soul_river, SoulActions.RIVER_TOTAL]
+    var revive_pairs := [
+        [&"human", revive_human_button],
+        [&"forestfolk", revive_forest_button],
+        [&"stoneborn", revive_stone_button],
+        [&"wildfolk", revive_wild_button],
+    ]
+    for p in revive_pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = SoulActions.can_revive(s, rid)
+    var soul_pairs := [
+        [&"human", plunder_soul_human_button],
+        [&"forestfolk", plunder_soul_forest_button],
+        [&"stoneborn", plunder_soul_stone_button],
+        [&"wildfolk", plunder_soul_wild_button],
+    ]
+    for p in soul_pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = SoulActions.can_plunder_soul(s, rid)
+
+func _on_revive_pressed(race_id: StringName) -> void:
+    var result: Dictionary = GameManager.revive_race(race_id)
+    if not result.get("ok", false):
+        log_label.text = "河水太远了。"
+    # 成功播报由 _on_soul_revived 处理
+
+func _on_plunder_soul_pressed(race_id: StringName) -> void:
+    var result: Dictionary = GameManager.plunder_soul_race(race_id)
+    if not result.get("ok", false):
+        log_label.text = "它还在岸上。"
+    # 成功播报由 _on_soul_plundered 处理
+
+func _on_soul_revived(race_id: StringName, pop_gain: int) -> void:
+    race_event_label.text = "河水浅了一分。有人醒来了。"
+    log_label.text = "（你从河里，唤回 %d 人。）" % pop_gain
+    _refresh()
+
+func _on_soul_plundered(race_id: StringName, pop_loss: int) -> void:
+    race_event_label.text = "河水满了一分。有人沉默了。"
+    log_label.text = "（你让 %d 人，沉回河底。）" % pop_loss
+    _refresh()

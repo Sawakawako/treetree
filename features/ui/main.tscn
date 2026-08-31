@@ -133,6 +133,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "信仰：0"
 
+[node name="SoulLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "灵魂：100 / 100"
+
 [node name="RootExploreButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -278,3 +283,51 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "把梦收进年轮"
+
+[node name="ReviveHumanButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "唤回说梦的人"
+
+[node name="ReviveForestButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "唤回听风的人"
+
+[node name="ReviveStoneButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "唤回执锤的人"
+
+[node name="ReviveWildButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "唤回画影的人"
+
+[node name="PlunderSoulHumanButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulForestButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulStoneButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulWildButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "让它沉回河底"
