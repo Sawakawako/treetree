@@ -40,6 +40,10 @@ const RELATION_COLORS := {
 @onready var interact_forest_button: Button = %InteractForestButton
 @onready var interact_stone_button: Button = %InteractStoneButton
 @onready var interact_wild_button: Button = %InteractWildButton
+@onready var plunder_human_button: Button = %PlunderHumanButton
+@onready var plunder_forest_button: Button = %PlunderForestButton
+@onready var plunder_stone_button: Button = %PlunderStoneButton
+@onready var plunder_wild_button: Button = %PlunderWildButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -51,6 +55,11 @@ func _ready() -> void:
     interact_forest_button.pressed.connect(func(): _on_interact_pressed(&"forestfolk"))
     interact_stone_button.pressed.connect(func(): _on_interact_pressed(&"stoneborn"))
     interact_wild_button.pressed.connect(func(): _on_interact_pressed(&"wildfolk"))
+    plunder_human_button.pressed.connect(func(): _on_plunder_pressed(&"human"))
+    plunder_forest_button.pressed.connect(func(): _on_plunder_pressed(&"forestfolk"))
+    plunder_stone_button.pressed.connect(func(): _on_plunder_pressed(&"stoneborn"))
+    plunder_wild_button.pressed.connect(func(): _on_plunder_pressed(&"wildfolk"))
+    GameManager.plunder_done.connect(_on_plunder_done)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
@@ -102,6 +111,7 @@ func _refresh() -> void:
     _refresh_race_rows()
     _refresh_totem()
     _refresh_interact_buttons()
+    _refresh_plunder_buttons()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -182,3 +192,27 @@ func _on_interact_pressed(race_id: StringName) -> void:
         race_event_label.text = str(result.get("text", ""))
         log_label.text = "关系 · 亲近了一分。"
     _refresh()
+
+func _refresh_plunder_buttons() -> void:
+    var s := GameManager.get_state()
+    var pairs := [
+        [&"human", plunder_human_button],
+        [&"forestfolk", plunder_forest_button],
+        [&"stoneborn", plunder_stone_button],
+        [&"wildfolk", plunder_wild_button],
+    ]
+    for p in pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = PlunderActions.can_plunder(s, rid)
+
+func _on_plunder_pressed(race_id: StringName) -> void:
+    var result: Dictionary = GameManager.plunder_race(race_id)
+    if not result.get("ok", false):
+        log_label.text = "它还在沉睡。"
+    # 成功显示由 _on_plunder_done 处理
+
+func _on_plunder_done(race_id: StringName, text: String, revealed: bool) -> void:
+    race_event_label.text = text
+    if revealed:
+        log_label.text = "（你忽然意识到什么。）"

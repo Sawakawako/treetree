@@ -169,3 +169,27 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "与野民看壁画"
+
+[node name="PlunderHumanButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderForestButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderStoneButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderWildButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "把梦收进年轮"
