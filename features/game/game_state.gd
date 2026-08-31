@@ -15,6 +15,8 @@ var races: Dictionary = {}
 var relics_found: Array[int] = []
 var totem_interpreted: Array[int] = []
 var insight: int = 0
+var relations: Dictionary = {}
+var relation_events: Array[StringName] = []
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -39,6 +41,8 @@ func to_dict() -> Dictionary:
         "relics_found": relics_found,
         "totem_interpreted": totem_interpreted,
         "insight": insight,
+        "relations": relations,
+        "relation_events": relation_events,
     }
 
 static func from_dict(d: Dictionary) -> GameState:
@@ -82,4 +86,18 @@ static func from_dict(d: Dictionary) -> GameState:
             ti_cleaned.append(int(x))
     s.totem_interpreted.assign(ti_cleaned)
     s.insight = int(d.get("insight", 0))
+    var rel: Variant = d.get("relations", {})
+    if typeof(rel) != TYPE_DICTIONARY:
+        rel = {}
+    s.relations = {}
+    for rid: Variant in rel:
+        var rv: Variant = rel[rid]
+        if typeof(rv) == TYPE_INT or typeof(rv) == TYPE_FLOAT:
+            s.relations[rid] = int(rv)
+    var re: Array = d.get("relation_events", [])
+    var re_cleaned: Array = []
+    for x in re:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            re_cleaned.append(StringName(x))
+    s.relation_events.assign(re_cleaned)
     return s

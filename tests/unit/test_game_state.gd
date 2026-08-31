@@ -86,6 +86,30 @@ func test_from_dict_filters_invalid_totem_ids() -> void:
     assert_that(back.totem_interpreted).contains(1)
     assert_that(back.totem_interpreted).contains(3)
 
+func test_relations_roundtrip() -> void:
+    var s := GameState.new()
+    s.relations["human"] = 2
+    s.relations["wildfolk"] = -1
+    s.relation_events.assign([&"human", &"wildfolk"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(int(back.relations["human"])).is_equal(2)
+    assert_that(int(back.relations["wildfolk"])).is_equal(-1)
+    assert_that(back.relation_events).contains(&"human")
+    assert_that(back.relation_events).contains(&"wildfolk")
+
+func test_relations_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.relations.is_empty()).is_true()
+    assert_that(back.relation_events).is_empty()
+
+func test_from_dict_guards_corrupt_relations() -> void:
+    # 损坏存档：relations 非字典 / 值非数字 → 回退或归一，不崩溃
+    var back := GameState.from_dict({"relations": "corrupt"})
+    assert_that(back.relations.is_empty()).is_true()
+    var back2 := GameState.from_dict({"relations": {"human": "x", "wildfolk": 1.5}})
+    assert_that(int(back2.relations.get("human", 0))).is_equal(0)
+    assert_that(int(back2.relations["wildfolk"])).is_equal(1)
+
 func test_races_serialization_roundtrip() -> void:
     var s := GameState.new()
     s.races["human"] = {"awakened": true, "population": 58.5}
