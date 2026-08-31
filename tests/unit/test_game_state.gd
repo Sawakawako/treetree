@@ -90,3 +90,10 @@ func test_races_partial_entry_fallback() -> void:
     # races 条目缺 population —— 回退默认 0 不损坏
     var back := GameState.from_dict({"races": {"human": {"awakened": true}}})
     assert_that(float(back.races["human"]["population"])).is_equal_approx(0.0, 1e-4)
+
+func test_races_corrupt_type_fallback() -> void:
+    # 损坏存档：races 非字典 / 条目非字典 → 回退不崩溃
+    var back := GameState.from_dict({"races": "corrupt"})
+    assert_that(back.races.is_empty()).is_true()
+    var back2 := GameState.from_dict({"races": {"human": "corrupt"}})
+    assert_that(back2.races.is_empty()).is_true()

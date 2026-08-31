@@ -50,13 +50,17 @@ static func from_dict(d: Dictionary) -> GameState:
     s.tick = int(d.get("tick", 0))
     s.hope = int(d.get("hope", 1))
     # M2 旧档迁移：无 races 但有 human_awakened —— 迁移人族状态
-    var rd: Dictionary = d.get("races", {})
+    var rd: Variant = d.get("races", {})
+    if typeof(rd) != TYPE_DICTIONARY:
+        rd = {}
     if rd.is_empty() and d.has("human_awakened"):
         rd = {"human": {"awakened": bool(d.get("human_awakened", false)),
                 "population": 50.0 if bool(d.get("human_awakened", false)) else 0.0}}
     s.races = {}
     for race_id: Variant in rd:
-        var entry: Dictionary = rd[race_id]
+        var entry: Variant = rd[race_id]
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
         s.races[race_id] = {
             "awakened": bool(entry.get("awakened", false)),
             "population": float(entry.get("population", 0.0)),
