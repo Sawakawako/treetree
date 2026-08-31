@@ -31,3 +31,28 @@ func test_buy_branch_success() -> void:
     assert_that(GameActions.buy_branch(s)).is_true()
     assert_that(s.branch_level).is_equal(1)
     assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
+
+func test_buy_chloroplast_success() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(800.0)
+    assert_that(GameActions.buy_chloroplast(s)).is_true()
+    assert_that(s.chloroplast_level).is_equal(1)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
+
+func test_buy_chloroplast_insufficient() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(799.0)
+    assert_that(GameActions.buy_chloroplast(s)).is_false()
+    assert_that(s.chloroplast_level).is_equal(0)
+
+func test_buy_xylem_sunflower_nautilus_root() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(10000.0)
+    assert_that(GameActions.buy_xylem(s)).is_true()
+    assert_that(GameActions.buy_sunflower(s)).is_true()
+    assert_that(GameActions.buy_nautilus(s)).is_true()
+    assert_that(GameActions.buy_root_eff(s)).is_true()
+    assert_that(s.xylem_level).is_equal(1)
+    assert_that(s.sunflower_level).is_equal(1)
+    assert_that(s.nautilus_level).is_equal(1)
+    assert_that(s.root_eff_level).is_equal(1)
