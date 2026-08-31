@@ -17,6 +17,11 @@ var totem_interpreted: Array[int] = []
 var insight: int = 0
 var relations: Dictionary = {}
 var relation_events: Array[StringName] = []
+var chloroplast_level: int = 0
+var xylem_level: int = 0
+var sunflower_level: int = 0
+var nautilus_level: int = 0
+var root_eff_level: int = 0
 var plundered: Dictionary = {}
 var plunder_reveals: Array[StringName] = []
 
@@ -47,6 +52,11 @@ func to_dict() -> Dictionary:
         "relation_events": relation_events,
         "plundered": plundered,
         "plunder_reveals": plunder_reveals,
+        "chloroplast_level": chloroplast_level,
+        "xylem_level": xylem_level,
+        "sunflower_level": sunflower_level,
+        "nautilus_level": nautilus_level,
+        "root_eff_level": root_eff_level,
     }
 
 static func from_dict(d: Dictionary) -> GameState:
@@ -118,4 +128,9 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             pr_cleaned.append(StringName(x))
     s.plunder_reveals.assign(pr_cleaned)
+    s.chloroplast_level = int(d.get("chloroplast_level", 0))
+    s.xylem_level = int(d.get("xylem_level", 0))
+    s.sunflower_level = int(d.get("sunflower_level", 0))
+    s.nautilus_level = int(d.get("nautilus_level", 0))
+    s.root_eff_level = int(d.get("root_eff_level", 0))
     return s

@@ -164,3 +164,25 @@ func test_from_dict_guards_corrupt_plundered() -> void:
     var back2 := GameState.from_dict({"plundered": {"human": "x", "wildfolk": 2.5}})
     assert_that(int(back2.plundered.get("human", 0))).is_equal(0)
     assert_that(int(back2.plundered["wildfolk"])).is_equal(2)
+
+func test_upgrade_levels_roundtrip() -> void:
+    var s := GameState.new()
+    s.chloroplast_level = 2
+    s.xylem_level = 1
+    s.sunflower_level = 3
+    s.nautilus_level = 1
+    s.root_eff_level = 2
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.chloroplast_level).is_equal(2)
+    assert_that(back.xylem_level).is_equal(1)
+    assert_that(back.sunflower_level).is_equal(3)
+    assert_that(back.nautilus_level).is_equal(1)
+    assert_that(back.root_eff_level).is_equal(2)
+
+func test_upgrade_levels_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.chloroplast_level).is_equal(0)
+    assert_that(back.xylem_level).is_equal(0)
+    assert_that(back.sunflower_level).is_equal(0)
+    assert_that(back.nautilus_level).is_equal(0)
+    assert_that(back.root_eff_level).is_equal(0)
