@@ -1,0 +1,147 @@
+﻿8221293 feat: BigNum 大数模块（尾数/指数/加减乘/比较/序列化）
+
+=== diff --stat ===
+ features/economy/big_num.gd     | 67 +++++++++++++++++++++++++++++++++++++++++
+ features/economy/big_num.gd.uid |  1 +
+ tests/unit/test_big_num.gd      | 44 +++++++++++++++++++++++++++
+ tests/unit/test_big_num.gd.uid  |  1 +
+ 4 files changed, 113 insertions(+)
+
+=== diff -U10 ===
+diff --git a/features/economy/big_num.gd b/features/economy/big_num.gd
+new file mode 100644
+index 0000000..b58617c
+--- /dev/null
++++ b/features/economy/big_num.gd
+@@ -0,0 +1,67 @@
++class_name BigNum
++extends RefCounted
++
++var mantissa: float = 0.0
++var exponent: int = 0
++
++func _init(v: float = 0.0) -> void:
++    set_value(v)
++
++func set_value(v: float) -> void:
++    if v == 0.0:
++        mantissa = 0.0
++        exponent = 0
++        return
++    exponent = int(floor(log(abs(v)) / log(10.0)))
++    mantissa = v / pow(10.0, exponent)
++    _normalize()
++
++func _normalize() -> void:
++    if mantissa == 0.0:
++        exponent = 0
++        return
++    var e := int(floor(log(abs(mantissa)) / log(10.0)))
++    if e != 0:
++        mantissa /= pow(10.0, e)
++        exponent += e
++
++func add(other: BigNum) -> void:
++    if other.mantissa == 0.0:
++        return
++    var e := maxi(exponent, other.exponent)
++    var a := mantissa * pow(10.0, exponent - e)
++    var b := other.mantissa * pow(10.0, other.exponent - e)
++    mantissa = a + b
++    exponent = e
++    _normalize()
++
++func sub(other: BigNum) -> void:
++    var neg := BigNum.new()
++    neg.mantissa = -other.mantissa
++    neg.exponent = other.exponent
++    add(neg)
++
++func mul_scalar(f: float) -> BigNum:
++    var out := BigNum.new()
++    out.mantissa = mantissa * f
++    out.exponent = exponent
++    out._normalize()
++    return out
++
++func is_greater_or_equal(other: BigNum) -> bool:
++    if exponent != other.exponent:
++        return exponent > other.exponent
++    return mantissa >= other.mantissa
++
++func to_value() -> float:
++    return mantissa * pow(10.0, exponent)
++
++func to_dict() -> Dictionary:
++    return {"m": mantissa, "e": exponent}
++
++static func from_dict(d: Dictionary) -> BigNum:
++    var bn := BigNum.new()
++    bn.mantissa = float(d.get("m", 0.0))
++    bn.exponent = int(d.get("e", 0))
++    bn._normalize()
++    return bn
+diff --git a/features/economy/big_num.gd.uid b/features/economy/big_num.gd.uid
+new file mode 100644
+index 0000000..f94fb7b
+--- /dev/null
++++ b/features/economy/big_num.gd.uid
+@@ -0,0 +1 @@
++uid://2fxyqah88238
+diff --git a/tests/unit/test_big_num.gd b/tests/unit/test_big_num.gd
+new file mode 100644
+index 0000000..527b6dc
+--- /dev/null
++++ b/tests/unit/test_big_num.gd
+@@ -0,0 +1,44 @@
++extends GdUnitTestSuite
++
++# 注：GdUnit4 6.2.1 的 is_equal_approx 签名是 (expected, approx) 双参数，
++# 故按 brief 逐字写测试时需补容差参数（1e-4），详见 task-2-report.md。
++
++func test_zero() -> void:
++    var bn := BigNum.new(0.0)
++    assert_that(bn.to_value()).is_equal(0.0)
++
++func test_initialization_normalizes() -> void:
++    var bn := BigNum.new(1234.5)
++    assert_that(bn.mantissa).is_equal_approx(1.2345, 1e-4)
++    assert_that(bn.exponent).is_equal(3)
++    assert_that(bn.to_value()).is_equal_approx(1234.5, 1e-4)
++
++func test_add_with_carry() -> void:
++    var a := BigNum.new(9.5)
++    var b := BigNum.new(0.8)
++    a.add(b)
++    assert_that(a.to_value()).is_equal_approx(10.3, 1e-4)
++    assert_that(a.exponent).is_equal(1)
++
++func test_sub() -> void:
++    var a := BigNum.new(500.0)
++    var b := BigNum.new(499.0)
++    a.sub(b)
++    assert_that(a.to_value()).is_equal_approx(1.0, 1e-4)
++
++func test_mul_scalar() -> void:
++    var a := BigNum.new(1234.0)
++    var c := a.mul_scalar(0.1)
++    assert_that(c.to_value()).is_equal_approx(123.4, 1e-4)
++    assert_that(a.to_value()).is_equal_approx(1234.0, 1e-4)
++
++func test_compare() -> void:
++    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(998.0))).is_true()
++    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(999.0))).is_true()
++    assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(1000.0))).is_false()
++    assert_that(BigNum.new(1e9).is_greater_or_equal(BigNum.new(9e8))).is_true()
++
++func test_serialization_roundtrip() -> void:
++    var bn := BigNum.new(5702887.0)
++    var back := BigNum.from_dict(bn.to_dict())
++    assert_that(back.to_value()).is_equal_approx(5702887.0, 1e-4)
+diff --git a/tests/unit/test_big_num.gd.uid b/tests/unit/test_big_num.gd.uid
+new file mode 100644
+index 0000000..b1bc15c
+--- /dev/null
++++ b/tests/unit/test_big_num.gd.uid
+@@ -0,0 +1 @@
++uid://w5fvhdjekn5t

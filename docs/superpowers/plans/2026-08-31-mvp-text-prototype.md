@@ -1,61 +1,42 @@
-# 世界树 MVP 文字原型 Implementation Plan（Godot 版）
+﻿# 涓栫晫鏍?MVP 鏂囧瓧鍘熷瀷 Implementation Plan锛圙odot 鐗堬級
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 用 Godot 4.7 搭起《世界树》最小可玩文字原型：玩家扮演一棵树，点击舒展叶片收集日光，经光合转化为树液，购买斐波那契成本的升级（叶序螺旋/分枝序）实现自动采集，树液累积为树高（生长），带 `user://` 自动存档。
-
-**Architecture:** 按 godot-master Layer Cake 分层：`GameState`（RefCounted 数据容器）、`GameLoop`/`GameActions`/`CostCalculator`/`BigNum`/`Formatter`（RefCounted 纯逻辑，headless 可测）、`GameManager`（Autoload：持有状态、`_process(delta)` 手动累加 tick、发 `resources_changed` 信号）、`main.tscn`（Presentation 只监听信号更新 UI）。测试用 GdUnit4，`godot --headless` 运行。
-
-**Tech Stack:** Godot 4.7.1（mono，已装于 `C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\`，`godot` 命令在 PATH）；GDScript（typed）；GdUnit4 v6.x（MIT，克隆到 `addons/gdUnit4/`）。零第三方运行时依赖。
-
-**Spec:** `docs/superpowers/specs/2026-08-31-world-tree-design.md`（本计划实现其 §4 具象轨 MVP 部分 + §9 斐波那契升级组中的叶序螺旋/分枝序）
+**Goal:** 鐢?Godot 4.7 鎼捣銆婁笘鐣屾爲銆嬫渶灏忓彲鐜╂枃瀛楀師鍨嬶細鐜╁鎵紨涓€妫垫爲锛岀偣鍑昏垝灞曞彾鐗囨敹闆嗘棩鍏夛紝缁忓厜鍚堣浆鍖栦负鏍戞恫锛岃喘涔版枑娉㈤偅濂戞垚鏈殑鍗囩骇锛堝彾搴忚灪鏃?鍒嗘灊搴忥級瀹炵幇鑷姩閲囬泦锛屾爲娑茬疮绉负鏍戦珮锛堢敓闀匡級锛屽甫 `user://` 鑷姩瀛樻。銆?
+**Architecture:** 鎸?godot-master Layer Cake 鍒嗗眰锛歚GameState`锛圧efCounted 鏁版嵁瀹瑰櫒锛夈€乣GameLoop`/`GameActions`/`CostCalculator`/`BigNum`/`Formatter`锛圧efCounted 绾€昏緫锛宧eadless 鍙祴锛夈€乣GameManager`锛圓utoload锛氭寔鏈夌姸鎬併€乣_process(delta)` 鎵嬪姩绱姞 tick銆佸彂 `resources_changed` 淇″彿锛夈€乣main.tscn`锛圥resentation 鍙洃鍚俊鍙锋洿鏂?UI锛夈€傛祴璇曠敤 GdUnit4锛宍godot --headless` 杩愯銆?
+**Tech Stack:** Godot 4.7.1锛坢ono锛屽凡瑁呬簬 `C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\`锛宍godot` 鍛戒护鍦?PATH锛夛紱GDScript锛坱yped锛夛紱GdUnit4 v6.x锛圡IT锛屽厠闅嗗埌 `addons/gdUnit4/`锛夈€傞浂绗笁鏂硅繍琛屾椂渚濊禆銆?
+**Spec:** `docs/superpowers/specs/2026-08-31-world-tree-design.md`锛堟湰璁″垝瀹炵幇鍏?搂4 鍏疯薄杞?MVP 閮ㄥ垎 + 搂9 鏂愭尝閭ｅ鍗囩骇缁勪腑鐨勫彾搴忚灪鏃?鍒嗘灊搴忥級
 
 ## Global Constraints
 
-- Godot 版本：4.7.x（勿降级；mono 版亦可跑 GDScript）。
-- 全部数据与逻辑使用 typed GDScript；`@export` 资源按需 `duplicate()`，避免共享内存。
-- 货币与资源数值**一律使用 `BigNum`**（尾数+指数），禁止裸 `float` 存储资源（防 1e308 INF，idle-clicker NEVER 规则）。
-- 收入与 tick **在 `GameManager._process(delta)` 用累加器手动累加**，禁止 `Timer` 节点驱动经济（防帧率漂移）。
-- UI 只通过 `resources_changed` 信号更新，禁止在 `_process` 里直接改 Label。
-- 存档走 `user://`（禁止 `res://` 写入），保存为 JSON；BigNum 序列化为 `{"m": mantissa, "e": exponent}`。
-- 升级成本按斐波那契数列：`fib(1)=1, fib(2)=1, fib(3)=2, ..., fib(34)=5702887`（F₁=F₂=1）。**刻意偏离 idle-clicker 行业标准 1.15 指数曲线**，采用斐波那契（spec §9 主题设计：植物的数学 + 前期密集/中期紧张/后期仰望的体验曲线）。
-- 数值规则（MVP 定稿）：
-  - 点击「舒展叶片」：`daylight += 1 × (1 + 0.25 × leafLevel)`
-  - 每 tick 自动采集：`daylight += branchLevel × (1 + 0.25 × leafLevel)`
-  - 每 tick 光合：`sap += daylight × 0.1`（日光不因转化而消耗）
-  - 每 tick 生长：`growth += sap × 0.01`
-  - 叶序螺旋（level 从 0 计，升到 level+1 的花费）：`500 × fib(level + 1)`
-  - 分枝序：`1200 × fib(level + 1)`
-- 开局状态：`daylight=0, sap=0, growth=0, leafLevel=0, branchLevel=0, tick=0, hope=1`（`hope` 叙事元素，MVP 只显示）。
-- 自动存档：每 60 tick 保存一次；加载时读档，无档则新建。
-- 命名与文案：脚本/节点用 snake_case；游戏内文案简体中文。
-- 测试：GdUnit4；命令 `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 必须全绿；每个 `features/` 逻辑模块有对应 `tests/unit/` 套件。
-
+- Godot 鐗堟湰锛?.7.x锛堝嬁闄嶇骇锛沵ono 鐗堜害鍙窇 GDScript锛夈€?- 鍏ㄩ儴鏁版嵁涓庨€昏緫浣跨敤 typed GDScript锛沗@export` 璧勬簮鎸夐渶 `duplicate()`锛岄伩鍏嶅叡浜唴瀛樸€?- 璐у竵涓庤祫婧愭暟鍊?*涓€寰嬩娇鐢?`BigNum`**锛堝熬鏁?鎸囨暟锛夛紝绂佹瑁?`float` 瀛樺偍璧勬簮锛堥槻 1e308 INF锛宨dle-clicker NEVER 瑙勫垯锛夈€?- 鏀跺叆涓?tick **鍦?`GameManager._process(delta)` 鐢ㄧ疮鍔犲櫒鎵嬪姩绱姞**锛岀姝?`Timer` 鑺傜偣椹卞姩缁忔祹锛堥槻甯х巼婕傜Щ锛夈€?- UI 鍙€氳繃 `resources_changed` 淇″彿鏇存柊锛岀姝㈠湪 `_process` 閲岀洿鎺ユ敼 Label銆?- 瀛樻。璧?`user://`锛堢姝?`res://` 鍐欏叆锛夛紝淇濆瓨涓?JSON锛汢igNum 搴忓垪鍖栦负 `{"m": mantissa, "e": exponent}`銆?- 鍗囩骇鎴愭湰鎸夋枑娉㈤偅濂戞暟鍒楋細`fib(1)=1, fib(2)=1, fib(3)=2, ..., fib(34)=5702887`锛團鈧?F鈧?1锛夈€?*鍒绘剰鍋忕 idle-clicker 琛屼笟鏍囧噯 1.15 鎸囨暟鏇茬嚎**锛岄噰鐢ㄦ枑娉㈤偅濂戯紙spec 搂9 涓婚璁捐锛氭鐗╃殑鏁板 + 鍓嶆湡瀵嗛泦/涓湡绱у紶/鍚庢湡浠版湜鐨勪綋楠屾洸绾匡級銆?- 鏁板€艰鍒欙紙MVP 瀹氱锛夛細
+  - 鐐瑰嚮銆岃垝灞曞彾鐗囥€嶏細`daylight += 1 脳 (1 + 0.25 脳 leafLevel)`
+  - 姣?tick 鑷姩閲囬泦锛歚daylight += branchLevel 脳 (1 + 0.25 脳 leafLevel)`
+  - 姣?tick 鍏夊悎锛歚sap += daylight 脳 0.1`锛堟棩鍏変笉鍥犺浆鍖栬€屾秷鑰楋級
+  - 姣?tick 鐢熼暱锛歚growth += sap 脳 0.01`
+  - 鍙跺簭铻烘棆锛坙evel 浠?0 璁★紝鍗囧埌 level+1 鐨勮姳璐癸級锛歚500 脳 fib(level + 1)`
+  - 鍒嗘灊搴忥細`1200 脳 fib(level + 1)`
+- 寮€灞€鐘舵€侊細`daylight=0, sap=0, growth=0, leafLevel=0, branchLevel=0, tick=0, hope=1`锛坄hope` 鍙欎簨鍏冪礌锛孧VP 鍙樉绀猴級銆?- 鑷姩瀛樻。锛氭瘡 60 tick 淇濆瓨涓€娆★紱鍔犺浇鏃惰妗ｏ紝鏃犳。鍒欐柊寤恒€?- 鍛藉悕涓庢枃妗堬細鑴氭湰/鑺傜偣鐢?snake_case锛涙父鎴忓唴鏂囨绠€浣撲腑鏂囥€?- 娴嬭瘯锛欸dUnit4锛涘懡浠?`godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 蹇呴』鍏ㄧ豢锛涙瘡涓?`features/` 閫昏緫妯″潡鏈夊搴?`tests/unit/` 濂椾欢銆?
 ---
 
-### Task 1: Godot 项目脚手架 + GdUnit4 安装 + headless 测试跑通
-
+### Task 1: Godot 椤圭洰鑴氭墜鏋?+ GdUnit4 瀹夎 + headless 娴嬭瘯璺戦€?
 **Files:**
 - Create: `project.godot`
 - Create: `icon.svg`
 - Create: `autoloads/.gitkeep`
-- Create: `features/game/.gitkeep`、`features/economy/.gitkeep`、`features/ui/.gitkeep`
+- Create: `features/game/.gitkeep`銆乣features/economy/.gitkeep`銆乣features/ui/.gitkeep`
 - Create: `tests/unit/.gitkeep`
-- Create: `tests/unit/test_smoke.gd`（冒烟测试，验证 GdUnit4 可用）
-- Create: `addons/gdUnit4/`（克隆自 https://github.com/MikeSchulze/gdUnit4）
-
+- Create: `tests/unit/test_smoke.gd`锛堝啋鐑熸祴璇曪紝楠岃瘉 GdUnit4 鍙敤锛?- Create: `addons/gdUnit4/`锛堝厠闅嗚嚜 https://github.com/MikeSchulze/gdUnit4锛?
 **Interfaces:**
-- Consumes: 无
-- Produces: 可运行项目骨架；`godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 能跑并显示 1 个通过用例；`godot` 打开项目无报错
-
-- [ ] **Step 1: 创建 project.godot**
+- Consumes: 鏃?- Produces: 鍙繍琛岄」鐩鏋讹紱`godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` 鑳借窇骞舵樉绀?1 涓€氳繃鐢ㄤ緥锛沗godot` 鎵撳紑椤圭洰鏃犳姤閿?
+- [ ] **Step 1: 鍒涘缓 project.godot**
 
 ```ini
 ; Engine configuration file.
 config_version=5
 
 [application]
-config/name="世界树"
+config/name="涓栫晫鏍?
 run/main_scene="res://features/ui/main.tscn"
 
 [display]
@@ -66,23 +47,22 @@ window/size/viewport_height=640
 enabled=PackedStringArray("gdUnit4")
 ```
 
-- [ ] **Step 2: 创建 icon.svg（极简树形图标）**
+- [ ] **Step 2: 鍒涘缓 icon.svg锛堟瀬绠€鏍戝舰鍥炬爣锛?*
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="#1a1512"/><path d="M64 20 L96 84 L32 84 Z" fill="#3f7a3f"/><rect x="60" y="84" width="8" height="28" fill="#6b5638"/></svg>
 ```
 
-- [ ] **Step 3: 安装 GdUnit4 插件**
+- [ ] **Step 3: 瀹夎 GdUnit4 鎻掍欢**
 
 Run:
 ```bash
 mkdir -p addons
 git clone --depth 1 https://github.com/MikeSchulze/gdUnit4.git addons/gdUnit4
 ```
-（若 git clone 被网络 reset，改用：下载 `https://codeload.github.com/MikeSchulze/gdUnit4/zip/refs/heads/master` 解压并将解压出的 `gdUnit4-master` 目录重命名为 `addons/gdUnit4`。）
-Expected: `addons/gdUnit4/plugin.cfg` 存在。
-
-- [ ] **Step 4: 创建冒烟测试**
+锛堣嫢 git clone 琚綉缁?reset锛屾敼鐢細涓嬭浇 `https://codeload.github.com/MikeSchulze/gdUnit4/zip/refs/heads/master` 瑙ｅ帇骞跺皢瑙ｅ帇鍑虹殑 `gdUnit4-master` 鐩綍閲嶅懡鍚嶄负 `addons/gdUnit4`銆傦級
+Expected: `addons/gdUnit4/plugin.cfg` 瀛樺湪銆?
+- [ ] **Step 4: 鍒涘缓鍐掔儫娴嬭瘯**
 
 ```gdscript
 # tests/unit/test_smoke.gd
@@ -92,40 +72,36 @@ func test_gdunit_works() -> void:
     assert_that(1 + 1).is_equal(2)
 ```
 
-- [ ] **Step 5: 运行冒烟测试验证 headless 链路**
+- [ ] **Step 5: 杩愯鍐掔儫娴嬭瘯楠岃瘉 headless 閾捐矾**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
-Expected: 输出包含 test_gdunit_works 通过；退出码 0
-（首次运行若报 "Plugin not enabled"，确认 project.godot `[editor_plugins]` 已写入且路径为 `res://addons/gdUnit4/plugin.cfg`。）
+Expected: 杈撳嚭鍖呭惈 test_gdunit_works 閫氳繃锛涢€€鍑虹爜 0
+锛堥娆¤繍琛岃嫢鎶?"Plugin not enabled"锛岀‘璁?project.godot `[editor_plugins]` 宸插啓鍏ヤ笖璺緞涓?`res://addons/gdUnit4/plugin.cfg`銆傦級
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add project.godot icon.svg autoloads features tests addons/gdUnit4
-git commit -m "feat: Godot 4.7 脚手架 + GdUnit4 接入（headless 测试跑通）"
+git commit -m "feat: Godot 4.7 鑴氭墜鏋?+ GdUnit4 鎺ュ叆锛坔eadless 娴嬭瘯璺戦€氾級"
 ```
 
 ---
 
-### Task 2: 大数模块 big_num.gd
+### Task 2: 澶ф暟妯″潡 big_num.gd
 
 **Files:**
 - Create: `features/economy/big_num.gd`
 - Test: `tests/unit/test_big_num.gd`
 
 **Interfaces:**
-- Produces: `class_name BigNum extends RefCounted`，字段 `mantissa: float`、`exponent: int`（值 = mantissa × 10^exponent，mantissa ∈ [1,10) 或 0）。方法：
+- Produces: `class_name BigNum extends RefCounted`锛屽瓧娈?`mantissa: float`銆乣exponent: int`锛堝€?= mantissa 脳 10^exponent锛宮antissa 鈭?[1,10) 鎴?0锛夈€傛柟娉曪細
   - `_init(v: float = 0.0)`
   - `set_value(v: float) -> void`
-  - `add(other: BigNum) -> void`（原地加）
-  - `sub(other: BigNum) -> void`（原地减）
-  - `mul_scalar(f: float) -> BigNum`（返回新 BigNum）
-  - `is_greater_or_equal(other: BigNum) -> bool`
-  - `to_value() -> float`（测试辅助）
-  - `to_dict() -> Dictionary`（`{"m": mantissa, "e": exponent}`）
-  - `static from_dict(d: Dictionary) -> BigNum`
+  - `add(other: BigNum) -> void`锛堝師鍦板姞锛?  - `sub(other: BigNum) -> void`锛堝師鍦板噺锛?  - `mul_scalar(f: float) -> BigNum`锛堣繑鍥炴柊 BigNum锛?  - `is_greater_or_equal(other: BigNum) -> bool`
+  - `to_value() -> float`锛堟祴璇曡緟鍔╋級
+  - `to_dict() -> Dictionary`锛坄{"m": mantissa, "e": exponent}`锛?  - `static from_dict(d: Dictionary) -> BigNum`
 
-- [ ] **Step 1: 写失败测试**
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_big_num.gd
@@ -137,49 +113,59 @@ func test_zero() -> void:
 
 func test_initialization_normalizes() -> void:
     var bn := BigNum.new(1234.5)
-    assert_that(bn.mantissa).is_equal_approx(1.2345)
+    assert_that(bn.mantissa).is_equal_approx(1.2345, 1e-4)
     assert_that(bn.exponent).is_equal(3)
-    assert_that(bn.to_value()).is_equal_approx(1234.5)
+    assert_that(bn.to_value()).is_equal_approx(1234.5, 1e-4)
 
 func test_add_with_carry() -> void:
     var a := BigNum.new(9.5)
     var b := BigNum.new(0.8)
     a.add(b)
-    assert_that(a.to_value()).is_equal_approx(10.3)
+    assert_that(a.to_value()).is_equal_approx(10.3, 1e-4)
     assert_that(a.exponent).is_equal(1)
 
 func test_sub() -> void:
     var a := BigNum.new(500.0)
     var b := BigNum.new(499.0)
     a.sub(b)
-    assert_that(a.to_value()).is_equal_approx(1.0)
+    assert_that(a.to_value()).is_equal_approx(1.0, 1e-4)
 
 func test_mul_scalar() -> void:
     var a := BigNum.new(1234.0)
     var c := a.mul_scalar(0.1)
-    assert_that(c.to_value()).is_equal_approx(123.4)
-    # 原对象不变
-    assert_that(a.to_value()).is_equal_approx(1234.0)
+    assert_that(c.to_value()).is_equal_approx(123.4, 1e-4)
+    # 鍘熷璞′笉鍙?    assert_that(a.to_value()).is_equal_approx(1234.0, 1e-4)
 
 func test_compare() -> void:
     assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(998.0))).is_true()
     assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(999.0))).is_true()
     assert_that(BigNum.new(999.0).is_greater_or_equal(BigNum.new(1000.0))).is_false()
-    # 跨指数比较
-    assert_that(BigNum.new(1e9).is_greater_or_equal(BigNum.new(9e8))).is_true()
+    # 璺ㄦ寚鏁版瘮杈?    assert_that(BigNum.new(1e9).is_greater_or_equal(BigNum.new(9e8))).is_true()
+
+func test_compare_negative() -> void:
+    assert_that(BigNum.new(-500.0).is_greater_or_equal(BigNum.new(-90.0))).is_false()
+    assert_that(BigNum.new(-500.0).is_greater_or_equal(BigNum.new(10.0))).is_false()
+    assert_that(BigNum.new(-90.0).is_greater_or_equal(BigNum.new(-500.0))).is_true()
+
+func test_no_inf_storage() -> void:
+    var a := BigNum.new(1e308)
+    var b := BigNum.new(1e308)
+    a.add(b)
+    assert_that(is_inf(a.mantissa)).is_false()
+    assert_that(a.exponent).is_equal(308)
 
 func test_serialization_roundtrip() -> void:
     var bn := BigNum.new(5702887.0)
     var back := BigNum.from_dict(bn.to_dict())
-    assert_that(back.to_value()).is_equal_approx(5702887.0)
+    assert_that(back.to_value()).is_equal_approx(5702887.0, 1e-4)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_big_num.gd`
-Expected: FAIL（无法解析 `BigNum` 类）
+Expected: FAIL锛堟棤娉曡В鏋?`BigNum` 绫伙級
 
-- [ ] **Step 3: 实现 features/economy/big_num.gd**
+- [ ] **Step 3: 瀹炵幇 features/economy/big_num.gd**
 
 ```gdscript
 class_name BigNum
@@ -233,6 +219,14 @@ func mul_scalar(f: float) -> BigNum:
     return out
 
 func is_greater_or_equal(other: BigNum) -> bool:
+    var self_neg := mantissa < 0.0
+    var other_neg := other.mantissa < 0.0
+    if self_neg != other_neg:
+        return other_neg
+    if self_neg:
+        if exponent != other.exponent:
+            return exponent < other.exponent
+        return mantissa <= other.mantissa
     if exponent != other.exponent:
         return exponent > other.exponent
     return mantissa >= other.mantissa
@@ -251,34 +245,29 @@ static func from_dict(d: Dictionary) -> BigNum:
     return bn
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_big_num.gd`
-Expected: PASS（8 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/economy/big_num.gd tests/unit/test_big_num.gd
-git commit -m "feat: BigNum 大数模块（尾数/指数/加减乘/比较/序列化）"
+git commit -m "feat: BigNum 澶ф暟妯″潡锛堝熬鏁?鎸囨暟/鍔犲噺涔?姣旇緝/搴忓垪鍖栵級"
 ```
 
 ---
 
-### Task 3: 斐波那契成本模块 cost_calculator.gd
+### Task 3: 鏂愭尝閭ｅ鎴愭湰妯″潡 cost_calculator.gd
 
 **Files:**
 - Create: `features/economy/cost_calculator.gd`
 - Test: `tests/unit/test_cost_calculator.gd`
 
 **Interfaces:**
-- Consumes: 无
-- Produces: `class_name CostCalculator extends RefCounted`：
-  - `static func fib(n: int) -> int`（F₁=F₂=1）
-  - `static func leaf_cost(level: int) -> int`（500×fib(level+1)）
-  - `static func branch_cost(level: int) -> int`（1200×fib(level+1)）
-
-- [ ] **Step 1: 写失败测试**
+- Consumes: 鏃?- Produces: `class_name CostCalculator extends RefCounted`锛?  - `static func fib(n: int) -> int`锛團鈧?F鈧?1锛?  - `static func leaf_cost(level: int) -> int`锛?00脳fib(level+1)锛?  - `static func branch_cost(level: int) -> int`锛?200脳fib(level+1)锛?
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_cost_calculator.gd
@@ -293,8 +282,7 @@ func test_fib_first_terms() -> void:
     assert_that(CostCalculator.fib(6)).is_equal(8)
 
 func test_fib_34_is_easter_egg_number() -> void:
-    # 伦纳德之律彩蛋数字
-    assert_that(CostCalculator.fib(34)).is_equal(5702887)
+    # 浼︾撼寰蜂箣寰嬪僵铔嬫暟瀛?    assert_that(CostCalculator.fib(34)).is_equal(5702887)
 
 func test_leaf_cost() -> void:
     assert_that(CostCalculator.leaf_cost(0)).is_equal(500)
@@ -308,12 +296,11 @@ func test_branch_cost() -> void:
     assert_that(CostCalculator.branch_cost(2)).is_equal(2400)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_cost_calculator.gd`
-Expected: FAIL（无法解析 `CostCalculator`）
-
-- [ ] **Step 3: 实现 features/economy/cost_calculator.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`CostCalculator`锛?
+- [ ] **Step 3: 瀹炵幇 features/economy/cost_calculator.gd**
 
 ```gdscript
 class_name CostCalculator
@@ -339,33 +326,29 @@ static func branch_cost(level: int) -> int:
     return 1200 * fib(level + 1)
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_cost_calculator.gd`
-Expected: PASS（4 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/economy/cost_calculator.gd tests/unit/test_cost_calculator.gd
-git commit -m "feat: 斐波那契成本模块（fib/叶序螺旋/分枝序）"
+git commit -m "feat: 鏂愭尝閭ｅ鎴愭湰妯″潡锛坒ib/鍙跺簭铻烘棆/鍒嗘灊搴忥級"
 ```
 
 ---
 
-### Task 4: 数字格式化模块 formatter.gd
+### Task 4: 鏁板瓧鏍煎紡鍖栨ā鍧?formatter.gd
 
 **Files:**
 - Create: `features/economy/formatter.gd`
 - Test: `tests/unit/test_formatter.gd`
 
 **Interfaces:**
-- Consumes: `BigNum`（big_num.gd）
-- Produces: `class_name Formatter extends RefCounted`：
-  - `static func format_number(bn: BigNum) -> String`（<1000 显示原值（≤2 位小数）；≥1000 用 K/M/B/T 后缀，保留 2 位小数去尾零）
-  - `static func format_cost(cost: int) -> String`（整数千分位）
-
-- [ ] **Step 1: 写失败测试**
+- Consumes: `BigNum`锛坆ig_num.gd锛?- Produces: `class_name Formatter extends RefCounted`锛?  - `static func format_number(bn: BigNum) -> String`锛?1000 鏄剧ず鍘熷€硷紙鈮? 浣嶅皬鏁帮級锛涒墺1000 鐢?K/M/B/T 鍚庣紑锛屼繚鐣?2 浣嶅皬鏁板幓灏鹃浂锛?  - `static func format_cost(cost: int) -> String`锛堟暣鏁板崈鍒嗕綅锛?
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_formatter.gd
@@ -387,12 +370,11 @@ func test_cost_format() -> void:
     assert_that(Formatter.format_cost(5702887)).is_equal("5,702,887")
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_formatter.gd`
-Expected: FAIL（无法解析 `Formatter`）
-
-- [ ] **Step 3: 实现 features/economy/formatter.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`Formatter`锛?
+- [ ] **Step 3: 瀹炵幇 features/economy/formatter.gd**
 
 ```gdscript
 class_name Formatter
@@ -432,22 +414,21 @@ static func _trim_zeros(s: String) -> String:
     return s
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_formatter.gd`
-Expected: PASS（3 个用例全绿）
-注：若 `5702887` 格式化结果因浮点取整偏差出现 `5.7M` 之外的值（如 `5.71M`），将测试断言改为对应当前 `String.num` 四舍五入行为，或把 `_trim_zeros(String.num(mant, 2))` 中 mant 先 `floor(mant*100)/100` 再格式化，保证与断言一致——二者取其一并保持测试/实现同步。
-
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
+娉細鑻?`5702887` 鏍煎紡鍖栫粨鏋滃洜娴偣鍙栨暣鍋忓樊鍑虹幇 `5.7M` 涔嬪鐨勫€硷紙濡?`5.71M`锛夛紝灏嗘祴璇曟柇瑷€鏀逛负瀵瑰簲褰撳墠 `String.num` 鍥涜垗浜斿叆琛屼负锛屾垨鎶?`_trim_zeros(String.num(mant, 2))` 涓?mant 鍏?`floor(mant*100)/100` 鍐嶆牸寮忓寲锛屼繚璇佷笌鏂█涓€鑷粹€斺€斾簩鑰呭彇鍏朵竴骞朵繚鎸佹祴璇?瀹炵幇鍚屾銆?
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/economy/formatter.gd tests/unit/test_formatter.gd
-git commit -m "feat: 数字格式化模块（后缀/千分位）"
+git commit -m "feat: 鏁板瓧鏍煎紡鍖栨ā鍧楋紙鍚庣紑/鍗冨垎浣嶏級"
 ```
 
 ---
 
-### Task 5: 游戏状态 game_state.gd
+### Task 5: 娓告垙鐘舵€?game_state.gd
 
 **Files:**
 - Create: `features/game/game_state.gd`
@@ -455,12 +436,11 @@ git commit -m "feat: 数字格式化模块（后缀/千分位）"
 
 **Interfaces:**
 - Consumes: `BigNum`
-- Produces: `class_name GameState extends RefCounted`，字段 `daylight: BigNum`、`sap: BigNum`、`growth: BigNum`、`leaf_level: int = 0`、`branch_level: int = 0`、`tick: int = 0`、`hope: int = 1`。方法：
+- Produces: `class_name GameState extends RefCounted`锛屽瓧娈?`daylight: BigNum`銆乣sap: BigNum`銆乣growth: BigNum`銆乣leaf_level: int = 0`銆乣branch_level: int = 0`銆乣tick: int = 0`銆乣hope: int = 1`銆傛柟娉曪細
   - `_init()`
   - `to_dict() -> Dictionary`
-  - `static from_dict(d: Dictionary) -> GameState`（字段缺失回退默认）
-
-- [ ] **Step 1: 写失败测试**
+  - `static from_dict(d: Dictionary) -> GameState`锛堝瓧娈电己澶卞洖閫€榛樿锛?
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_game_state.gd
@@ -482,23 +462,22 @@ func test_serialization_roundtrip() -> void:
     s.leaf_level = 3
     s.tick = 60
     var back := GameState.from_dict(s.to_dict())
-    assert_that(back.daylight.to_value()).is_equal_approx(42.0)
+    assert_that(back.daylight.to_value()).is_equal_approx(42.0, 1e-4)
     assert_that(back.leaf_level).is_equal(3)
     assert_that(back.tick).is_equal(60)
 
 func test_from_dict_missing_fields_fallback() -> void:
     var back := GameState.from_dict({"sap": {"m": 7.0, "e": 0}})
-    assert_that(back.sap.to_value()).is_equal_approx(7.0)
+    assert_that(back.sap.to_value()).is_equal_approx(7.0, 1e-4)
     assert_that(back.leaf_level).is_equal(0)
     assert_that(back.hope).is_equal(1)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_state.gd`
-Expected: FAIL（无法解析 `GameState`）
-
-- [ ] **Step 3: 实现 features/game/game_state.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`GameState`锛?
+- [ ] **Step 3: 瀹炵幇 features/game/game_state.gd**
 
 ```gdscript
 class_name GameState
@@ -540,34 +519,33 @@ static func from_dict(d: Dictionary) -> GameState:
     return s
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_state.gd`
-Expected: PASS（3 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/game/game_state.gd tests/unit/test_game_state.gd
-git commit -m "feat: 游戏状态模块（初始值/序列化）"
+git commit -m "feat: 娓告垙鐘舵€佹ā鍧楋紙鍒濆鍊?搴忓垪鍖栵級"
 ```
 
 ---
 
-### Task 6: 玩家动作模块 actions.gd
+### Task 6: 鐜╁鍔ㄤ綔妯″潡 actions.gd
 
 **Files:**
 - Create: `features/economy/actions.gd`
 - Test: `tests/unit/test_actions.gd`
 
 **Interfaces:**
-- Consumes: `GameState`、`BigNum`、`CostCalculator`
-- Produces: `class_name GameActions extends RefCounted`：
-  - `static func gather_daylight(state: GameState) -> void`
+- Consumes: `GameState`銆乣BigNum`銆乣CostCalculator`
+- Produces: `class_name GameActions extends RefCounted`锛?  - `static func gather_daylight(state: GameState) -> void`
   - `static func buy_leaf(state: GameState) -> bool`
   - `static func buy_branch(state: GameState) -> bool`
 
-- [ ] **Step 1: 写失败测试**
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_actions.gd
@@ -576,42 +554,41 @@ extends GdUnitTestSuite
 func test_gather_basic() -> void:
     var s := GameState.new()
     GameActions.gather_daylight(s)
-    assert_that(s.daylight.to_value()).is_equal_approx(1.0)
+    assert_that(s.daylight.to_value()).is_equal_approx(1.0, 1e-4)
 
 func test_gather_with_leaf_bonus() -> void:
     var s := GameState.new()
     s.leaf_level = 2  # 1 + 0.25*2 = 1.5
     GameActions.gather_daylight(s)
-    assert_that(s.daylight.to_value()).is_equal_approx(1.5)
+    assert_that(s.daylight.to_value()).is_equal_approx(1.5, 1e-4)
 
 func test_buy_leaf_success() -> void:
     var s := GameState.new()
     s.sap = BigNum.new(500.0)
     assert_that(GameActions.buy_leaf(s)).is_true()
     assert_that(s.leaf_level).is_equal(1)
-    assert_that(s.sap.to_value()).is_equal_approx(0.0)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
 
 func test_buy_leaf_insufficient() -> void:
     var s := GameState.new()
     s.sap = BigNum.new(499.0)
     assert_that(GameActions.buy_leaf(s)).is_false()
     assert_that(s.leaf_level).is_equal(0)
-    assert_that(s.sap.to_value()).is_equal_approx(499.0)
+    assert_that(s.sap.to_value()).is_equal_approx(499.0, 1e-4)
 
 func test_buy_branch_success() -> void:
     var s := GameState.new()
     s.sap = BigNum.new(1200.0)
     assert_that(GameActions.buy_branch(s)).is_true()
     assert_that(s.branch_level).is_equal(1)
-    assert_that(s.sap.to_value()).is_equal_approx(0.0)
+    assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_actions.gd`
-Expected: FAIL（无法解析 `GameActions`）
-
-- [ ] **Step 3: 实现 features/economy/actions.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`GameActions`锛?
+- [ ] **Step 3: 瀹炵幇 features/economy/actions.gd**
 
 ```gdscript
 class_name GameActions
@@ -638,33 +615,31 @@ static func buy_branch(state: GameState) -> bool:
     return true
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_actions.gd`
-Expected: PASS（5 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/economy/actions.gd tests/unit/test_actions.gd
-git commit -m "feat: 玩家动作模块（舒展叶片/购买升级）"
+git commit -m "feat: 鐜╁鍔ㄤ綔妯″潡锛堣垝灞曞彾鐗?璐拱鍗囩骇锛?
 ```
 
 ---
 
-### Task 7: 游戏循环模块 game_loop.gd
+### Task 7: 娓告垙寰幆妯″潡 game_loop.gd
 
 **Files:**
 - Create: `features/game/game_loop.gd`
 - Test: `tests/unit/test_game_loop.gd`
 
 **Interfaces:**
-- Consumes: `GameState`、`BigNum`
-- Produces: `class_name GameLoop extends RefCounted`：
-  - `static func tick(state: GameState) -> void`
-  - `static func should_auto_save(state: GameState) -> bool`（`state.tick > 0 and state.tick % 60 == 0`）
-
-- [ ] **Step 1: 写失败测试**
+- Consumes: `GameState`銆乣BigNum`
+- Produces: `class_name GameLoop extends RefCounted`锛?  - `static func tick(state: GameState) -> void`
+  - `static func should_auto_save(state: GameState) -> bool`锛坄state.tick > 0 and state.tick % 60 == 0`锛?
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_game_loop.gd
@@ -675,28 +650,28 @@ func test_tick_increments_and_photosynthesis() -> void:
     s.daylight = BigNum.new(100.0)
     GameLoop.tick(s)
     assert_that(s.tick).is_equal(1)
-    assert_that(s.sap.to_value()).is_equal_approx(10.0)  # 100 × 0.1
-    assert_that(s.daylight.to_value()).is_equal_approx(100.0)  # 无分支时日光不变
+    assert_that(s.sap.to_value()).is_equal_approx(10.0, 1e-4)  # 100 脳 0.1
+    assert_that(s.daylight.to_value()).is_equal_approx(100.0, 1e-4)  # 鏃犲垎鏀椂鏃ュ厜涓嶅彉
 
 func test_tick_auto_collect() -> void:
     var s := GameState.new()
     s.branch_level = 3
     s.daylight = BigNum.new(10.0)
     GameLoop.tick(s)
-    assert_that(s.daylight.to_value()).is_equal_approx(13.0)  # 10 + 3×1
+    assert_that(s.daylight.to_value()).is_equal_approx(13.0, 1e-4)  # 10 + 3脳1
 
 func test_tick_auto_collect_with_leaf_bonus() -> void:
     var s := GameState.new()
     s.branch_level = 2
-    s.leaf_level = 2  # 2 × 1.5 = 3
+    s.leaf_level = 2  # 2 脳 1.5 = 3
     GameLoop.tick(s)
-    assert_that(s.daylight.to_value()).is_equal_approx(3.0)
+    assert_that(s.daylight.to_value()).is_equal_approx(3.0, 1e-4)
 
 func test_tick_growth() -> void:
     var s := GameState.new()
     s.sap = BigNum.new(200.0)
     GameLoop.tick(s)
-    assert_that(s.growth.to_value()).is_equal_approx(2.0)  # 200 × 0.01
+    assert_that(s.growth.to_value()).is_equal_approx(2.0, 1e-4)  # 200 脳 0.01
 
 func test_should_auto_save() -> void:
     var s := GameState.new()
@@ -706,12 +681,11 @@ func test_should_auto_save() -> void:
     assert_that(GameLoop.should_auto_save(s)).is_false()
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_loop.gd`
-Expected: FAIL（无法解析 `GameLoop`）
-
-- [ ] **Step 3: 实现 features/game/game_loop.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`GameLoop`锛?
+- [ ] **Step 3: 瀹炵幇 features/game/game_loop.gd**
 
 ```gdscript
 class_name GameLoop
@@ -731,21 +705,21 @@ static func should_auto_save(state: GameState) -> bool:
     return state.tick > 0 and state.tick % 60 == 0
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_game_loop.gd`
-Expected: PASS（5 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/game/game_loop.gd tests/unit/test_game_loop.gd
-git commit -m "feat: 游戏循环模块（自动采集/光合/生长/自动存档判定）"
+git commit -m "feat: 娓告垙寰幆妯″潡锛堣嚜鍔ㄩ噰闆?鍏夊悎/鐢熼暱/鑷姩瀛樻。鍒ゅ畾锛?
 ```
 
 ---
 
-### Task 8: 存档模块 save_manager.gd
+### Task 8: 瀛樻。妯″潡 save_manager.gd
 
 **Files:**
 - Create: `features/game/save_manager.gd`
@@ -753,11 +727,10 @@ git commit -m "feat: 游戏循环模块（自动采集/光合/生长/自动存�
 
 **Interfaces:**
 - Consumes: `GameState`
-- Produces: `class_name SaveManager extends RefCounted`：
-  - `static func save(state: GameState, path: String = "user://save.json") -> void`
+- Produces: `class_name SaveManager extends RefCounted`锛?  - `static func save(state: GameState, path: String = "user://save.json") -> void`
   - `static func load_or_create(path: String = "user://save.json") -> GameState`
 
-- [ ] **Step 1: 写失败测试**
+- [ ] **Step 1: 鍐欏け璐ユ祴璇?*
 
 ```gdscript
 # tests/unit/test_save_manager.gd
@@ -777,7 +750,7 @@ func test_save_then_load_roundtrip() -> void:
     SaveManager.save(s, TEST_PATH)
     assert_that(FileAccess.file_exists(TEST_PATH)).is_true()
     var loaded := SaveManager.load_or_create(TEST_PATH)
-    assert_that(loaded.daylight.to_value()).is_equal_approx(42.0)
+    assert_that(loaded.daylight.to_value()).is_equal_approx(42.0, 1e-4)
     assert_that(loaded.leaf_level).is_equal(3)
     assert_that(loaded.tick).is_equal(120)
 
@@ -789,12 +762,11 @@ func test_load_when_missing_returns_fresh() -> void:
     assert_that(loaded.hope).is_equal(1)
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [ ] **Step 2: 杩愯纭澶辫触**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_save_manager.gd`
-Expected: FAIL（无法解析 `SaveManager`）
-
-- [ ] **Step 3: 实现 features/game/save_manager.gd**
+Expected: FAIL锛堟棤娉曡В鏋?`SaveManager`锛?
+- [ ] **Step 3: 瀹炵幇 features/game/save_manager.gd**
 
 ```gdscript
 class_name SaveManager
@@ -805,7 +777,7 @@ const DEFAULT_PATH := "user://save.json"
 static func save(state: GameState, path: String = DEFAULT_PATH) -> void:
     var f := FileAccess.open(path, FileAccess.WRITE)
     if f == null:
-        push_error("无法写入存档: %s" % path)
+        push_error("鏃犳硶鍐欏叆瀛樻。: %s" % path)
         return
     f.store_string(JSON.stringify(state.to_dict()))
     f.close()
@@ -824,42 +796,41 @@ static func load_or_create(path: String = DEFAULT_PATH) -> GameState:
     return GameState.from_dict(parsed)
 ```
 
-- [ ] **Step 4: 运行确认通过**
+- [ ] **Step 4: 杩愯纭閫氳繃**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests --add res://tests/unit/test_save_manager.gd`
-Expected: PASS（2 个用例全绿）
+Expected: PASS锛? 涓敤渚嬪叏缁匡級
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add features/game/save_manager.gd tests/unit/test_save_manager.gd
-git commit -m "feat: 存档模块（user:// JSON 读写/缺档回退）"
+git commit -m "feat: 瀛樻。妯″潡锛坲ser:// JSON 璇诲啓/缂烘。鍥為€€锛?
 ```
 
 ---
 
-### Task 9: GameManager Autoload + main 场景（集成）
+### Task 9: GameManager Autoload + main 鍦烘櫙锛堥泦鎴愶級
 
 **Files:**
 - Create: `autoloads/game_manager.gd`
 - Create: `features/ui/main.tscn`
 - Create: `features/ui/main.gd`
-- Modify: `project.godot`（注册 autoload）
-
+- Modify: `project.godot`锛堟敞鍐?autoload锛?
 **Interfaces:**
-- Consumes: `GameState`、`GameLoop`、`GameActions`、`SaveManager`、`Formatter`、`CostCalculator`
+- Consumes: `GameState`銆乣GameLoop`銆乣GameActions`銆乣SaveManager`銆乣Formatter`銆乣CostCalculator`
 - Produces:
-  - `GameManager`（Autoload，节点名 `GameManager`）：信号 `resources_changed`；方法 `gather()`、`buy_leaf() -> bool`、`buy_branch() -> bool`、`get_state() -> GameState`、`get_leaf_cost() -> int`、`get_branch_cost() -> int`
-  - `features/ui/main.tscn`：主场景（根 Control，含标题、希望行、采集按钮、资源标签、升级按钮、日志标签）
+  - `GameManager`锛圓utoload锛岃妭鐐瑰悕 `GameManager`锛夛細淇″彿 `resources_changed`锛涙柟娉?`gather()`銆乣buy_leaf() -> bool`銆乣buy_branch() -> bool`銆乣get_state() -> GameState`銆乣get_leaf_cost() -> int`銆乣get_branch_cost() -> int`
+  - `features/ui/main.tscn`锛氫富鍦烘櫙锛堟牴 Control锛屽惈鏍囬銆佸笇鏈涜銆侀噰闆嗘寜閽€佽祫婧愭爣绛俱€佸崌绾ф寜閽€佹棩蹇楁爣绛撅級
 
-- [ ] **Step 1: 注册 Autoload（修改 project.godot）**
+- [ ] **Step 1: 娉ㄥ唽 Autoload锛堜慨鏀?project.godot锛?*
 
 ```ini
 [autoload]
 GameManager="*res://autoloads/game_manager.gd"
 ```
 
-- [ ] **Step 2: 实现 autoloads/game_manager.gd**
+- [ ] **Step 2: 瀹炵幇 autoloads/game_manager.gd**
 
 ```gdscript
 extends Node
@@ -910,7 +881,7 @@ func get_branch_cost() -> int:
     return CostCalculator.branch_cost(_state.branch_level)
 ```
 
-- [ ] **Step 3: 实现 features/ui/main.gd**
+- [ ] **Step 3: 瀹炵幇 features/ui/main.gd**
 
 ```gdscript
 extends Control
@@ -936,12 +907,12 @@ func _on_gather_pressed() -> void:
 
 func _on_leaf_pressed() -> void:
     if GameManager.buy_leaf():
-        log_label.text = "叶序螺旋升至 %d 级。" % GameManager.get_state().leaf_level
+        log_label.text = "鍙跺簭铻烘棆鍗囪嚦 %d 绾с€? % GameManager.get_state().leaf_level
     _refresh()
 
 func _on_branch_pressed() -> void:
     if GameManager.buy_branch():
-        log_label.text = "分枝序升至 %d 级。" % GameManager.get_state().branch_level
+        log_label.text = "鍒嗘灊搴忓崌鑷?%d 绾с€? % GameManager.get_state().branch_level
     _refresh()
 
 func _refresh() -> void:
@@ -955,7 +926,7 @@ func _refresh() -> void:
     branch_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_branch_cost())))
 ```
 
-- [ ] **Step 4: 创建 features/ui/main.tscn**
+- [ ] **Step 4: 鍒涘缓 features/ui/main.tscn**
 
 ```
 [gd_scene load_steps=2 format=3 uid="uid://worldtreemain"]
@@ -981,52 +952,52 @@ offset_bottom = -24.0
 
 [node name="Title" type="Label" parent="VBox"]
 layout_mode = 2
-text = "世界树"
+text = "涓栫晫鏍?
 
 [node name="Hope" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "一点希望，在废墟中静静燃烧。"
+text = "涓€鐐瑰笇鏈涳紝鍦ㄥ簾澧熶腑闈欓潤鐕冪儳銆?
 
 [node name="GatherButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "舒展叶片"
+text = "鑸掑睍鍙剁墖"
 
 [node name="DaylightLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "日光：0"
+text = "鏃ュ厜锛?"
 
 [node name="SapLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "树液：0"
+text = "鏍戞恫锛?"
 
 [node name="GrowthLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "树高：0"
+text = "鏍戦珮锛?"
 
 [node name="LeafButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "叶序螺旋（日光采集 +25%/级）"
+text = "鍙跺簭铻烘棆锛堟棩鍏夐噰闆?+25%/绾э級"
 
 [node name="LeafCostLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "价格：500"
+text = "浠锋牸锛?00"
 
 [node name="BranchButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "分枝序（自动采集 +1/级）"
+text = "鍒嗘灊搴忥紙鑷姩閲囬泦 +1/绾э級"
 
 [node name="BranchCostLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "价格：1200"
+text = "浠锋牸锛?200"
 
 [node name="LogLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
@@ -1034,60 +1005,51 @@ layout_mode = 2
 text = ""
 ```
 
-- [ ] **Step 5: 运行全部测试确认无回归**
+- [ ] **Step 5: 杩愯鍏ㄩ儴娴嬭瘯纭鏃犲洖褰?*
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
-Expected: PASS（全部测试套件，含 smoke）
+Expected: PASS锛堝叏閮ㄦ祴璇曞浠讹紝鍚?smoke锛?
+- [ ] **Step 6: 鎵撳紑缂栬緫鍣ㄩ獙璇佸満鏅彲杩愯**
 
-- [ ] **Step 6: 打开编辑器验证场景可运行**
-
-Run: `godot --path .`（或编辑器打开），运行主场景
-Expected: 无脚本报错；按钮/标签按预期出现（数值为 0）
-
+Run: `godot --path .`锛堟垨缂栬緫鍣ㄦ墦寮€锛夛紝杩愯涓诲満鏅?Expected: 鏃犺剼鏈姤閿欙紱鎸夐挳/鏍囩鎸夐鏈熷嚭鐜帮紙鏁板€间负 0锛?
 - [ ] **Step 7: Commit**
 
 ```bash
 git add autoloads/game_manager.gd features/ui/main.tscn features/ui/main.gd project.godot
-git commit -m "feat: GameManager Autoload + 主场景集成（tick/信号/UI）"
+git commit -m "feat: GameManager Autoload + 涓诲満鏅泦鎴愶紙tick/淇″彿/UI锛?
 ```
 
 ---
 
-### Task 10: 集成验证与手测清单
-
+### Task 10: 闆嗘垚楠岃瘉涓庢墜娴嬫竻鍗?
 **Files:**
-- Modify: 无（纯验证）
+- Modify: 鏃狅紙绾獙璇侊級
 
 **Interfaces:**
-- Consumes: 全部前序任务产物
+- Consumes: 鍏ㄩ儴鍓嶅簭浠诲姟浜х墿
 
-- [ ] **Step 1: 全量测试**
+- [ ] **Step 1: 鍏ㄩ噺娴嬭瘯**
 
 Run: `godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`
-Expected: 全部 PASS，退出码 0
+Expected: 鍏ㄩ儴 PASS锛岄€€鍑虹爜 0
 
-- [ ] **Step 2: 手动玩法验证（对照 Global Constraints 数值规则）**
+- [ ] **Step 2: 鎵嬪姩鐜╂硶楠岃瘉锛堝鐓?Global Constraints 鏁板€艰鍒欙級**
 
-在 Godot 编辑器运行主场景，依次验证：
-- [ ] 界面显示"一点希望，在废墟中静静燃烧"（hope 叙事元素）
-- [ ] 点击 5 次「舒展叶片」→ 日光 = 5
-- [ ] 等待树液 ≥ 500 → 购买「叶序螺旋」→ 点击采集变为 +1.25
-- [ ] 购买第 2 级叶序螺旋（500）→ 采集 +1.5
-- [ ] 购买「分枝序」→ 每 tick 日光自动 +1
-- [ ] 60 秒后触发自动存档（`user://save.json` 存在）；重启游戏数值保留
-
-- [ ] **Step 3: 最终提交**
+鍦?Godot 缂栬緫鍣ㄨ繍琛屼富鍦烘櫙锛屼緷娆￠獙璇侊細
+- [ ] 鐣岄潰鏄剧ず"涓€鐐瑰笇鏈涳紝鍦ㄥ簾澧熶腑闈欓潤鐕冪儳"锛坔ope 鍙欎簨鍏冪礌锛?- [ ] 鐐瑰嚮 5 娆°€岃垝灞曞彾鐗囥€嶁啋 鏃ュ厜 = 5
+- [ ] 绛夊緟鏍戞恫 鈮?500 鈫?璐拱銆屽彾搴忚灪鏃嬨€嶁啋 鐐瑰嚮閲囬泦鍙樹负 +1.25
+- [ ] 璐拱绗?2 绾у彾搴忚灪鏃嬶紙500锛夆啋 閲囬泦 +1.5
+- [ ] 璐拱銆屽垎鏋濆簭銆嶁啋 姣?tick 鏃ュ厜鑷姩 +1
+- [ ] 60 绉掑悗瑙﹀彂鑷姩瀛樻。锛坄user://save.json` 瀛樺湪锛夛紱閲嶅惎娓告垙鏁板€间繚鐣?
+- [ ] **Step 3: 鏈€缁堟彁浜?*
 
 ```bash
 git add -A
-git commit -m "chore: Godot MVP 验证通过"
+git commit -m "chore: Godot MVP 楠岃瘉閫氳繃"
 ```
 
 ---
 
-## Self-Review 记录
+## Self-Review 璁板綍
 
-- **Spec 覆盖**：§4 具象轨（日光/树液/生长）✓（game_loop/actions）；§9 斐波那契升级组前两项 ✓（cost_calculator/actions）；开局一点希望 ✓（game_state.hope + main.tscn 文案）；存档 ✓（save_manager + GameManager 每 60 tick）。四族/梦境/明选/终局属后续里程碑，不在本计划范围（spec §12 里程碑 2-4）。
-- **占位符扫描**：无 TBD/TODO；所有步骤含具体 GDScript 与命令。
-- **类型一致性**：`BigNum`（`add/sub/mul_scalar/is_greater_or_equal/to_value/to_dict/from_dict`）、`CostCalculator.fib/leaf_cost/branch_cost`、`GameActions.gather_daylight/buy_leaf/buy_branch`、`GameLoop.tick/should_auto_save`、`SaveManager.save/load_or_create`、`GameManager` 信号与方法在各任务间签名一致；main.gd 的 `%UniqueName` 与 main.tscn 的 `unique_name_in_owner` 节点一一对应。
-- **铁律遵循**：本计划按铁律 2 先读 godot-master 并路由至 godot-genre-idle-clicker（BigNum/手动累加/信号节流/UNIX 存档规则）与 godot-testing-patterns（GdUnit4 headless）。
+- **Spec 瑕嗙洊**锛毬? 鍏疯薄杞紙鏃ュ厜/鏍戞恫/鐢熼暱锛夆湏锛坓ame_loop/actions锛夛紱搂9 鏂愭尝閭ｅ鍗囩骇缁勫墠涓ら」 鉁擄紙cost_calculator/actions锛夛紱寮€灞€涓€鐐瑰笇鏈?鉁擄紙game_state.hope + main.tscn 鏂囨锛夛紱瀛樻。 鉁擄紙save_manager + GameManager 姣?60 tick锛夈€傚洓鏃?姊﹀/鏄庨€?缁堝眬灞炲悗缁噷绋嬬锛屼笉鍦ㄦ湰璁″垝鑼冨洿锛坰pec 搂12 閲岀▼纰?2-4锛夈€?- **鍗犱綅绗︽壂鎻?*锛氭棤 TBD/TODO锛涙墍鏈夋楠ゅ惈鍏蜂綋 GDScript 涓庡懡浠ゃ€?- **绫诲瀷涓€鑷存€?*锛歚BigNum`锛坄add/sub/mul_scalar/is_greater_or_equal/to_value/to_dict/from_dict`锛夈€乣CostCalculator.fib/leaf_cost/branch_cost`銆乣GameActions.gather_daylight/buy_leaf/buy_branch`銆乣GameLoop.tick/should_auto_save`銆乣SaveManager.save/load_or_create`銆乣GameManager` 淇″彿涓庢柟娉曞湪鍚勪换鍔￠棿绛惧悕涓€鑷达紱main.gd 鐨?`%UniqueName` 涓?main.tscn 鐨?`unique_name_in_owner` 鑺傜偣涓€涓€瀵瑰簲銆?- **閾佸緥閬靛惊**锛氭湰璁″垝鎸夐搧寰?2 鍏堣 godot-master 骞惰矾鐢辫嚦 godot-genre-idle-clicker锛圔igNum/鎵嬪姩绱姞/淇″彿鑺傛祦/UNIX 瀛樻。瑙勫垯锛変笌 godot-testing-patterns锛圙dUnit4 headless锛夈€?
