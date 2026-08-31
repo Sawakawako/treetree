@@ -7,13 +7,19 @@ static func format_number(bn: BigNum) -> String:
 	if bn.mantissa == 0.0:
 		return "0"
 	var tier := bn.exponent / 3
-	if tier == 0:
+	if tier <= 0:
+		# 绝对值 < 1 的小数：直接显示原值（≤6 位有效小数，去尾零）
 		var small := bn.to_value()
-		var rounded: float = floor(small * 100.0) / 100.0
-		return _trim_zeros(String.num(rounded, 2))
+		return _trim_zeros(String.num(small, 6))
 	var mant := bn.mantissa * pow(10.0, bn.exponent - tier * 3)
+	var text := String.num(mant, 2)
+	if text.begins_with("1000"):
+		# 四舍五入进位（如 999.999 → "1000.00"）：升一档重算
+		tier += 1
+		mant = bn.mantissa * pow(10.0, bn.exponent - tier * 3)
+		text = String.num(mant, 2)
 	var idx := mini(tier, SUFFIX.size() - 1)
-	return "%s%s" % [_trim_zeros(String.num(mant, 2)), SUFFIX[idx]]
+	return "%s%s" % [_trim_zeros(text), SUFFIX[idx]]
 
 static func format_cost(cost: int) -> String:
 	var s := str(cost)
