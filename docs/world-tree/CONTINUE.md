@@ -1,6 +1,6 @@
 # 世界树（World Tree）继续指南
 
-> 新会话/新代理接手本项目的入口文档。先读本文件，再读 AGENTS.md（铁律）。
+> 新会话/新代理接手本项目的入口文档。先读本文件，再读 `AGENTS.md`（铁律），再读设计规格（权威）。
 
 ## 一、项目是什么
 
@@ -13,8 +13,8 @@
 |---|---|
 | **设计** | ✅ spec v2.3+ 完整（世界观/五阶段/系统/明选/四结局/文风画风） |
 | **MVP（里程碑 1）** | ✅ 完成（可玩文字原型，36 测试全绿） |
-| **里程碑 2** | ✅ 完成（记忆/信仰/人族/遗迹梦境，54 测试全绿 + M2 E2E VERIFY PASSED，2026-08-31 实施） |
-| **里程碑 3-5** | ⏳ 待定（四族扩展/人口/明选/终局） |
+| **里程碑 2** | ✅ 完成（记忆/信仰/人族/遗迹梦境，54 测试全绿 + M2 E2E PASSED，2026-08-31 实施） |
+| **里程碑 3-5** | ⏳ 待定（四族扩展/人口/明选/终局）——**下一步从这里挑**（见 §七） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -23,53 +23,74 @@
 |---|---|
 | 设计规格（权威） | `docs/superpowers/specs/2026-08-31-world-tree-design.md`（v2.3：双层目标/四族/梦境/灵魂/人口/九界/升级总表 90+/四结局/归还序列/文风六则/画风六则/数值骨架/明暗双线） |
 | MVP 实施计划 | `docs/superpowers/plans/2026-08-31-mvp-text-prototype.md`（Godot 版，10 任务） |
+| 里程碑 2 实施计划 | `docs/superpowers/plans/2026-08-31-milestone2-memory-races-dreams.md`（7 任务 TDD，33 步全勾选 ✅） |
 | 项目铁律 | `AGENTS.md`（铁律 1 读写作 skill / 铁律 2 读 godot-master / 铁律 5 文风 / 铁律 6 本文件） |
-| SDD 审查记录 | `.superpowers/sdd/2026-08-31-mvp-text-prototype/`（每任务 brief/report/review，含全部 ruling） |
+| SDD 审查记录（M1） | `.superpowers/sdd/2026-08-31-mvp-text-prototype/`（每任务 brief/report/review，含全部 ruling） |
 
 ## 四、技术栈与命令
 
-- **引擎**：Godot 4.7.1 mono（`godot` 在 PATH：`C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\godot.cmd`）
+- **引擎**：Godot **4.7.1** mono（`godot` 在 PATH：`C:\Users\10990\AppData\Local\Programs\Godot\Godot_v4.7.1-stable_mono_win64\godot.cmd`）——⚠️ 不是 3.x，project.godot `config_version=5` 即 4.x 格式
 - **测试**：GdUnit4 6.2.1（`addons/gdUnit4/`）
   ```powershell
   # 新增 class_name 脚本后必须先跑（否则类未注册）：
   godot --headless --path . --import
   # 全量测试：
   godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode
+  # 单文件测试（--add 指定）：
+  godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode --add res://tests/unit/test_xxx.gd
   ```
-  ⚠️ 注意：不是 `--run-tests`（旧语法）；`is_equal_approx` 是双参签名 `(expected, approx)`。
-- **运行游戏**：`godot --path .`（编辑器打开后 F5）
-- **存档**：`user://save.json`（60 tick 自动保存）
-- **编码**：中文文件一律用 edit 工具或 .NET 显式 UTF-8 读写（禁 PowerShell 默认编码——曾致乱码事故）
+  ⚠️ 注意：不是 `--run-tests`（旧语法）；`is_equal_approx` 是双参签名 `(expected, approx)`；退出码 0 = 全绿，100 = 有失败。
+- **运行游戏**：`godot --path .`（编辑器打开后 F5）；headless 冒烟：`godot --headless --path . --quit-after 5`（无 SCRIPT ERROR 即通过）
+- **存档**：`user://save.json`（60 tick 自动保存；M2 起含 memory/faith/root_depth/human_awakened/relics_found，旧档缺字段回退默认不损坏）
+- **编码**：中文文件一律用 edit/write 工具或 .NET 显式 UTF-8 读写（禁 PowerShell 默认编码——曾致乱码事故）；`.uid` 类引用文件要入库（Godot 4.4+ 自动生成）
+- **git**：master 分支；每任务一个 commit，风格 `feat: 模块名（要点）`
 
 ## 五、架构速览（Layer Cake）
 
 ```
-autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）+ resources_changed 信号 + 60tick 存档
+autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）+ resources_changed 信号 + 60tick 存档 + explore_relic 入口 + 人族 tick
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契成本）/ Formatter（格式化）/ GameActions（动作）
-features/game/              # GameState（状态）/ GameLoop（tick 逻辑）/ SaveManager（user:// 存档）
-features/ui/                # main.tscn + main.gd（只监听信号，不直改数据）
-tests/unit/                 # GdUnit4 测试（36 个）
+features/game/              # GameState（状态：含 memory/faith/root_depth/human_awakened/relics_found）/ GameLoop（tick 逻辑）/ SaveManager
+features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
+features/races/             # HumanManager（人族：记忆≥2 唤醒；每 10 tick 信仰+1；每 20 tick 记忆+1）
+features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/人族事件）
+tests/unit/                 # GdUnit4 测试（54 个，12 套件）
 ```
-规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源）；升级成本斐波那契（spec §9）。
+规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
-## 六、里程碑 2 范围（✅ 已实施，2026-08-31）
+## 六、里程碑 2 完成记录（2026-08-31）
 
-**MVP-2 最小可玩增量（已完成）**：
-- 记忆（梦珀）资源 + 遗迹系统（数据驱动：遗迹 id/名称/梦境碎片文本/奖励）→ `features/dreams/relic_library.gd`
-- 根须探索（深度解锁遗迹，消耗树液 200/次，一次性 +1 记忆）→ `features/dreams/root_actions.gd`
-- 信仰资源（人族献梦产生：每 10 tick +1）→ `features/races/human_manager.gd`
-- 人族（说书人）唤醒事件（记忆≥2 触发；每 20 tick 记忆 +1）
-- 梦境碎片文本 4 个（诗歌化文风，spec §11.1 六则）
-- UI：记忆/信仰显示、根须探索按钮、梦境文本弹层、人族事件 → `features/ui/main.tscn` + `main.gd`
-- 验证：54 单测全绿 + `M2 E2E VERIFY PASSED`（27 项端到端检查）
+**内容**：记忆（梦珀）+ 遗迹系统（4 遗迹数据驱动）→ `features/dreams/relic_library.gd`；根须探索（深度解锁遗迹，200 树液/次）→ `features/dreams/root_actions.gd`；信仰资源（人族献梦每 10 tick +1）+ 人族唤醒（记忆≥2，每 20 tick 记忆 +1）→ `features/races/human_manager.gd`；梦境碎片文本 4 个（文风六则）；UI 扩展（记忆/信仰显示、根须按钮、梦境弹层、人族事件）。
 
-**实施记录**：计划 `docs/superpowers/plans/2026-08-31-milestone2-memory-races-dreams.md`（7 任务 TDD，33 步全勾选）。
-**实施偏离**（计划书小坑，已修正）：① `Array[int]` 赋 untyped 字面量报错，用 `.assign()`/`Array[int](...)` 修正（Godot 4 typed array 严格性）；② `Array.contains()` → `Array.has()`；③ `var gm: Node` 静态类型无法推断动态方法 → 改无类型 + 显式 `Dictionary` 返回；④ autoload 单例不可 `GameManager.new()` → `preload` 脚本建实例；⑤ GDScript lambda 按值捕获 → Dictionary 包装回写；⑥ `OS.set_exit_code` 静态调用错误 → `quit(code)`。
+**验证**：54 单测全绿（0 失败 0 orphan）+ 临时 E2E 脚本 27 项检查全 PASS（采集→攒树液→4 遗迹→唤醒→产信仰/记忆→存档往返→旧档兼容，验证后已删除）。
 
-**暂不做（里程碑 3+）**：林地民/石裔/野民、人口 S 曲线、记忆图书馆、明选、奇迹。
-**数值**：沿用 spec §14 骨架（记忆≥2 唤醒人族；遗迹一次性记忆；信仰=献梦产出）。
+**实施偏离记录**（计划书小坑，已修正，写新计划时引以为戒）：
+1. `Array[int]` 属性不能直接赋 untyped 字面量/`map()` 结果——用 `.assign()`（`s.relics_found.assign(rf.map(...))`）；`Array[int](...)` 构造语法在 4.7 解析报错不可用
+2. `Array.contains()` 不存在——用 `Array.has()`
+3. `var gm: Node` 下 `gm.explore_relic()` 静态推断失败——用无类型 var + 显式 `var result: Dictionary`
+4. autoload 单例不可 `GameManager.new()`（"Nonexistent function 'new'"）——测试里 `const GM := preload("res://autoloads/game_manager.gd")` 再 `.new()`
+5. GDScript lambda **按值捕获**局部变量——lambda 里改不了外部 bool；用 Dictionary 包装回写（`got["relic"] = true`）
+6. `OS.set_exit_code()` 静态调用报错——SceneTree 脚本直接 `quit(code)`
 
-## 七、文风速查（铁律 5）
+**数值**：探索 200 树液、记忆≥2 唤醒、信仰每 10 tick +1、记忆每 20 tick +1（spec §14 骨架；如有手感问题记录偏离并回填 spec）。
+
+## 七、下一步：里程碑 3+ 候选（待主人挑选）
+
+从 CONTINUE.md 原范围与 spec §14 出发，按依赖顺序建议：
+
+| 候选 | 内容 | 依赖 | 建议 |
+|---|---|---|---|
+| **四族扩展（第一优先）** | 林地民/石裔/野民三族加入（人族已有），各族特性/人口 | HumanManager 模式可复用 | ⭐ 推荐先做：把 HumanManager 泛化为 RaceManager 数据驱动，三族各一张表 |
+| **记忆图书馆** | 已发现的遗迹/梦境碎片可回看（遗迹 4 个后没内容了，需要消耗口） | 遗迹系统 | 与四族并行可选 |
+| **人口 S 曲线** | 各族人口增长曲线（spec §14 骨架） | 四族系统 | 跟随四族 |
+| **明选** | 玩家明面选择（代价/收益可见） | 四族+人口 | 中后期 |
+| **奇迹** | 终局内容 | 全部 | 最后 |
+
+**文本归档**（可随时做）：把已产出的五阶段文本（遗迹梦境/人族事件等）落成 `docs/world-tree/narrative/` 文档。
+
+**实施流程**（按 DSH 编程模式，铁律 4）：先读写作 skill（铁律 1）与 godot-master（铁律 2）→ writing-plans 写实施计划 → 主人确认 → TDD/SDD 逐任务执行（先失败测试 → 实现 → 验证 → commit）。
+
+## 八、文风速查（铁律 5）
 
 诗歌化·柔和六则：短句呼吸 / 意象代替说明 / 留白不写尽 / 柔和如风 / 自然词汇（露光土风河火灰种子）/ 人称柔软。
-写作任务完成默认过 `humanize-ai` 自检。详见 spec §11.1。
+所有游戏内文本（心语/事件/明选/结局/遗迹碎片/升级消息）必须遵循；写作任务完成默认过 `humanize-ai` 自检。详见 spec §11.1（文风六则）与 §11.2（画风规范：梦与画/水彩晕染/留白构图/光为主角；MVP 白+暖色 `#f5f0e6` / `#e6a23c`）。
