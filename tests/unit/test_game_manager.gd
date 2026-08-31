@@ -28,14 +28,14 @@ func test_getters() -> void:
     gm._state.memory = BigNum.new(5.0)
     gm._state.faith = BigNum.new(3.0)
     gm._state.root_depth = 2
-    gm._state.human_awakened = true
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
     assert_that(gm.get_memory().to_value()).is_equal_approx(5.0, 1e-4)
     assert_that(gm.get_faith().to_value()).is_equal_approx(3.0, 1e-4)
     assert_that(gm.get_root_depth()).is_equal(2)
     assert_that(gm.is_human_awakened()).is_true()
 
 func test_human_awakens_during_play() -> void:
-    # C1 回归：游戏中记忆≥2 后，tick 链路必须触发唤醒（不能只靠读档 _ready）
+    # C1 回归（M3 语义）：游戏中记忆≥2 后，tick 链路必须触发唤醒
     gm._state = GameState.new()
     gm._state.sap = BigNum.new(200.0)
     gm.explore_relic()
@@ -46,20 +46,23 @@ func test_human_awakens_during_play() -> void:
     gm._process(1.0)
     assert_that(gm.is_human_awakened()).is_true()
 
-func test_human_awakened_signal_emitted() -> void:
-    # I4：唤醒时须发出 human_awakened 信号（UI 靠信号而非轮询）
+func test_race_awakened_signal_emitted() -> void:
+    # I4 回归（M3）：唤醒时发出 race_awakened（含种族名与文本）
     gm._state = GameState.new()
     gm._state.sap = BigNum.new(200.0)
     gm.explore_relic()
     gm._state.sap = BigNum.new(200.0)
     gm.explore_relic()
-    var got := {"awakened": false}
-    gm.human_awakened.connect(func() -> void: got["awakened"] = true)
+    var got := {"awakened": false, "name": ""}
+    gm.race_awakened.connect(func(id: StringName, name: String, text: String) -> void:
+        got["awakened"] = true
+        got["name"] = name)
     gm._process(1.0)
     assert_that(got["awakened"]).is_true()
+    assert_that(got["name"]).is_equal("人族")
 
 func test_human_produces_faith_after_awaken() -> void:
-    # C1 回归：唤醒后 tick=10 边界产信仰（集成链路，非单测直调）
+    # M3 公式：唤醒后每 tick 产 50×1.0×0.002 = 0.1 信仰（原 M2 平铺 +1.0 已废弃）
     gm._state = GameState.new()
     gm._state.sap = BigNum.new(200.0)
     gm.explore_relic()
@@ -68,4 +71,4 @@ func test_human_produces_faith_after_awaken() -> void:
     gm._state.tick = 9
     gm._process(1.0)
     assert_that(gm.is_human_awakened()).is_true()
-    assert_that(gm.get_faith().to_value()).is_equal_approx(1.0, 1e-4)
+    assert_that(gm.get_faith().to_value()).is_equal_approx(0.1, 1e-4)

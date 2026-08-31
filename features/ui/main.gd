@@ -12,7 +12,7 @@ extends Control
 @onready var faith_label: Label = %FaithLabel
 @onready var root_button: Button = %RootExploreButton
 @onready var dream_text_label: Label = %DreamTextLabel
-@onready var human_event_label: Label = %HumanEventLabel
+@onready var race_event_label: Label = %RaceEventLabel
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -21,14 +21,15 @@ func _ready() -> void:
     root_button.pressed.connect(_on_root_pressed)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
-    GameManager.human_awakened.connect(_on_human_awakened)
+    GameManager.race_awakened.connect(_on_race_awakened)
     # 读档恢复的唤醒发生在 autoload _ready（早于本场景），信号已发出——此处兜底播报
     if GameManager.is_human_awakened():
-        _on_human_awakened()
+        var human := GameManager.get_race(&"human")
+        _on_race_awakened(human.id, human.display_name, human.awaken_text)
     _refresh()
 
-func _on_human_awakened() -> void:
-    human_event_label.text = "土里传来一个苍老的声音：\n「你在听吗？……我是最后一个说梦的人。我梦见你很多年了。」"
+func _on_race_awakened(race_id: StringName, race_name: String, awaken_text: String) -> void:
+    race_event_label.text = awaken_text
 
 func _on_gather_pressed() -> void:
     GameManager.gather()

@@ -2,7 +2,7 @@ extends Node
 
 signal resources_changed
 signal relic_discovered(relic_name: String, dream_text: String)
-signal human_awakened
+signal race_awakened(race_id: StringName, race_name: String, awaken_text: String)
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -12,22 +12,18 @@ var _tick_accumulator := 0.0
 
 func _ready() -> void:
     _state = SaveManager.load_or_create(SAVE_PATH)
-    _try_awaken()
 
 func _process(delta: float) -> void:
     _tick_accumulator += delta
     if _tick_accumulator >= TICK_INTERVAL:
         _tick_accumulator -= TICK_INTERVAL
         GameLoop.tick(_state)
-        _try_awaken()
-        HumanManager.tick_human(_state)
+        var events: Array[Dictionary] = RaceManager.tick_races(_state)
+        for ev in events:
+            race_awakened.emit(ev["race_id"], ev["race_name"], ev["awaken_text"])
         if GameLoop.should_auto_save(_state):
             SaveManager.save(_state, SAVE_PATH)
         resources_changed.emit()
-
-func _try_awaken() -> void:
-    if HumanManager.check_awaken(_state):
-        human_awakened.emit()
 
 func get_state() -> GameState:
     return _state
@@ -72,4 +68,7 @@ func get_root_depth() -> int:
     return _state.root_depth
 
 func is_human_awakened() -> bool:
-    return _state.human_awakened
+    return _state.races.has(&"human") and bool(_state.races[&"human"].get("awakened", false))
+
+func get_race(id: StringName) -> RaceData:
+    return RaceManager.get_race(id)

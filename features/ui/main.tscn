@@ -98,7 +98,7 @@ layout_mode = 2
 text = ""
 autowrap_mode = 3
 
-[node name="HumanEventLabel" type="Label" parent="VBox"]
+[node name="RaceEventLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
