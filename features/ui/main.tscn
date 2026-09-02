@@ -331,3 +331,38 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "让它沉回河底"
+
+[node name="ChoicePanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ChoiceVBox" type="VBoxContainer" parent="VBox/ChoicePanel"]
+layout_mode = 2
+
+[node name="ChoiceTitleLabel" type="Label" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="ChoiceIntroLabel" type="Label" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="ChoiceOptionAButton" type="Button" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+
+[node name="ChoiceOptionBButton" type="Button" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+
+[node name="ChoiceOptionCButton" type="Button" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""

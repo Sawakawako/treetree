@@ -69,6 +69,12 @@ const RELATION_COLORS := {
 @onready var plunder_soul_forest_button: Button = %PlunderSoulForestButton
 @onready var plunder_soul_stone_button: Button = %PlunderSoulStoneButton
 @onready var plunder_soul_wild_button: Button = %PlunderSoulWildButton
+@onready var choice_panel: PanelContainer = %ChoicePanel
+@onready var choice_title_label: Label = %ChoiceTitleLabel
+@onready var choice_intro_label: Label = %ChoiceIntroLabel
+@onready var choice_option_a_button: Button = %ChoiceOptionAButton
+@onready var choice_option_b_button: Button = %ChoiceOptionBButton
+@onready var choice_option_c_button: Button = %ChoiceOptionCButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -95,6 +101,11 @@ func _ready() -> void:
     intimate_stone_button.pressed.connect(func(): _on_intimate_pressed(&"stoneborn"))
     intimate_wild_button.pressed.connect(func(): _on_intimate_pressed(&"wildfolk"))
     GameManager.intimate_done.connect(_on_intimate_done)
+    choice_option_a_button.pressed.connect(func(): _on_choice_pressed(&"a"))
+    choice_option_b_button.pressed.connect(func(): _on_choice_pressed(&"b"))
+    choice_option_c_button.pressed.connect(func(): _on_choice_pressed(&"c"))
+    GameManager.choice_available.connect(_on_choice_available)
+    GameManager.choice_resolved.connect(_on_choice_resolved)
     revive_human_button.pressed.connect(func(): _on_revive_pressed(&"human"))
     revive_forest_button.pressed.connect(func(): _on_revive_pressed(&"forestfolk"))
     revive_stone_button.pressed.connect(func(): _on_revive_pressed(&"stoneborn"))
@@ -114,6 +125,11 @@ func _ready() -> void:
         var human := GameManager.get_race(&"human")
         if human != null:
             _on_race_awakened(human.id, human.display_name, human.awaken_text)
+    # 读档恢复兜底：_pending_choice 非空（同进程场景重载）时重发弹层
+    if GameManager._pending_choice != &"":
+        var c := ChoiceLibrary.get_choice(GameManager._pending_choice)
+        if not c.is_empty():
+            _on_choice_available(GameManager._pending_choice, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
     _refresh()
 
 func _on_race_awakened(race_id: StringName, race_name: String, awaken_text: String) -> void:
@@ -377,4 +393,35 @@ func _on_soul_revived(race_id: StringName, pop_gain: int) -> void:
 func _on_soul_plundered(race_id: StringName, pop_loss: int) -> void:
     race_event_label.text = "河水满了一分。有人沉默了。"
     log_label.text = "（你让 %d 人，沉回河底。）" % pop_loss
+    _refresh()
+
+func _on_choice_available(choice_id: StringName, title: String, intro: String, options: Array) -> void:
+    choice_title_label.text = title
+    choice_intro_label.text = intro
+    var s := GameManager.get_state()
+    var buttons := [choice_option_a_button, choice_option_b_button, choice_option_c_button]
+    for i in mini(options.size(), buttons.size()):
+        var opt: Variant = options[i]
+        if typeof(opt) != TYPE_DICTIONARY:
+            buttons[i].visible = false
+            continue
+        var opt_id := StringName(str(opt.get("id", "")))
+        buttons[i].visible = true
+        buttons[i].text = str(opt.get("text", ""))
+        buttons[i].disabled = not ChoiceActions.option_unlocked(s, choice_id, opt_id)
+    for i in range(options.size(), buttons.size()):
+        buttons[i].visible = false
+    choice_panel.visible = true
+
+func _on_choice_pressed(option_id: StringName) -> void:
+    # 当前弹层的 choice_id 由 GameManager._pending_choice 持有，经 resolve_choice 校验
+    var s := GameManager.get_state()
+    var cid := GameManager._pending_choice
+    var result: Dictionary = GameManager.resolve_choice(cid, option_id)
+    # 成功显示由 _on_choice_resolved 处理；失败静默（门槛拦截已在按钮 disabled 挡住）
+
+func _on_choice_resolved(choice_id: StringName, option_id: StringName, result_text: String, option_text: String) -> void:
+    race_event_label.text = result_text
+    log_label.text = "（明选·%s）" % option_text
+    choice_panel.visible = false
     _refresh()
