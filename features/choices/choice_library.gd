@@ -17,14 +17,18 @@ static func _load_raw() -> Array[Dictionary]:
 		return _cache
 	var text := f.get_as_text()
 	f.close()
+	_cache.assign(_parse_content(text))
+	return _cache
+
+static func _parse_content(text: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	var parsed: Variant = JSON.parse_string(text)
 	if typeof(parsed) != TYPE_DICTIONARY:
-		push_error("明选 JSON 解析失败: %s" % DATA_PATH)
-		return _cache
+		push_error("明选 JSON 解析失败")
+		return out
 	var list: Variant = parsed.get("choices", [])
 	if typeof(list) != TYPE_ARRAY:
-		push_error("明选 JSON 缺 choices 数组")
-		return _cache
+		return out
 	var seen: Dictionary = {}
 	for item: Variant in list:
 		if typeof(item) != TYPE_DICTIONARY:
@@ -38,8 +42,8 @@ static func _load_raw() -> Array[Dictionary]:
 		if str(item.get("title", "")).is_empty() or str(item.get("intro", "")).is_empty():
 			continue
 		seen[id] = true
-		_cache.append(item)
-	return _cache
+		out.append(item)
+	return out
 
 static func load_all() -> Array[Dictionary]:
 	return _load_raw()

@@ -45,3 +45,19 @@ func test_theseus_c_option_has_unlock_gate() -> void:
 	var opts: Array = c.get("options", [])
 	var c_opt: Dictionary = opts[2]
 	assert_that(int(c_opt.get("unlock", {}).get("insight_gte", 0))).is_equal(8)
+
+func test_parse_bad_json_returns_empty() -> void:
+	var r := ChoiceLibrary._parse_content("not json {{{")
+	assert_that(r.is_empty()).is_true()
+
+func test_parse_duplicate_id_filtered() -> void:
+	var text := '{"choices": [{"id": "a", "title": "T", "intro": "I", "options": [{"id": "x", "text": "t"}]}, {"id": "a", "title": "T2", "intro": "I2", "options": [{"id": "y", "text": "t"}]}]}'
+	var r := ChoiceLibrary._parse_content(text)
+	assert_that(r.size()).is_equal(1)
+	assert_that(str(r[0].get("title", ""))).is_equal("T")
+
+func test_parse_empty_options_filtered() -> void:
+	var text := '{"choices": [{"id": "a", "title": "T", "intro": "I", "options": []}, {"id": "b", "title": "T2", "intro": "I2", "options": [{"id": "y", "text": "t"}]}]}'
+	var r := ChoiceLibrary._parse_content(text)
+	assert_that(r.size()).is_equal(1)
+	assert_that(str(r[0].get("id", ""))).is_equal("b")
