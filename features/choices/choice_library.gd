@@ -28,6 +28,7 @@ static func _parse_content(text: String) -> Array[Dictionary]:
 		return out
 	var list: Variant = parsed.get("choices", [])
 	if typeof(list) != TYPE_ARRAY:
+		push_error("明选 JSON 缺 choices 数组")
 		return out
 	var seen: Dictionary = {}
 	for item: Variant in list:
