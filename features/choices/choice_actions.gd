@@ -80,3 +80,61 @@ static func option_unlocked(state: GameState, choice_id: StringName, option_id: 
 			return true
 		return _trigger_met(state, unlock)
 	return false
+
+static func _apply_effects(state: GameState, effects: Dictionary) -> void:
+	if effects.has("memory"):
+		state.memory.add(BigNum.new(float(effects["memory"])))
+	if effects.has("faith"):
+		state.faith.add(BigNum.new(float(effects["faith"])))
+	if effects.has("growth_pct"):
+		var p := float(effects["growth_pct"])
+		state.growth.add(BigNum.new(state.growth.to_value() * p))
+	if effects.has("faith_pct"):
+		var p2 := float(effects["faith_pct"])
+		state.faith.add(BigNum.new(state.faith.to_value() * p2))
+	if effects.has("relation"):
+		for rid in effects["relation"]:
+			RelationActions.apply_change(state, StringName(str(rid)), int(effects["relation"][rid]))
+	if effects.has("insight"):
+		state.insight += int(effects["insight"])
+	if effects.has("truth"):
+		state.truth += int(effects["truth"])
+	if effects.has("drift"):
+		state.drift_extra += float(effects["drift"])
+	if effects.has("memory_eff"):
+		for rid2 in effects["memory_eff"]:
+			state.race_memory_eff[rid2] = float(effects["memory_eff"][rid2])
+	if effects.has("soul"):
+		var soul_op: Dictionary = effects["soul"]
+		if soul_op.has("soul_cost"):
+			state.soul_river = maxi(state.soul_river - int(soul_op["soul_cost"]), 0)
+		if soul_op.has("revive_pop"):
+			for rid3 in soul_op["revive_pop"]:
+				if not state.races.has(rid3):
+					continue
+				state.races[rid3]["population"] = float(state.races[rid3].get("population", 0.0)) + float(soul_op["revive_pop"][rid3])
+		if soul_op.has("relation"):
+			for rid4 in soul_op["relation"]:
+				RelationActions.apply_change(state, StringName(str(rid4)), int(soul_op["relation"][rid4]))
+	if effects.has("flags"):
+		for f in effects["flags"]:
+			var fn := StringName(str(f))
+			if not state.choice_flags.has(fn):
+				state.choice_flags.append(fn)
+
+static func resolve(state: GameState, choice_id: StringName, option_id: StringName) -> Dictionary:
+	if not can_choose(state, choice_id):
+		return {"ok": false}
+	var c := ChoiceLibrary.get_choice(choice_id)
+	for opt: Variant in c.get("options", []):
+		if typeof(opt) != TYPE_DICTIONARY:
+			continue
+		if StringName(str(opt.get("id", ""))) != option_id:
+			continue
+		if not option_unlocked(state, choice_id, option_id):
+			return {"ok": false}
+		_apply_effects(state, opt.get("effects", {}))
+		state.choices_done.append(choice_id)
+		return {"ok": true, "id": choice_id, "option": option_id,
+			"result_text": str(opt.get("result_text", "")), "effects": opt.get("effects", {})}
+	return {"ok": false}
