@@ -160,3 +160,19 @@ func test_root_eff_boosts_human_memory() -> void:
 	# 人族梦产：50×0.001×1.1 = 0.055（增长后 pop 略有变化，用容差区间）
 	assert_that(s.memory.to_value()).is_greater(0.05)
 	assert_that(s.memory.to_value()).is_less(0.06)
+
+func test_memory_eff_multiplier_applied() -> void:
+	var s := GameState.new()
+	s.races["human"] = {"awakened": true, "population": 50.0}
+	s.sap = BigNum.new(500.0)
+	s.race_memory_eff["human"] = 0.7  # ①A 人族失眠
+	RaceManager.tick_races(s)
+	# 增长后人口 50.25（sap=500>0，tick 先供养后增长再产出）×0.001×0.7 = 0.035175
+	assert_that(s.memory.to_value()).is_equal_approx(0.035175, 1e-4)
+
+func test_memory_eff_default_no_change() -> void:
+	var s := GameState.new()
+	s.races["human"] = {"awakened": true, "population": 50.0}
+	s.sap = BigNum.new(500.0)
+	RaceManager.tick_races(s)
+	assert_that(s.memory.to_value()).is_equal_approx(0.05025, 1e-4)  # 50.25×0.001

@@ -67,3 +67,21 @@ func test_intimate_once_only() -> void:
 	assert_that(s.intimate_events).contains(&"human")
 	var again := DriftActions.intimate(s, &"human")
 	assert_that(again.get("ok", false)).is_false()
+
+func test_drift_extra_adds_to_pure_state() -> void:
+	var s := GameState.new()
+	s.drift_extra = 1.0
+	assert_that(DriftActions.drift_value(s)).is_equal_approx(1.0, 1e-4)
+	assert_that(DriftActions.drift_tier(s)).is_equal(0)  # <3
+
+func test_drift_extra_pushes_tier() -> void:
+	var s := GameState.new()
+	s.drift_extra = 4.0
+	assert_that(DriftActions.drift_value(s)).is_equal_approx(4.0, 1e-4)
+	assert_that(DriftActions.drift_tier(s)).is_equal(1)  # ≥3
+
+func test_drift_extra_clamped_at_max() -> void:
+	var s := GameState.new()
+	s.plundered["human"] = 20  # 20×0.5 = 10（已满）
+	s.drift_extra = 3.0
+	assert_that(DriftActions.drift_value(s)).is_equal_approx(10.0, 1e-4)  # clamp 不溢出

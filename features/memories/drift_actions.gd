@@ -13,7 +13,7 @@ static func drift_value(state: GameState) -> float:
 	var memory_drift := 0.0
 	if state.memory.to_value() > AVATAR_MEMORY:
 		memory_drift = (state.memory.to_value() - AVATAR_MEMORY) * MEMORY_DRIFT_RATE
-	return clampf(float(total_plundered) * PLUNDER_DRIFT + memory_drift, 0.0, DRIFT_MAX)
+	return clampf(float(total_plundered) * PLUNDER_DRIFT + memory_drift + state.drift_extra, 0.0, DRIFT_MAX)
 
 static func drift_tier(state: GameState) -> int:
 	var v := drift_value(state)
