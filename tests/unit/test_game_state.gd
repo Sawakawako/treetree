@@ -287,3 +287,31 @@ func test_m5d2_fields_corrupt_fallback() -> void:
     assert_that(back.seedling_level).is_equal(0)
     assert_that(back.deep_dream).is_false()
     assert_that(back.wind_veil).is_false()
+
+func test_m5e_fields_roundtrip() -> void:
+    var s := GameState.new()
+    s.faith_engine_level = 2
+    s.memory_engine_level = 1
+    s.lingua_life_level = 2
+    s.lingua_memory_level = 0
+    s.lingua_nodes.assign([&"tree_canopy", &"ring_memory"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.faith_engine_level).is_equal(2)
+    assert_that(back.memory_engine_level).is_equal(1)
+    assert_that(back.lingua_life_level).is_equal(2)
+    assert_that(back.lingua_memory_level).is_equal(0)
+    assert_that(back.lingua_nodes).contains(&"tree_canopy")
+    assert_that(back.lingua_nodes).contains(&"ring_memory")
+
+func test_m5e_fields_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.faith_engine_level).is_equal(0)
+    assert_that(back.memory_engine_level).is_equal(0)
+    assert_that(back.lingua_life_level).is_equal(0)
+    assert_that(back.lingua_memory_level).is_equal(0)
+    assert_that(back.lingua_nodes).is_empty()
+
+func test_m5e_fields_corrupt_fallback() -> void:
+    var back := GameState.from_dict({"faith_engine_level": "corrupt", "lingua_nodes": [1, {"a": 1}]})
+    assert_that(back.faith_engine_level).is_equal(0)
+    assert_that(back.lingua_nodes.size()).is_equal(0)

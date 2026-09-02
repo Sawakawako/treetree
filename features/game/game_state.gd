@@ -38,6 +38,11 @@ var forge_level: int = 0         # 铸根坊·石裔设施（M5d2）
 var totem_pole_level: int = 0    # 图腾柱·野民设施（M5d2）
 var deep_dream: bool = false     # 深根梦已购（一次性，M5d2）
 var wind_veil: bool = false      # 风语膜已购（一次性，M5d2）
+var faith_engine_level: int = 0     # 信仰引擎（M5e）
+var memory_engine_level: int = 0    # 记忆引擎（M5e）
+var lingua_life_level: int = 0      # 生命之语等级（M5e）
+var lingua_memory_level: int = 0    # 记忆之语等级（M5e，批 2 升）
+var lingua_nodes: Array[StringName] = []  # 已购树语节点（M5e）
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -72,6 +77,11 @@ func to_dict() -> Dictionary:
         "drift_extra": drift_extra,
         "race_memory_eff": race_memory_eff,
         "choice_flags": choice_flags,
+        "faith_engine_level": faith_engine_level,
+        "memory_engine_level": memory_engine_level,
+        "lingua_life_level": lingua_life_level,
+        "lingua_memory_level": lingua_memory_level,
+        "lingua_nodes": lingua_nodes,
         "soul_river": soul_river,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
@@ -210,4 +220,18 @@ static func from_dict(d: Dictionary) -> GameState:
     s.deep_dream = bool(dd) if typeof(dd) == TYPE_BOOL else false
     var wv: Variant = d.get("wind_veil", false)
     s.wind_veil = bool(wv) if typeof(wv) == TYPE_BOOL else false
+    var fel: Variant = d.get("faith_engine_level", 0)
+    s.faith_engine_level = int(fel) if typeof(fel) == TYPE_INT or typeof(fel) == TYPE_FLOAT else 0
+    var mel: Variant = d.get("memory_engine_level", 0)
+    s.memory_engine_level = int(mel) if typeof(mel) == TYPE_INT or typeof(mel) == TYPE_FLOAT else 0
+    var lll: Variant = d.get("lingua_life_level", 0)
+    s.lingua_life_level = int(lll) if typeof(lll) == TYPE_INT or typeof(lll) == TYPE_FLOAT else 0
+    var lml: Variant = d.get("lingua_memory_level", 0)
+    s.lingua_memory_level = int(lml) if typeof(lml) == TYPE_INT or typeof(lml) == TYPE_FLOAT else 0
+    var ln: Array = d.get("lingua_nodes", [])
+    var ln_cleaned: Array = []
+    for x in ln:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            ln_cleaned.append(StringName(x))
+    s.lingua_nodes.assign(ln_cleaned)
     return s
