@@ -46,3 +46,18 @@ func test_explore_picks_next_unexplored_relic() -> void:
     assert_that(int(result.get("relic", {}).get("id", 0))).is_equal(2)
     assert_that(s.relics_found).contains(2)
     assert_that(s.root_depth).is_equal(1)
+
+func test_deep_root_halves_explore_cost() -> void:
+    var s := GameState.new()
+    s.sap = BigNum.new(150.0)
+    assert_that(RootActions.can_explore(s)).is_false()  # 无节点 200 不够
+    s.sap = BigNum.new(250.0)
+    assert_that(RootActions.can_explore(s)).is_true()
+    # 有 deep_root：100 即可
+    var s2 := GameState.new()
+    s2.lingua_nodes.assign([&"deep_root"])
+    s2.sap = BigNum.new(100.0)
+    assert_that(RootActions.can_explore(s2)).is_true()
+    var r := RootActions.explore(s2)
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(s2.sap.to_value()).is_equal_approx(0.0, 1e-4)  # 100-100 半价

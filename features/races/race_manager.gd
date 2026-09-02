@@ -100,8 +100,9 @@ static func tick_races(state: GameState) -> Array[Dictionary]:
 		state.faith.add(BigNum.new(float(state.faith_engine_level) * altar_mult))
 	if state.memory_engine_level > 0:
 		state.memory.add(BigNum.new(float(state.memory_engine_level) * 0.1))
-	# 四族设施（各族唤醒解锁后购买，独立产出——M5d2）
-	state.memory.add(BigNum.new(0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)))
-	state.faith.add(BigNum.new(0.3 * float(state.ring_level)))
-	state.sap.add(BigNum.new(0.5 * float(state.forge_level)))
+	# 四族设施（各族唤醒解锁后购买，独立产出——M5d2；聚落之心 ×1.5——M5e）
+	var village_mult := 1.5 if state.lingua_nodes.has(&"village_heart") else 1.0
+	state.memory.add(BigNum.new((0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)) * village_mult))
+	state.faith.add(BigNum.new(0.3 * float(state.ring_level) * village_mult))
+	state.sap.add(BigNum.new(0.5 * float(state.forge_level) * village_mult))
 	return events

@@ -219,3 +219,24 @@ func test_song_resonance_boosts_race_faith() -> void:
 	RaceManager.tick_races(s)
 	# ⚠️ 增长后人口 50.25 × 1.0 × 0.002 × 1.1 = 0.11055（M5g 教训：用增长后精确值）
 	assert_that(s.faith.to_value()).is_equal_approx(0.11055, 1e-4)
+
+func test_village_heart_boosts_facility_output() -> void:
+	var s := GameState.new()
+	s.firepit_level = 1
+	s.ring_level = 1
+	s.forge_level = 1
+	s.totem_pole_level = 1
+	s.lingua_nodes.assign([&"village_heart"])
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	# 基础产出：记忆 0.1+0.1 / 信仰 0.3 / 树液 0.5 → ×1.5
+	assert_that(s.memory.to_value()).is_equal_approx(0.3, 1e-4)   # (0.1+0.1)×1.5
+	assert_that(s.faith.to_value()).is_equal_approx(0.45, 1e-4)   # 0.3×1.5
+	assert_that(s.sap.to_value()).is_equal_approx(0.75, 1e-4)     # 0.5×1.5
+
+func test_facility_output_without_village_heart() -> void:
+	var s := GameState.new()
+	s.firepit_level = 1
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	assert_that(s.memory.to_value()).is_equal_approx(0.1, 1e-4)   # 无节点不乘

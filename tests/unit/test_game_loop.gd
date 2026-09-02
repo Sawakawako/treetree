@@ -65,3 +65,19 @@ func test_nautilus_raises_cap() -> void:
     assert_that(GameLoop.sap_cap(s)).is_equal_approx(15000.0, 1e-4)
     s.nautilus_level = 2
     assert_that(GameLoop.sap_cap(s)).is_equal_approx(20000.0, 1e-4)
+
+func test_wood_heart_raises_sap_cap() -> void:
+    var s := GameState.new()
+    assert_that(GameLoop.sap_cap(s)).is_equal_approx(10000.0, 1e-4)
+    s.lingua_nodes.assign([&"wood_heart"])
+    assert_that(GameLoop.sap_cap(s)).is_equal_approx(15000.0, 1e-4)  # ×1.5
+
+func test_ring_memory_boosts_growth() -> void:
+    var s := GameState.new()
+    s.daylight = BigNum.new(0.0)
+    s.sap = BigNum.new(10000.0)
+    s.lingua_nodes.assign([&"ring_memory"])
+    GameLoop.tick(s)
+    # tick 内先 grown 后 clamp：sap 10000 恰在 cap（无 wood_heart）不扣
+    # grown = 10000×0.01×1.2 = 120
+    assert_that(s.growth.to_value()).is_equal_approx(120.0, 1e-4)
