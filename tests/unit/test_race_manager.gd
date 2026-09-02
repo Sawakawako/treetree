@@ -189,3 +189,33 @@ func test_facility_independent_production() -> void:
 	assert_that(s.memory.to_value()).is_equal_approx(0.3, 1e-4)   # 0.1×2 + 0.1×1
 	assert_that(s.faith.to_value()).is_equal_approx(0.9, 1e-4)    # 0.3×3
 	assert_that(s.sap.to_value()).is_equal_approx(1.0, 1e-4)      # 0.5×2
+
+func test_faith_engine_produces_per_tick() -> void:
+	var s := GameState.new()
+	s.faith_engine_level = 2
+	s.sap = BigNum.new(0.0)  # 无供养，纯引擎
+	RaceManager.tick_races(s)
+	assert_that(s.faith.to_value()).is_equal_approx(2.0, 1e-4)  # 2×1
+
+func test_altar_doubles_faith_engine() -> void:
+	var s := GameState.new()
+	s.faith_engine_level = 2
+	s.lingua_nodes.assign([&"altar"])
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	assert_that(s.faith.to_value()).is_equal_approx(4.0, 1e-4)  # 2×(1×2)
+
+func test_memory_engine_produces_per_tick() -> void:
+	var s := GameState.new()
+	s.memory_engine_level = 1
+	RaceManager.tick_races(s)
+	assert_that(s.memory.to_value()).is_equal_approx(0.1, 1e-4)
+
+func test_song_resonance_boosts_race_faith() -> void:
+	var s := GameState.new()
+	s.races["human"] = {"awakened": true, "population": 50.0}
+	s.lingua_nodes.assign([&"song_resonance"])
+	s.sap = BigNum.new(500.0)
+	RaceManager.tick_races(s)
+	# ⚠️ 增长后人口 50.25 × 1.0 × 0.002 × 1.1 = 0.11055（M5g 教训：用增长后精确值）
+	assert_that(s.faith.to_value()).is_equal_approx(0.11055, 1e-4)

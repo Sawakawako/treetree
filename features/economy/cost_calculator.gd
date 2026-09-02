@@ -49,3 +49,9 @@ static func forge_cost(level: int) -> int:
 
 static func totem_pole_cost(level: int) -> int:
 	return 1000 * fib(level + 1)
+
+static func faith_engine_cost(level: int) -> int:
+	return 200 * fib(level + 1)
+
+static func memory_engine_cost(level: int) -> int:
+	return 500 * fib(level + 1)

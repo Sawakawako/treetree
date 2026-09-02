@@ -157,3 +157,23 @@ static func convert_sap_to_memory(state: GameState) -> bool:
 	state.sap.sub(cost)
 	state.memory.add(BigNum.new(1.0))
 	return true
+
+static func buy_faith_engine(state: GameState) -> bool:
+	if not LinguaActions.has_node(state, &"cloud_crown"):
+		return false
+	var cost := BigNum.new(float(CostCalculator.faith_engine_cost(state.faith_engine_level)))
+	if not state.faith.is_greater_or_equal(cost):
+		return false
+	state.faith.sub(cost)
+	state.faith_engine_level += 1
+	return true
+
+static func buy_memory_engine(state: GameState) -> bool:
+	if not LinguaActions.has_node(state, &"grace"):
+		return false
+	var cost := BigNum.new(float(CostCalculator.memory_engine_cost(state.memory_engine_level)))
+	if not state.memory.is_greater_or_equal(cost):
+		return false
+	state.memory.sub(cost)
+	state.memory_engine_level += 1
+	return true
