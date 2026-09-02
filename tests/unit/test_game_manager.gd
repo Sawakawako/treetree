@@ -280,3 +280,24 @@ func test_resolve_choice_no_pending_fails() -> void:
     gm._state = GameState.new()  # 无触发
     var r: Dictionary = gm.resolve_choice(&"human_nightmare", &"a")
     assert_that(r.get("ok", false)).is_false()
+
+func test_buy_seedling_entrance() -> void:
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(100.0)
+    assert_that(gm.buy_seedling()).is_true()
+    assert_that(gm.get_state().seedling_level).is_equal(1)
+    assert_that(gm.get_seedling_cost()).is_equal(20)  # 下一级
+
+func test_buy_deep_dream_entrance() -> void:
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(3000.0)
+    assert_that(gm.buy_deep_dream()).is_true()
+    assert_that(gm.get_state().deep_dream).is_true()
+
+func test_buy_firepit_entrance_requires_awaken() -> void:
+    gm._state = GameState.new()
+    gm._state.sap = BigNum.new(5000.0)
+    assert_that(gm.buy_firepit()).is_false()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    assert_that(gm.buy_firepit()).is_true()
+    assert_that(gm.get_firepit_cost()).is_equal(1000)  # Lv1 后下一级仍 1000×fib(2)=1000

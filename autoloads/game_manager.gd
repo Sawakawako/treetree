@@ -85,6 +85,63 @@ func buy_root_eff() -> bool:
         resources_changed.emit()
     return ok
 
+func buy_seedling() -> bool:
+    var ok := GameActions.buy_seedling(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_firepit() -> bool:
+    var ok := GameActions.buy_firepit(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_ring() -> bool:
+    var ok := GameActions.buy_ring(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_forge() -> bool:
+    var ok := GameActions.buy_forge(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_totem_pole() -> bool:
+    var ok := GameActions.buy_totem_pole(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_deep_dream() -> bool:
+    var ok := GameActions.buy_deep_dream(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_wind_veil() -> bool:
+    var ok := GameActions.buy_wind_veil(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func get_seedling_cost() -> int:
+    return CostCalculator.seedling_cost(_state.seedling_level)
+
+func get_firepit_cost() -> int:
+    return CostCalculator.firepit_cost(_state.firepit_level)
+
+func get_ring_cost() -> int:
+    return CostCalculator.ring_cost(_state.ring_level)
+
+func get_forge_cost() -> int:
+    return CostCalculator.forge_cost(_state.forge_level)
+
+func get_totem_pole_cost() -> int:
+    return CostCalculator.totem_pole_cost(_state.totem_pole_level)
+
 func get_chloroplast_cost() -> int:
     return CostCalculator.chloroplast_cost(_state.chloroplast_level)
 
