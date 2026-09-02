@@ -83,6 +83,25 @@ const RELATION_COLORS := {
 @onready var ring_button: Button = %RingButton
 @onready var forge_button: Button = %ForgeButton
 @onready var totem_pole_button: Button = %TotemPoleButton
+@onready var faith_convert_button: Button = %FaithConvertButton
+@onready var memory_convert_button: Button = %MemoryConvertButton
+@onready var life_upgrade_button: Button = %LifeUpgradeButton
+@onready var life_cost_label: Label = %LifeCostLabel
+@onready var faith_engine_button: Button = %FaithEngineButton
+@onready var faith_engine_cost_label: Label = %FaithEngineCostLabel
+@onready var memory_engine_button: Button = %MemoryEngineButton
+@onready var memory_engine_cost_label: Label = %MemoryEngineCostLabel
+@onready var root_echo_button: Button = %RootEchoButton
+@onready var root_resonance_button: Button = %RootResonanceButton
+@onready var deep_root_button: Button = %DeepRootButton
+@onready var tree_canopy_button: Button = %TreeCanopyButton
+@onready var ring_memory_button: Button = %RingMemoryButton
+@onready var cloud_crown_button: Button = %CloudCrownButton
+@onready var wood_heart_button: Button = %WoodHeartButton
+@onready var song_resonance_button: Button = %SongResonanceButton
+@onready var village_heart_button: Button = %VillageHeartButton
+@onready var grace_button: Button = %GraceButton
+@onready var altar_button: Button = %AltarButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -119,6 +138,12 @@ func _ready() -> void:
     ring_button.pressed.connect(func(): _on_facility_pressed(&"forestfolk", "ring_level"))
     forge_button.pressed.connect(func(): _on_facility_pressed(&"stoneborn", "forge_level"))
     totem_pole_button.pressed.connect(func(): _on_facility_pressed(&"wildfolk", "totem_pole_level"))
+    faith_convert_button.pressed.connect(_on_convert_faith_pressed)
+    memory_convert_button.pressed.connect(_on_convert_memory_pressed)
+    life_upgrade_button.pressed.connect(_on_life_upgrade_pressed)
+    faith_engine_button.pressed.connect(_on_engine_faith_pressed)
+    memory_engine_button.pressed.connect(_on_engine_memory_pressed)
+    _wire_node_buttons()
     GameManager.choice_available.connect(_on_choice_available)
     GameManager.choice_resolved.connect(_on_choice_resolved)
     revive_human_button.pressed.connect(func(): _on_revive_pressed(&"human"))
@@ -227,6 +252,7 @@ func _refresh() -> void:
     _refresh_intimate_buttons()
     _refresh_soul()
     _refresh_m5d2()
+    _refresh_lingua()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -491,4 +517,90 @@ func _on_facility_pressed(race_id: StringName, field: String) -> void:
     if ok:
         var names := {&"human": "火塘", &"forestfolk": "歌之环", &"stoneborn": "铸根坊", &"wildfolk": "图腾柱"}
         log_label.text = "（%s 立起来了。）" % names.get(race_id, "设施")
+    _refresh()
+
+func _node_buttons() -> Array:
+    # 与 LinguaData.NODES 注册序一致（M5e 批 1：11 节点）
+    return [
+        [&"root_echo", root_echo_button],
+        [&"root_resonance", root_resonance_button],
+        [&"deep_root", deep_root_button],
+        [&"tree_canopy", tree_canopy_button],
+        [&"ring_memory", ring_memory_button],
+        [&"cloud_crown", cloud_crown_button],
+        [&"wood_heart", wood_heart_button],
+        [&"song_resonance", song_resonance_button],
+        [&"village_heart", village_heart_button],
+        [&"grace", grace_button],
+        [&"altar", altar_button],
+    ]
+
+func _wire_node_buttons() -> void:
+    for p in _node_buttons():
+        var nid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.pressed.connect(_on_node_unlock_pressed.bind(nid))
+
+func _refresh_lingua() -> void:
+    var s := GameManager.get_state()
+    # 兑换按钮：对应节点已购才显示
+    faith_convert_button.visible = LinguaActions.has_node(s, &"tree_canopy")
+    memory_convert_button.visible = LinguaActions.has_node(s, &"root_resonance")
+    # 生命之语：Lv≥1 后常显（免费激活即出现）；未激活前隐藏，避免开局刷脸
+    life_upgrade_button.visible = s.lingua_life_level > 0 or s.faith.is_greater_or_equal(BigNum.new(1.0))
+    life_cost_label.visible = s.lingua_life_level > 0
+    var lc := LinguaActions.life_cost(s)
+    life_cost_label.text = "生命之语 Lv%d → %s" % [s.lingua_life_level, ("免费" if lc == 0 else ("%d 信仰" % lc)) if lc >= 0 else "已满级"]
+    life_upgrade_button.disabled = not LinguaActions.can_upgrade_life(s)
+    # 引擎按钮：对应节点已购才显示；成本 Label 同步
+    faith_engine_button.visible = LinguaActions.has_node(s, &"cloud_crown")
+    faith_engine_cost_label.visible = LinguaActions.has_node(s, &"cloud_crown")
+    faith_engine_cost_label.text = "价格：%d" % CostCalculator.faith_engine_cost(s.faith_engine_level)
+    faith_engine_button.disabled = not s.faith.is_greater_or_equal(BigNum.new(float(CostCalculator.faith_engine_cost(s.faith_engine_level))))
+    memory_engine_button.visible = LinguaActions.has_node(s, &"grace")
+    memory_engine_cost_label.visible = LinguaActions.has_node(s, &"grace")
+    memory_engine_cost_label.text = "价格：%d" % CostCalculator.memory_engine_cost(s.memory_engine_level)
+    memory_engine_button.disabled = not s.memory.is_greater_or_equal(BigNum.new(float(CostCalculator.memory_engine_cost(s.memory_engine_level))))
+    _refresh_node_buttons()
+
+func _refresh_node_buttons() -> void:
+    var s := GameManager.get_state()
+    for p in _node_buttons():
+        var nid: StringName = p[0]
+        var btn: Button = p[1]
+        # 显示门槛：未购 + 生命之语达到 requirement；disabled 由 sap 决定
+        var node := LinguaData.get_node(nid)
+        var req := int(node.get("requirement", 99))
+        btn.visible = not LinguaActions.has_node(s, nid) and s.lingua_life_level >= req
+        btn.disabled = not LinguaActions.can_unlock_node(s, nid)
+
+func _on_convert_faith_pressed() -> void:
+    if GameManager.convert_faith():
+        log_label.text = "（献祭 · 信仰 +1）"
+    _refresh()
+
+func _on_convert_memory_pressed() -> void:
+    if GameManager.convert_memory():
+        log_label.text = "（挖梦 · 记忆 +1）"
+    _refresh()
+
+func _on_engine_faith_pressed() -> void:
+    if GameManager.buy_faith_engine():
+        log_label.text = "（信仰引擎升至 %d 级）" % GameManager.get_state().faith_engine_level
+    _refresh()
+
+func _on_engine_memory_pressed() -> void:
+    if GameManager.buy_memory_engine():
+        log_label.text = "（记忆引擎升至 %d 级）" % GameManager.get_state().memory_engine_level
+    _refresh()
+
+func _on_life_upgrade_pressed() -> void:
+    if GameManager.upgrade_life():
+        log_label.text = "（生命之语 · 第 %d 阶）" % GameManager.get_state().lingua_life_level
+    _refresh()
+
+func _on_node_unlock_pressed(node_id: StringName) -> void:
+    if GameManager.unlock_node(node_id):
+        var node := LinguaData.get_node(node_id)
+        log_label.text = "（%s 已点亮）" % str(node.get("name", ""))
     _refresh()

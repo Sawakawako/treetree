@@ -410,3 +410,117 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "图腾柱（野民设施 · 记忆 +0.1/tick）"
+
+[node name="FaithConvertButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "献祭（100 树液 → 信仰 +1）"
+
+[node name="MemoryConvertButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "挖梦（500 树液 → 记忆 +1）"
+
+[node name="LifeUpgradeButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "生命之语 · 升级"
+
+[node name="LifeCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = ""
+
+[node name="FaithEngineButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "信仰引擎 · 升级"
+
+[node name="FaithEngineCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = ""
+
+[node name="MemoryEngineButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "记忆引擎 · 升级"
+
+[node name="MemoryEngineCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = ""
+
+[node name="RootEchoButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "遗迹回声（遗迹文本回看）"
+
+[node name="RootResonanceButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "根须共鸣（解锁树液→记忆兑换）"
+
+[node name="DeepRootButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "深层根须（根须探索成本 -50%）"
+
+[node name="TreeCanopyButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "树冠舒展（解锁树液→信仰兑换）"
+
+[node name="RingMemoryButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "年轮记忆（生长 +20%）"
+
+[node name="CloudCrownButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "云冠（解锁信仰引擎）"
+
+[node name="WoodHeartButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "木质强化（sap 上限 +50%）"
+
+[node name="SongResonanceButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "歌之共鸣（信仰产出 +10%）"
+
+[node name="VillageHeartButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "聚落之心（四族设施产出 +50%）"
+
+[node name="GraceButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "恩泽（解锁记忆引擎）"
+
+[node name="AltarButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "圣坛（信仰引擎效果 ×2）"
