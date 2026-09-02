@@ -137,3 +137,23 @@ static func buy_wind_veil(state: GameState) -> bool:
 	state.faith.add(BigNum.new(30.0))
 	state.wind_veil = true
 	return true
+
+static func convert_sap_to_faith(state: GameState) -> bool:
+	if not LinguaActions.has_node(state, &"tree_canopy"):
+		return false  # 树冠舒展解锁
+	var cost := BigNum.new(100.0)
+	if not state.sap.is_greater_or_equal(cost):
+		return false
+	state.sap.sub(cost)
+	state.faith.add(BigNum.new(1.0))
+	return true
+
+static func convert_sap_to_memory(state: GameState) -> bool:
+	if not LinguaActions.has_node(state, &"root_resonance"):
+		return false  # 根须共鸣解锁
+	var cost := BigNum.new(500.0)
+	if not state.sap.is_greater_or_equal(cost):
+		return false
+	state.sap.sub(cost)
+	state.memory.add(BigNum.new(1.0))
+	return true
