@@ -34,3 +34,18 @@ static func nautilus_cost(level: int) -> int:
 
 static func root_eff_cost(level: int) -> int:
 	return int(1000.0 * pow(1.8, float(level)))
+
+static func seedling_cost(level: int) -> int:
+	return 10 * (level + 1)
+
+static func firepit_cost(level: int) -> int:
+	return 1000 * fib(level + 1)
+
+static func ring_cost(level: int) -> int:
+	return 1000 * fib(level + 1)
+
+static func forge_cost(level: int) -> int:
+	return 1000 * fib(level + 1)
+
+static func totem_pole_cost(level: int) -> int:
+	return 1000 * fib(level + 1)

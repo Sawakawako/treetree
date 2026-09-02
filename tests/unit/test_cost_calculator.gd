@@ -45,3 +45,15 @@ func test_root_eff_cost_exponential() -> void:
 	assert_that(CostCalculator.root_eff_cost(0)).is_equal(1000)
 	assert_that(CostCalculator.root_eff_cost(1)).is_equal(1800)     # 1000×1.8
 	assert_that(CostCalculator.root_eff_cost(2)).is_equal(3240)     # 1000×1.8²
+
+func test_m5d2_seedling_cost_linear() -> void:
+	assert_that(CostCalculator.seedling_cost(0)).is_equal(10)
+	assert_that(CostCalculator.seedling_cost(1)).is_equal(20)
+	assert_that(CostCalculator.seedling_cost(2)).is_equal(30)
+
+func test_m5d2_facility_costs_fib() -> void:
+	assert_that(CostCalculator.firepit_cost(0)).is_equal(1000)   # 1000×fib(1)
+	assert_that(CostCalculator.ring_cost(0)).is_equal(1000)
+	assert_that(CostCalculator.forge_cost(0)).is_equal(1000)
+	assert_that(CostCalculator.totem_pole_cost(0)).is_equal(1000)
+	assert_that(CostCalculator.firepit_cost(2)).is_equal(2000)   # 1000×fib(3)=1000×2
