@@ -7,6 +7,8 @@ signal totem_interpreted(totem_id: int, interpret_text: String)
 signal relation_changed(race_id: StringName, relation: int)
 signal plunder_done(race_id: StringName, text: String, revealed: bool)
 signal intimate_done(race_id: StringName, text: String)
+signal choice_available(choice_id: StringName, title: String, intro: String, options: Array)
+signal choice_resolved(choice_id: StringName, option_id: StringName, result_text: String, option_text: String)
 signal soul_changed(soul_river: int)
 signal soul_revived(race_id: StringName, pop_gain: int)
 signal soul_plundered(race_id: StringName, pop_loss: int)
@@ -16,6 +18,7 @@ const TICK_INTERVAL := 1.0
 
 var _state: GameState
 var _tick_accumulator := 0.0
+var _pending_choice: StringName = &""
 
 func _ready() -> void:
     _state = SaveManager.load_or_create(SAVE_PATH)
@@ -30,6 +33,7 @@ func _process(delta: float) -> void:
             race_awakened.emit(ev["race_id"], ev["race_name"], ev["awaken_text"])
         if GameLoop.should_auto_save(_state):
             SaveManager.save(_state, SAVE_PATH)
+        _check_choice_trigger()
         resources_changed.emit()
 
 func get_state() -> GameState:
@@ -170,4 +174,32 @@ func plunder_soul_race(race_id: StringName) -> Dictionary:
         soul_plundered.emit(race_id, SoulActions.PLUNDER_SOUL_POP_LOSS)
         soul_changed.emit(int(_state.soul_river))
         resources_changed.emit()
+    return result
+
+func _check_choice_trigger() -> void:
+    if _pending_choice != &"":
+        return
+    var cid := ChoiceActions.first_available(_state)
+    if cid == &"":
+        return
+    _pending_choice = cid
+    var c := ChoiceLibrary.get_choice(cid)
+    choice_available.emit(cid, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
+
+func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
+    if _pending_choice != choice_id:
+        return {"ok": false}
+    var result := ChoiceActions.resolve(_state, choice_id, option_id)
+    if not result.get("ok", false):
+        return result
+    _pending_choice = &""
+    # 第 4 参 = 所选选项的按钮文字（从 JSON options 按 option_id 取 text）
+    var c := ChoiceLibrary.get_choice(choice_id)
+    var opt_text := ""
+    for opt: Variant in c.get("options", []):
+        if typeof(opt) == TYPE_DICTIONARY and StringName(str(opt.get("id", ""))) == option_id:
+            opt_text = str(opt.get("text", ""))
+            break
+    choice_resolved.emit(choice_id, option_id, str(result.get("result_text", "")), opt_text)
+    resources_changed.emit()
     return result

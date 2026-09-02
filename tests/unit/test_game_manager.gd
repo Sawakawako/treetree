@@ -226,3 +226,57 @@ func test_plunder_soul_race_blocked_no_signal() -> void:
     var result: Dictionary = gm.plunder_soul_race(&"human")
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
+
+func test_choice_available_emitted_on_tick() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    var got := {"ok": false, "title": ""}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        got["ok"] = true
+        got["title"] = title)
+    gm._process(1.0)  # tick 触发人族召唤 → 明选检测
+    assert_that(got["ok"]).is_true()
+    assert_that(str(got["title"])).is_equal("人族噩梦")
+
+func test_choice_pending_blocks_second_emit() -> void:
+    # 一次只弹一个：pending 未清前不重复发
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    gm._state.memory = BigNum.new(30.0)  # 3 个 available，但只弹第一个
+    # GDScript lambda 按值捕获局部变量（CONTINUE.md 六·二 #5）——用 Dictionary 包装回写
+    var count := {"n": 0}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        count["n"] += 1)
+    gm._process(1.0)
+    gm._process(1.0)
+    assert_that(count["n"]).is_equal(1)
+    assert_that(gm._pending_choice).is_equal(&"human_nightmare")
+
+func test_resolve_choice_signal_and_effect() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    var got := {"ok": false, "text": ""}
+    gm.choice_resolved.connect(func(id: StringName, opt: StringName, text: String, opt_text: String) -> void:
+        got["ok"] = true
+        got["text"] = text)
+    gm._process(1.0)  # 弹 human_nightmare
+    var r: Dictionary = gm.resolve_choice(&"human_nightmare", &"a")
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(got["ok"]).is_true()
+    assert_that(str(got["text"]).length()).is_greater(10)
+    assert_that(gm.get_state().choices_done).contains(&"human_nightmare")
+    assert_that(gm._pending_choice).is_equal(&"")
+
+func test_resolve_choice_wrong_pending_fails() -> void:
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    gm._process(1.0)
+    # 尝试解一个非 pending 的明选（未触发）
+    var r: Dictionary = gm.resolve_choice(&"theseus", &"a")
+    assert_that(r.get("ok", false)).is_false()
+    assert_that(gm._pending_choice).is_equal(&"human_nightmare")  # pending 不被误清
+
+func test_resolve_choice_no_pending_fails() -> void:
+    gm._state = GameState.new()  # 无触发
+    var r: Dictionary = gm.resolve_choice(&"human_nightmare", &"a")
+    assert_that(r.get("ok", false)).is_false()
