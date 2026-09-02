@@ -25,6 +25,11 @@ var root_eff_level: int = 0
 var plundered: Dictionary = {}
 var plunder_reveals: Array[StringName] = []
 var intimate_events: Array[StringName] = []
+var choices_done: Array[StringName] = []
+var truth: int = 0
+var drift_extra: float = 0.0
+var race_memory_eff: Dictionary = {}
+var choice_flags: Array[StringName] = []
 var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
 
 func _init() -> void:
@@ -55,6 +60,11 @@ func to_dict() -> Dictionary:
         "plundered": plundered,
         "plunder_reveals": plunder_reveals,
         "intimate_events": intimate_events,
+        "choices_done": choices_done,
+        "truth": truth,
+        "drift_extra": drift_extra,
+        "race_memory_eff": race_memory_eff,
+        "choice_flags": choice_flags,
         "soul_river": soul_river,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
@@ -138,6 +148,30 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             ie_cleaned.append(StringName(x))
     s.intimate_events.assign(ie_cleaned)
+    var cd: Array = d.get("choices_done", [])
+    var cd_cleaned: Array = []
+    for x in cd:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            cd_cleaned.append(StringName(x))
+    s.choices_done.assign(cd_cleaned)
+    var tv: Variant = d.get("truth", 0)
+    s.truth = int(tv) if typeof(tv) == TYPE_INT or typeof(tv) == TYPE_FLOAT else 0
+    var dv: Variant = d.get("drift_extra", 0.0)
+    s.drift_extra = float(dv) if typeof(dv) == TYPE_INT or typeof(dv) == TYPE_FLOAT else 0.0
+    var rme: Variant = d.get("race_memory_eff", {})
+    if typeof(rme) != TYPE_DICTIONARY:
+        rme = {}
+    s.race_memory_eff = {}
+    for rid2: Variant in rme:
+        var rv2: Variant = rme[rid2]
+        if typeof(rv2) == TYPE_INT or typeof(rv2) == TYPE_FLOAT:
+            s.race_memory_eff[rid2] = float(rv2)
+    var cf: Array = d.get("choice_flags", [])
+    var cf_cleaned: Array = []
+    for x in cf:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            cf_cleaned.append(StringName(x))
+    s.choice_flags.assign(cf_cleaned)
     s.chloroplast_level = int(d.get("chloroplast_level", 0))
     s.xylem_level = int(d.get("xylem_level", 0))
     s.sunflower_level = int(d.get("sunflower_level", 0))

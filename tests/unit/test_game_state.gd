@@ -218,3 +218,38 @@ func test_soul_river_corrupt_fallback() -> void:
     # 损坏存档：soul_river 非数字 → 回退 100 不崩溃
     var back := GameState.from_dict({"soul_river": "corrupt"})
     assert_that(back.soul_river).is_equal(100)
+
+func test_m5g_fields_roundtrip() -> void:
+    var s := GameState.new()
+    s.choices_done.assign([&"human_nightmare", &"odin_sacrifice"])
+    s.truth = 3
+    s.drift_extra = 1.5
+    s.race_memory_eff["human"] = 0.7
+    s.choice_flags.assign([&"odin_name", &"ship_built"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.choices_done).contains(&"human_nightmare")
+    assert_that(back.truth).is_equal(3)
+    assert_that(back.drift_extra).is_equal_approx(1.5, 1e-4)
+    assert_that(float(back.race_memory_eff["human"])).is_equal_approx(0.7, 1e-4)
+    assert_that(back.choice_flags).contains(&"ship_built")
+
+func test_m5g_fields_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.choices_done).is_empty()
+    assert_that(back.truth).is_equal(0)
+    assert_that(back.drift_extra).is_equal_approx(0.0, 1e-4)
+    assert_that(back.race_memory_eff.is_empty()).is_true()
+    assert_that(back.choice_flags).is_empty()
+
+func test_m5g_fields_corrupt_fallback() -> void:
+    var back := GameState.from_dict({"truth": "corrupt", "drift_extra": "corrupt", "race_memory_eff": "corrupt"})
+    assert_that(back.truth).is_equal(0)
+    assert_that(back.drift_extra).is_equal_approx(0.0, 1e-4)
+    assert_that(back.race_memory_eff.is_empty()).is_true()
+
+func test_m5g_stringname_arrays_filter_invalid() -> void:
+    var back := GameState.from_dict({"choices_done": ["a", 1, {"x": 1}], "choice_flags": ["b", 2.0]})
+    assert_that(back.choices_done.size()).is_equal(1)
+    assert_that(back.choices_done).contains(&"a")
+    assert_that(back.choice_flags.size()).is_equal(1)
+    assert_that(back.choice_flags).contains(&"b")
