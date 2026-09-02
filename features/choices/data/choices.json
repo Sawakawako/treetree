@@ -1,0 +1,217 @@
+{
+  "choices": [
+    {
+      "id": "human_nightmare",
+      "title": "人族噩梦",
+      "stage_hint": "成树·第一次",
+      "intro": "夜里，火塘边的人族一起做了同一个梦。\n梦里天裂开，光熄了。\n有人在梦里喊你的名字。",
+      "trigger": { "races_awakened": ["human"] },
+      "options": [
+        {
+          "id": "a",
+          "text": "把梦收下",
+          "effects": {
+            "memory": 3.0,
+            "truth": 1,
+            "relation": { "human": -2 },
+            "memory_eff": { "human": 0.7 },
+            "flags": ["human_nightmare_harvested"]
+          },
+          "result_text": "梦很沉。\n醒来的它们眼神发直。\n——没有梦的我们，还算人吗。"
+        },
+        {
+          "id": "b",
+          "text": "让它做完",
+          "effects": {
+            "relation": { "human": 2 },
+            "flags": ["human_nightmare_protected"]
+          },
+          "result_text": "你没有动。\n梦里，人族的孩子追着一道光跑。\n你们围住了那个梦，没有碰它。"
+        }
+      ]
+    },
+    {
+      "id": "odin_sacrifice",
+      "title": "奥丁之祭",
+      "stage_hint": "巨树·记忆线",
+      "intro": "河底有一段完整的记忆。\n它太重了，要你付出一点什么，才肯上岸。",
+      "trigger": { "memory_gte": 30.0 },
+      "options": [
+        {
+          "id": "a",
+          "text": "折断一根根须",
+          "effects": {
+            "growth_pct": -0.30,
+            "truth": 2,
+            "flags": ["odin_root"]
+          },
+          "result_text": "断口处，年轮一圈圈翻开。\n第九日的天空，落进你怀里。"
+        },
+        {
+          "id": "b",
+          "text": "献出名字",
+          "effects": {
+            "memory": 6.0,
+            "drift": 1.0,
+            "flags": ["odin_name"]
+          },
+          "result_text": "你忽然想不起，自己叫什么。\n树不需要名字。\n……可你刚才，差点想起来。"
+        },
+        {
+          "id": "c",
+          "text": "转身离开",
+          "effects": {
+            "flags": ["odin_left"]
+          },
+          "result_text": "记忆沉回河底。\n它没有挣扎。\n——就像你曾经见过的那些。"
+        }
+      ]
+    },
+    {
+      "id": "norne_past",
+      "title": "诺恩·过去",
+      "stage_hint": "巨树",
+      "intro": "记忆里有一扇门。\n门后是旧世界毁灭的那一天。\n推开门，就再关不上了。",
+      "trigger": { "memory_gte": 35.0 },
+      "options": [
+        {
+          "id": "a",
+          "text": "推开门",
+          "effects": {
+            "truth": 2,
+            "memory_eff": { "human": 0.7 },
+            "flags": ["norne_past_revealed"]
+          },
+          "result_text": "你看见了那一夜。\n火，从天上落下来。\n人族的梦，从此矮了一截。"
+        },
+        {
+          "id": "b",
+          "text": "让门关着",
+          "effects": {
+            "flags": ["norne_past_sealed"]
+          },
+          "result_text": "天裂那天的事，就让它沉在河底。\n你转过身。门没有动。"
+        }
+      ]
+    },
+    {
+      "id": "norne_now",
+      "title": "诺恩·现在",
+      "stage_hint": "巨树",
+      "intro": "一个林地民要死了。\n它的歌已经哑了一半。\n你听见它在梦里喊：别让我听完。",
+      "trigger": { "memory_gte": 30.0, "races_awakened": ["forestfolk"] },
+      "options": [
+        {
+          "id": "a",
+          "text": "用灵魂救它",
+          "effects": {
+            "soul": { "soul_cost": 2, "revive_pop": { "forestfolk": 3 }, "relation": { "forestfolk": 1 } },
+            "flags": ["norne_now_saved"]
+          },
+          "result_text": "两缕灵魂从河底升起，裹住它。\n它咳出一声歌。\n河，浅了两指。"
+        },
+        {
+          "id": "b",
+          "text": "放手",
+          "effects": {
+            "soul": { "relation": { "forestfolk": -1 } },
+            "flags": ["norne_now_let_go"]
+          },
+          "result_text": "河底多了一缕。\n它很轻。\n你听完了它的歌。"
+        }
+      ]
+    },
+    {
+      "id": "norne_future",
+      "title": "诺恩·未来",
+      "stage_hint": "巨树",
+      "intro": "石裔说，远方有海。\n海的另一边，也许还有别的土地。\n它们问你：造一艘船，好吗。",
+      "trigger": { "memory_gte": 30.0, "races_awakened": ["stoneborn"] },
+      "options": [
+        {
+          "id": "a",
+          "text": "让它们造",
+          "effects": {
+            "flags": ["ship_built"]
+          },
+          "result_text": "石裔开始丈量天空。\n它们说，船要造得能装下所有歌。"
+        },
+        {
+          "id": "b",
+          "text": "不造",
+          "effects": {
+            "flags": ["ship_refused"]
+          },
+          "result_text": "锤声停了。\n有人在夜里，指着海的方向。"
+        }
+      ]
+    },
+    {
+      "id": "dodder",
+      "title": "菟丝子",
+      "stage_hint": "巨树·夺梦",
+      "intro": "你发现自己正在吸林地民的歌。\n不是采。是吸。\n歌顺着你的根，流成了一条河。",
+      "trigger": { "plundered_gte": { "forestfolk": 1 } },
+      "options": [
+        {
+          "id": "a",
+          "text": "松开",
+          "effects": {
+            "faith_pct": -0.30,
+            "relation": { "forestfolk": 3 },
+            "flags": ["dodder_released"]
+          },
+          "result_text": "萤光重新亮起。\n歌之环，接上了。"
+        },
+        {
+          "id": "b",
+          "text": "继续",
+          "effects": {
+            "memory": 8.0,
+            "relation": { "forestfolk": -3 },
+            "flags": ["dodder_kept"]
+          },
+          "result_text": "叶尖挂着半个音。\n风一吹，就散了。\n——只剩风声。"
+        }
+      ]
+    },
+    {
+      "id": "theseus",
+      "title": "忒修斯之树",
+      "stage_hint": "巨树·身份",
+      "intro": "你换了十七次根须、九次枝干。\n你问自己：还是当初那棵树吗。\n四族围坐着，等你回答。",
+      "trigger": { "memory_gte": 30.0 },
+      "options": [
+        {
+          "id": "a",
+          "text": "是",
+          "effects": {
+            "flags": ["theseus_yes"]
+          },
+          "result_text": "人族学者为此争论了三天。\n（灵魂即身份——它们觉得你答对了，又不甘心。）"
+        },
+        {
+          "id": "b",
+          "text": "我不知道",
+          "effects": {
+            "drift": 1.0,
+            "relation": { "human": 1, "forestfolk": 1, "stoneborn": 1, "wildfolk": 1 },
+            "flags": ["theseus_uncertain"]
+          },
+          "result_text": "它们靠得更近了些。\n真实的你，它们认识。"
+        },
+        {
+          "id": "c",
+          "text": "不是，但我记得我是",
+          "unlock": { "insight_gte": 8 },
+          "effects": {
+            "insight": 2,
+            "truth": 1,
+            "flags": ["theseus_remembered"]
+          },
+          "result_text": "说书人看了你很久。\n她说：'母树，你正在想起自己。'"
+        }
+      ]
+    }
+  ]
+}
