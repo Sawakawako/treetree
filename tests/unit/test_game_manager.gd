@@ -301,3 +301,47 @@ func test_buy_firepit_entrance_requires_awaken() -> void:
     gm._state.races["human"] = {"awakened": true, "population": 50.0}
     assert_that(gm.buy_firepit()).is_true()
     assert_that(gm.get_firepit_cost()).is_equal(1000)  # Lv1 后下一级仍 1000×fib(2)=1000
+
+func test_convert_entrances() -> void:
+    gm._state = GameState.new()
+    gm._state.lingua_nodes.assign([&"tree_canopy", &"root_resonance"])
+    gm._state.sap = BigNum.new(600.0)
+    assert_that(gm.convert_faith()).is_true()
+    assert_that(gm.get_state().faith.to_value()).is_equal_approx(1.0, 1e-4)
+    assert_that(gm.convert_memory()).is_true()
+    assert_that(gm.get_state().memory.to_value()).is_equal_approx(1.0, 1e-4)
+    assert_that(gm.get_state().sap.to_value()).is_equal_approx(0.0, 1e-4)  # 600-100-500
+
+func test_convert_blocked() -> void:
+    gm._state = GameState.new()  # 无节点
+    gm._state.sap = BigNum.new(1000.0)
+    assert_that(gm.convert_faith()).is_false()
+    assert_that(gm.convert_memory()).is_false()
+
+func test_engine_entrances() -> void:
+    gm._state = GameState.new()
+    gm._state.lingua_nodes.assign([&"cloud_crown", &"grace"])
+    gm._state.faith = BigNum.new(1000.0)
+    gm._state.memory = BigNum.new(1000.0)
+    assert_that(gm.buy_faith_engine()).is_true()
+    assert_that(gm.buy_memory_engine()).is_true()
+    assert_that(gm.get_state().faith_engine_level).is_equal(1)
+    assert_that(gm.get_state().memory_engine_level).is_equal(1)
+
+func test_lingua_entrances() -> void:
+    gm._state = GameState.new()
+    gm._state.faith = BigNum.new(1000.0)
+    assert_that(gm.upgrade_life()).is_true()  # Lv0→1 免费
+    assert_that(gm.upgrade_life()).is_true()  # Lv1→2 扣 200
+    assert_that(gm.get_state().lingua_life_level).is_equal(2)
+    gm._state.sap = BigNum.new(3000.0)
+    assert_that(gm.unlock_node(&"tree_canopy")).is_true()
+    assert_that(gm.get_state().lingua_nodes).contains(&"tree_canopy")
+
+func test_unlock_blocked() -> void:
+    gm._state = GameState.new()
+    gm._state.faith = BigNum.new(1000.0)
+    gm.upgrade_life()  # Lv1
+    gm._state.sap = BigNum.new(3000.0)
+    assert_that(gm.unlock_node(&"root_resonance")).is_true()
+    assert_that(gm.unlock_node(&"cloud_crown")).is_false()  # 需 Lv2

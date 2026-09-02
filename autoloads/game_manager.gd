@@ -260,3 +260,41 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     choice_resolved.emit(choice_id, option_id, str(result.get("result_text", "")), opt_text)
     resources_changed.emit()
     return result
+
+func convert_faith() -> bool:
+    var ok := GameActions.convert_sap_to_faith(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func convert_memory() -> bool:
+    var ok := GameActions.convert_sap_to_memory(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_faith_engine() -> bool:
+    var ok := GameActions.buy_faith_engine(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func buy_memory_engine() -> bool:
+    var ok := GameActions.buy_memory_engine(_state)
+    if ok:
+        resources_changed.emit()
+    return ok
+
+func upgrade_life() -> bool:
+    var ok := LinguaActions.upgrade_life(_state)
+    if ok.get("ok", false):
+        resources_changed.emit()
+        return true
+    return false
+
+func unlock_node(node_id: StringName) -> bool:
+    var ok := LinguaActions.unlock_node(_state, node_id)
+    if ok.get("ok", false):
+        resources_changed.emit()
+        return true
+    return false
