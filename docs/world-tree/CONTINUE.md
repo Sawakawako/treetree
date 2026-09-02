@@ -60,7 +60,7 @@
 | **里程碑 5c** | ✅ 完成（意志漂移+化身：drift 暗线/化身观感 4 档=漂移镜子/亲密事件对坐，184 测试全绿 + M5C E2E PASSED，2026-09-01 实施） |
 | **里程碑 5e** | 📝 设计完成（树语科技+资源分层）——实施待排 |
 | **里程碑 5f** | ✅ 完成（灵魂系统：河底守恒 100/复活/夺魂，201 测试全绿 + M5F E2E PASSED，2026-09-01 实施） |
-| **里程碑 5g+** | ⏳ 待定（明选引擎→终局，见 `docs/world-tree/ROADMAP.md`） |
+| **里程碑 5g** | ✅ 完成（明选引擎+五卡：ChoiceLibrary/ChoiceActions/choices.json 文本外置/GameState 五账本/GameManager 停顿点明选/UI 弹层，245 测试全绿 + M5G E2E 29 项 PASS，2026-09-01 实施） |
 | **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
 
 ## 三、关键文档索引
@@ -214,6 +214,23 @@ tests/unit/                 # GdUnit4 测试（201 个，23 套件）
 4. E2E 脚本 `load(...).new()` 返回值无静态类型，`var gm :=` 推断失败（已知坑，M2 教训 #4）——用无类型 var + 显式 `var x: Dictionary`。
 
 **下一步**：明选引擎（M5g）——灵魂夺魂机制已供复用（哲学僵尸明选）；M5e 树语科技批 1 亦可择机插入。
+
+## 六·十三、里程碑 5g 完成记录（2026-09-01）
+
+**内容**：明选引擎 + 五卡 → `features/choices/`：`ChoiceLibrary`（读 `data/choices.json`，静态缓存+结构校验）、`ChoiceActions`（触发解释器 9 条件键全支持/available 数组序/can_choose/option_unlocked/resolve 后果执行 effects 全键）、`choices.json`（★ 五卡七条目全文文本外置：①人族噩梦 ②奥丁之祭 ③诺恩三抉择×3 ④菟丝子 ⑤忒修斯，C 选项 unlock `insight_gte:8`）；`GameState` 五账本（`choices_done`/`truth`/`drift_extra`/`race_memory_eff`/`choice_flags`，全部序列化+缺省/损坏回退，旧档不损坏）；`RaceManager` 人族梦产×`race_memory_eff` 系数（缺省 1.0）；`DriftActions.drift_value` 叠加 `drift_extra` 后 clamp 0-10；`GameManager` 明选检测（`_pending_choice` 占用=停顿点/一次只弹一个）+ 双信号（`choice_available`/`choice_resolved`）+ `resolve_choice` 入口；UI 明选弹层（intro/选项按钮×3/门槛灰显/差分播报进 `race_event_label`）。
+
+**设计要点**（决策记录见 M5g 设计文档 §六）：JSON 文本外置（改文本只改 choices.json 一个文件，服务文本工作流）；明选=停顿点（无倒计时，`_pending_choice` 占用即停发新明选，选完清空下 tick 查下一个，JSON 数组序=优先级）；`truth`/`drift_extra`/`race_memory_eff`/`choice_flags` 四新账本供 M6 终局消费；flag 命名约定 `<choice_id 前缀>_<选项语义>` 落定（如 `ship_built`/`theseus_remembered`/`odin_left`）；明选特耗 vs 通用接口刻意区分（③现在「救 1 耗 2 缕」不走 SoulActions.revive——明选救个体更贵）。
+
+**验证**：245 单测全绿（25 套件 = 基线 201 + 44 新增：T1 4 + T2 7 + T3 13 + T4 10 + T5 5 + T6 5，0 失败 0 orphan）+ M5G E2E 29 项检查全 PASS（人族醒→五卡逐一弹出→resolve 全链路→防重复→存档往返→旧档回退，脚本已删）+ 冒烟通过。
+
+**实施教训**：
+1. **2 处计划缺陷经 BLOCKED 协议裁决**：#1 Task 5 种族梦产断言未用增长后人口（计划 0.05/0.035，实跑 0.05025/0.035175——tick 先供养后增长再产出）——裁决改断言为增长后精确值（与 test_memory_production_human_only 惯例一致，教训 #4 再犯）；#2 Task 6 pending 测试 `count += 1` 撞 lambda 值捕获（外部恒 0）——裁决按既有惯例改 Dictionary 包装回写。
+2. **E2E 类型标注**：临时 E2E 脚本 `var m0 := gm.get_state().memory.to_value()` 之类链式 `:=` 推断失败（gm 无类型，M2 教训 #4 再犯）——显式 `var x: float = ...`/`var s: GameState = ...` 解决。
+3. **`--add` 统计口径**：GdUnitCmdTool 带 `--add res://tests/unit/test_xxx.gd` 时套件统计存在双重计数（如 238 vs 全量 212）——以全量（无 `--add`）为权威口径。
+4. **.uid 入库**：新增 class_name 脚本（choice_library/choice_actions）与测试文件 .uid 均应显式入库（Task 2/3 各补一次 amend）。
+5. **文案善恶不对称延续**：①A 采梦「把梦收下」与 ④B 菟丝子「继续」延续夺梦伪装诚实对照；flag 全文以 choices.json 为准（设计 4.2 与附录不一致处按命名约定统一）。
+
+**下一步**：卡片 ⑥体验机器（隐藏遗迹扩展，RelicLibrary 扩至 9）+ ⑦终局四路径（M6，消费 truth/insight/关系/choice_flags）；M5e 树语科技批 1 亦可择机插入。
 
 ## 七、下一步：里程碑 5c+（按路线图推进，待主人确认）
 
