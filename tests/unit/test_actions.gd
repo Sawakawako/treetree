@@ -115,3 +115,16 @@ func test_all_facilities_gate_by_race() -> void:
     assert_that(s.ring_level).is_equal(1)
     assert_that(s.forge_level).is_equal(1)
     assert_that(s.totem_pole_level).is_equal(1)
+
+func test_gather_daylight_includes_seedling() -> void:
+    var s := GameState.new()
+    s.seedling_level = 3
+    s.leaf_level = 0
+    GameActions.gather_daylight(s)
+    # 原 1.0×(1+0) = 1.0 → +3 = 4.0
+    assert_that(s.daylight.to_value()).is_equal_approx(4.0, 1e-4)
+
+func test_gather_daylight_no_seedling() -> void:
+    var s := GameState.new()
+    GameActions.gather_daylight(s)
+    assert_that(s.daylight.to_value()).is_equal_approx(1.0, 1e-4)

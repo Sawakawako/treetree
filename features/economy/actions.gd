@@ -2,7 +2,7 @@ class_name GameActions
 extends RefCounted
 
 static func gather_daylight(state: GameState) -> void:
-	var gain := BigNum.new(1.0 * (1.0 + 0.25 * float(state.leaf_level)))
+	var gain := BigNum.new(1.0 * (1.0 + 0.25 * float(state.leaf_level)) + float(state.seedling_level))
 	state.daylight.add(gain)
 
 static func buy_leaf(state: GameState) -> bool:

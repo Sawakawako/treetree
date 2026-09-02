@@ -93,4 +93,8 @@ static func tick_races(state: GameState) -> Array[Dictionary]:
 	# 花盘：独立信仰产出（与人口无关）
 	if state.sunflower_level > 0:
 		state.faith.add(BigNum.new(0.5 * float(state.sunflower_level)))
+	# 四族设施（各族唤醒解锁后购买，独立产出——M5d2）
+	state.memory.add(BigNum.new(0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)))
+	state.faith.add(BigNum.new(0.3 * float(state.ring_level)))
+	state.sap.add(BigNum.new(0.5 * float(state.forge_level)))
 	return events

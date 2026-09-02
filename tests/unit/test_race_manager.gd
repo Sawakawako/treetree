@@ -176,3 +176,16 @@ func test_memory_eff_default_no_change() -> void:
 	s.sap = BigNum.new(500.0)
 	RaceManager.tick_races(s)
 	assert_that(s.memory.to_value()).is_equal_approx(0.05025, 1e-4)  # 50.25×0.001
+
+func test_facility_independent_production() -> void:
+	# 设施独立产出——sap 0 无增长无唤醒族，纯设施精确
+	var s := GameState.new()
+	s.firepit_level = 2
+	s.totem_pole_level = 1
+	s.ring_level = 3
+	s.forge_level = 2
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	assert_that(s.memory.to_value()).is_equal_approx(0.3, 1e-4)   # 0.1×2 + 0.1×1
+	assert_that(s.faith.to_value()).is_equal_approx(0.9, 1e-4)    # 0.3×3
+	assert_that(s.sap.to_value()).is_equal_approx(1.0, 1e-4)      # 0.5×2
