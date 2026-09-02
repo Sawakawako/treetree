@@ -31,6 +31,13 @@ var drift_extra: float = 0.0
 var race_memory_eff: Dictionary = {}
 var choice_flags: Array[StringName] = []
 var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
+var seedling_level: int = 0     # 嫩叶教学链（M5d2）
+var firepit_level: int = 0       # 说书人火塘·人族设施（M5d2）
+var ring_level: int = 0          # 歌之环·林地民设施（M5d2）
+var forge_level: int = 0         # 铸根坊·石裔设施（M5d2）
+var totem_pole_level: int = 0    # 图腾柱·野民设施（M5d2）
+var deep_dream: bool = false     # 深根梦已购（一次性，M5d2）
+var wind_veil: bool = false      # 风语膜已购（一次性，M5d2）
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -71,6 +78,13 @@ func to_dict() -> Dictionary:
         "sunflower_level": sunflower_level,
         "nautilus_level": nautilus_level,
         "root_eff_level": root_eff_level,
+        "seedling_level": seedling_level,
+        "firepit_level": firepit_level,
+        "ring_level": ring_level,
+        "forge_level": forge_level,
+        "totem_pole_level": totem_pole_level,
+        "deep_dream": deep_dream,
+        "wind_veil": wind_veil,
     }
 
 static func from_dict(d: Dictionary) -> GameState:
@@ -182,4 +196,18 @@ static func from_dict(d: Dictionary) -> GameState:
         s.soul_river = int(sr)
     else:
         s.soul_river = 100  # 损坏防御（同 relations 防御模式）
+    var sl: Variant = d.get("seedling_level", 0)
+    s.seedling_level = int(sl) if typeof(sl) == TYPE_INT or typeof(sl) == TYPE_FLOAT else 0
+    var fpl: Variant = d.get("firepit_level", 0)
+    s.firepit_level = int(fpl) if typeof(fpl) == TYPE_INT or typeof(fpl) == TYPE_FLOAT else 0
+    var rl: Variant = d.get("ring_level", 0)
+    s.ring_level = int(rl) if typeof(rl) == TYPE_INT or typeof(rl) == TYPE_FLOAT else 0
+    var fgl: Variant = d.get("forge_level", 0)
+    s.forge_level = int(fgl) if typeof(fgl) == TYPE_INT or typeof(fgl) == TYPE_FLOAT else 0
+    var tpl: Variant = d.get("totem_pole_level", 0)
+    s.totem_pole_level = int(tpl) if typeof(tpl) == TYPE_INT or typeof(tpl) == TYPE_FLOAT else 0
+    var dd: Variant = d.get("deep_dream", false)
+    s.deep_dream = bool(dd) if typeof(dd) == TYPE_BOOL else false
+    var wv: Variant = d.get("wind_veil", false)
+    s.wind_veil = bool(wv) if typeof(wv) == TYPE_BOOL else false
     return s

@@ -253,3 +253,37 @@ func test_m5g_stringname_arrays_filter_invalid() -> void:
     assert_that(back.choices_done).contains(&"a")
     assert_that(back.choice_flags.size()).is_equal(1)
     assert_that(back.choice_flags).contains(&"b")
+
+func test_m5d2_fields_roundtrip() -> void:
+    var s := GameState.new()
+    s.seedling_level = 3
+    s.firepit_level = 2
+    s.ring_level = 1
+    s.forge_level = 0
+    s.totem_pole_level = 2
+    s.deep_dream = true
+    s.wind_veil = false
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.seedling_level).is_equal(3)
+    assert_that(back.firepit_level).is_equal(2)
+    assert_that(back.ring_level).is_equal(1)
+    assert_that(back.forge_level).is_equal(0)
+    assert_that(back.totem_pole_level).is_equal(2)
+    assert_that(back.deep_dream).is_true()
+    assert_that(back.wind_veil).is_false()
+
+func test_m5d2_fields_missing_fallback() -> void:
+    var back := GameState.from_dict({"tick": 5})
+    assert_that(back.seedling_level).is_equal(0)
+    assert_that(back.firepit_level).is_equal(0)
+    assert_that(back.ring_level).is_equal(0)
+    assert_that(back.forge_level).is_equal(0)
+    assert_that(back.totem_pole_level).is_equal(0)
+    assert_that(back.deep_dream).is_false()
+    assert_that(back.wind_veil).is_false()
+
+func test_m5d2_fields_corrupt_fallback() -> void:
+    var back := GameState.from_dict({"seedling_level": "corrupt", "deep_dream": "corrupt", "wind_veil": 1})
+    assert_that(back.seedling_level).is_equal(0)
+    assert_that(back.deep_dream).is_false()
+    assert_that(back.wind_veil).is_false()
