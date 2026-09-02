@@ -4,7 +4,7 @@
 
 **Goal:** 落地三层资源架构（点击式兑换 + 二级引擎）+ 树语科技框架（生命之语 Lv1-2 + 初阶/中阶节点）——玩家从「点击产出」进阶到「点击转换」，树语成为能力解锁层。
 
-**Architecture:** GameState 增引擎/树语字段 + GameActions 兑换与引擎购买（纯静态，仿 M5d 五类）+ GameLoop/RaceManager tick 产出引擎与乘数节点 + LinguaActions（树语等级/节点解锁，RefCounted 纯静态）+ LinguaData 数据驱动节点表 + UI 树语区（兑换/引擎/树语面板）。聚落之心节点留能力位（M5d2 设施系统依赖，主人裁决后置）。
+**Architecture:** GameState 增引擎/树语字段 + GameActions 兑换与引擎购买（纯静态，仿 M5d 五类）+ GameLoop/RaceManager tick 产出引擎与乘数节点 + LinguaActions（树语等级/节点解锁，RefCounted 纯静态）+ LinguaData 数据驱动节点表 + UI 树语区（兑换/引擎/树语面板）。聚落之心节点注册实现（M5d2 四族设施已落地，产出 ×1.5）。
 
 **Tech Stack:** Godot 4.7.1 mono / GDScript / GdUnit4 6.2.1（headless CLI）。
 
@@ -21,9 +21,9 @@
 - 中文文件用 edit/write 工具（UTF-8，禁 PowerShell 默认编码写中文）
 - 存档兼容：新字段缺省回退；旧档（M5g 及更早）→ faith_engine_level=0/memory_engine_level=0/lingua_life_level=0/lingua_nodes=[]
 - 每任务一个 commit，风格 `feat: 模块名（要点）`
-- **基线测试数：248**（M5g 后全绿）；每任务后全量回归确认无回退
+- **基线测试数：265**（M5d2 后全绿——主人裁决先做 M5d2 再做 M5e）；每任务后全量回归确认无回退
 - 数值公式严格照抄设计文档（§三 100:1 / 500:1；§四 200×fib(L+1) / 500×fib(L+1)；§5.1 生命之语 Lv2=200、Lv3=800；§5.3 节点消耗 初阶 3000/中阶 8000）
-- **聚落之心（叶枝·初阶）本批不实现**——依赖 M5d2 四族设施（未实施，主人裁决后置）；节点表数据中不注册该节点（或注册但 can_unlock 恒 false 并注明能力位），实施选前者更干净
+- **聚落之心（叶枝·初阶）本批实现**——M5d2 四族设施已落地（firepit/ring/forge/totem_pole_level），效果「四族设施产出 +50%」在 RaceManager 设施产出处乘 1.5
 
 ---
 
@@ -149,7 +149,7 @@ func test_life_costs_table() -> void:
 
 func test_nodes_registered() -> void:
 	var nodes := LinguaData.all_nodes()
-	# 批 1 注册：根枝 2 + 干枝 3 + 叶枝 2（聚落之心不注册）
+	# 批 1 注册：根枝 3 + 干枝 4 + 叶枝 4 = 11 节点（含聚落之心——M5d2 设施已落地）
 	var ids: Array[StringName] = []
 	for n in nodes:
 		ids.append(StringName(str(n.get("id", ""))))
@@ -161,12 +161,13 @@ func test_nodes_registered() -> void:
 	assert_that(ids).contains(&"cloud_crown")   # 云冠
 	assert_that(ids).contains(&"wood_heart")    # 木质强化
 	assert_that(ids).contains(&"song_resonance")# 歌之共鸣
+	assert_that(ids).contains(&"village_heart") # 聚落之心
 	assert_that(ids).contains(&"grace")         # 恩泽
 	assert_that(ids).contains(&"altar")         # 圣坛
-	assert_that(ids).contains(&"village_heart").is_false()  # 聚落之心不注册（M5d2 后置）
+	assert_that(nodes.size()).is_equal(11)
 ```
 
-> ⚠️ 上面最后一行 `assert_that(...).contains(...).is_false()` 是链式误写——应为 `assert_that(ids).contains(&"village_heart")).is_false()`。实施时写对（GdUnit 断言：`assert_that(ids.contains(&"village_heart")).is_false()`）。
+> ⚠️ 节点表注册数：批 1 共 11 节点（根枝 root_echo/root_resonance/deep_root 3 + 干枝 tree_canopy/ring_memory/cloud_crown/wood_heart 4 + 叶枝 song_resonance/village_heart/grace/altar 4）。`test_nodes_registered` 断言 `nodes.size() == 11`。若 M5e 计划正文节点表与实际数不符，以本计划 LinguaData.NODES 实现代码为准（实施时逐条核对）。
 
 新文件 `tests/unit/test_lingua_actions.gd`：
 
@@ -248,7 +249,7 @@ extends RefCounted
 const LINGUA_LIFE_COSTS := {1: 0, 2: 200, 3: 800}
 const LIFE_MAX_LEVEL := 3
 
-# 节点表（设计 §5.2 批 1 注册；tier: 1 初阶 2 中阶；聚落之心不注册——M5d2 设施依赖后置）
+# 节点表（设计 §5.2 批 1 注册 11 节点；tier: 1 初阶 2 中阶；聚落之心已实现——M5d2 设施落地，产出 ×1.5）
 const NODES: Array[Dictionary] = [
 	{"id": &"root_echo", "name": "遗迹回声", "branch": "root", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "遗迹文本回看"},
 	{"id": &"root_resonance", "name": "根须共鸣", "branch": "root", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "解锁树液→记忆兑换"},
@@ -258,6 +259,7 @@ const NODES: Array[Dictionary] = [
 	{"id": &"cloud_crown", "name": "云冠", "branch": "trunk", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "解锁信仰引擎"},
 	{"id": &"wood_heart", "name": "木质强化", "branch": "trunk", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "sap 上限 +50%"},
 	{"id": &"song_resonance", "name": "歌之共鸣", "branch": "leaf", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "信仰产出 +10%"},
+	{"id": &"village_heart", "name": "聚落之心", "branch": "leaf", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "四族设施产出 +50%"},
 	{"id": &"grace", "name": "恩泽", "branch": "leaf", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "解锁记忆引擎"},
 	{"id": &"altar", "name": "圣坛", "branch": "leaf", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "信仰引擎效果 ×2"},
 ]
@@ -608,20 +610,21 @@ git commit -m "feat: 二级引擎（信仰/记忆引擎购买+tick 产出）+ �
 
 ---
 
-### Task 5: 乘数节点接入（年轮记忆/木质强化/深层根须）+ 引擎产出修正
+### Task 5: 乘数节点接入（年轮记忆/木质强化/深层根须/聚落之心）+ 引擎产出修正
 
 **Files:**
 - Modify: `features/game/game_loop.gd`（sap_cap ×wood_heart；生长 ×ring_memory）
 - Modify: `features/dreams/root_actions.gd`（探索成本 -50% deep_root）
-- Modify: `features/economy/cost_calculator.gd`（若 sap_cap 涉及——实际 sap_cap 在 GameLoop）
-- Test: `tests/unit/test_game_loop.gd`、`tests/unit/test_root_actions.gd`
+- Modify: `features/races/race_manager.gd`（四族设施产出 ×1.5 village_heart）
+- Test: `tests/unit/test_game_loop.gd`、`tests/unit/test_root_actions.gd`、`tests/unit/test_race_manager.gd`
 
 **Interfaces:**
 - Consumes: Task 1-2（lingua_nodes + LinguaActions.has_node）
-- Produces: 能力查询函数 `LinguaActions.has_node` 被 GameLoop/RootActions 消费：
+- Produces: 能力查询函数 `LinguaActions.has_node` 被 GameLoop/RootActions/RaceManager 消费：
   - `GameLoop.sap_cap(state)`：有 wood_heart → `(10000+5000×nautilus) × 1.5`
   - `GameLoop.tick` 生长：有 ring_memory → grown × 1.2
-  - `RootActions.EXPLORE_COST`：有 deep_root → 100（半价）
+  - `RootActions.explore_cost(state)`：有 deep_root → EXPLORE_COST × 0.5
+  - `RaceManager.tick_races` 四族设施产出：有 village_heart → × 1.5（M5d2 设施块内乘）
 
 - [ ] **Step 1: 写失败测试**：
 
@@ -665,12 +668,38 @@ func test_deep_root_halves_explore_cost() -> void:
 	assert_that(s2.sap.to_value()).is_equal_approx(0.0, 1e-4)  # 100-100 半价
 ```
 
+`tests/unit/test_race_manager.gd` 追加（聚落之心——仿 M5d2 设施产出测试，sap=0 隔离）：
+```gdscript
+func test_village_heart_boosts_facility_output() -> void:
+	var s := GameState.new()
+	s.firepit_level = 1
+	s.ring_level = 1
+	s.forge_level = 1
+	s.totem_pole_level = 1
+	s.lingua_nodes.assign([&"village_heart"])
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	# 基础产出：记忆 0.1+0.1 / 信仰 0.3 / 树液 0.5 → ×1.5
+	assert_that(s.memory.to_value()).is_equal_approx(0.3, 1e-4)   # (0.1+0.1)×1.5
+	assert_that(s.faith.to_value()).is_equal_approx(0.45, 1e-4)   # 0.3×1.5
+	assert_that(s.sap.to_value()).is_equal_approx(0.75, 1e-4)     # 0.5×1.5
+
+func test_facility_output_without_village_heart() -> void:
+	var s := GameState.new()
+	s.firepit_level = 1
+	s.sap = BigNum.new(0.0)
+	RaceManager.tick_races(s)
+	assert_that(s.memory.to_value()).is_equal_approx(0.1, 1e-4)   # 无节点不乘
+```
+
+> ⚠️ 注意 village_heart 测试中 `sap.to_value()` 断言 0.75——tick_races 供养段（无唤醒族 sap 不扣）→ 增长段（无唤醒族不增长）→ 产出段：铸根坊产 sap 0.5×1.5=0.75。sap 初始 0，产出后 0.75。若 sap clamp 在 RaceManager 内会钳（实际 clamp 在 GameLoop.tick，不在 tick_races——M5d2 已验证无冲突）✓。
+
 - [ ] **Step 2: 跑测试验证失败**
 
-Run: 两文件 `-c`
-Expected: FAIL（wood_heart/ring_memory/deep_root 未接入）
+Run: 三文件 `-c`（test_game_loop/test_root_actions/test_race_manager）
+Expected: FAIL（wood_heart/ring_memory/deep_root/village_heart 未接入）
 
-- [ ] **Step 3: 最小实现**——三文件：
+- [ ] **Step 3: 最小实现**——四文件：
 
 `features/game/game_loop.gd`：
 ```gdscript
@@ -695,6 +724,15 @@ static func explore_cost(state: GameState) -> float:
 ```
 can_explore/explore 用 `explore_cost(state)` 替换 `EXPLORE_COST` 两处（`BigNum.new(explore_cost(state))`）。
 
+`features/races/race_manager.gd`——M5d2 四族设施产出块改造（乘 village_heart 1.5）：
+```gdscript
+	# 四族设施（各族唤醒解锁后购买，独立产出——M5d2；聚落之心 ×1.5——M5e）
+	var village_mult := 1.5 if state.lingua_nodes.has(&"village_heart") else 1.0
+	state.memory.add(BigNum.new((0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)) * village_mult))
+	state.faith.add(BigNum.new(0.3 * float(state.ring_level) * village_mult))
+	state.sap.add(BigNum.new(0.5 * float(state.forge_level) * village_mult))
+```
+
 - [ ] **Step 4: 跑测试验证通过**
 
 Run: 同 Step 2 + 全量
@@ -703,8 +741,8 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add features/game/game_loop.gd features/dreams/root_actions.gd tests/unit/test_game_loop.gd tests/unit/test_root_actions.gd
-git commit -m "feat: 乘数节点接入（木质强化 sap 上限/年轮记忆生长/深层根须探索半价）"
+git add features/game/game_loop.gd features/dreams/root_actions.gd features/races/race_manager.gd tests/unit/test_game_loop.gd tests/unit/test_root_actions.gd tests/unit/test_race_manager.gd
+git commit -m "feat: 乘数节点接入（木质强化 sap 上限/年轮记忆生长/深层根须半价/聚落之心设施×1.5）"
 ```
 
 ---
@@ -1025,7 +1063,7 @@ git add -A
 git commit -m "feat: M5e 批 1 完整（E2E 全链路 PASS 后删临时脚本）"
 ```
 
-- [ ] **Step 5: 文档同步**——CONTINUE.md（状态表 M5e 行 + 六·十四 完成记录）+ ROADMAP.md（若路线图含 M5e 则标 ✅）。要点：三层架构（兑换/引擎）/树语 Lv1-2/10 节点；聚落之心留位注明（M5d2 依赖）；测试数 248+N。
+- [ ] **Step 5: 文档同步**——CONTINUE.md（状态表 M5e 行 + 六·十四 完成记录）+ ROADMAP.md（若路线图含 M5e 则标 ✅）。要点：三层架构（兑换/引擎）/树语 Lv1-2/11 节点（含聚落之心）；测试数 265+N。
 
 ```bash
 git add docs/world-tree/CONTINUE.md docs/world-tree/ROADMAP.md
@@ -1038,7 +1076,7 @@ git commit -m "docs: M5e 批 1 完成记录 + 路线图同步"
 
 **1. Spec 覆盖：**
 - §三 兑换（100:1/500:1）✅ T3；§四 引擎（200×fib/500×fib、+1/tick、+0.1/tick）✅ T4；§五 树语框架（5.1 等级成本 200/800 + Lv1 免费激活裁决；5.2 批 1 节点 10 个）✅ T2/T4/T5；5.3 解锁（树液 3000/8000 + 等级 + 幂等）✅ T2
-- §七 批 1 范围：三层架构 ✅ T3/T4、树语框架 ✅ T2、生命之语 Lv1-2 ✅ T2、初阶/中阶节点 ✅ T2/T5（聚落之心不注册 = 决策记录 #7 实施偏差，已报主人裁决后置）
+- §七 批 1 范围：三层架构 ✅ T3/T4、树语框架 ✅ T2、生命之语 Lv1-2 ✅ T2、初阶/中阶节点 ✅ T2/T5（聚落之心已注册实现——M5d2 先行，主人裁决顺序 M5d2→M5e）
 - §八 测试策略套件全部 ✅（test_conversion T3/test_engines T4/test_lingua T2/test_game_state T1/test_game_manager T6）
 - 能力位：地脉感应（离线）/天光（离线效率）不注册（批 2 实现时随离线一起）；奇迹之语/冥河之触不注册（批 2 记忆之语系）——与设计 §五「批 1 除大解锁」一致
 
