@@ -75,6 +75,14 @@ const RELATION_COLORS := {
 @onready var choice_option_a_button: Button = %ChoiceOptionAButton
 @onready var choice_option_b_button: Button = %ChoiceOptionBButton
 @onready var choice_option_c_button: Button = %ChoiceOptionCButton
+@onready var seedling_button: Button = %SeedlingButton
+@onready var seedling_cost_label: Label = %SeedlingCostLabel
+@onready var deep_dream_button: Button = %DeepDreamButton
+@onready var wind_veil_button: Button = %WindVeilButton
+@onready var firepit_button: Button = %FirepitButton
+@onready var ring_button: Button = %RingButton
+@onready var forge_button: Button = %ForgeButton
+@onready var totem_pole_button: Button = %TotemPoleButton
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -104,6 +112,13 @@ func _ready() -> void:
     choice_option_a_button.pressed.connect(func(): _on_choice_pressed(&"a"))
     choice_option_b_button.pressed.connect(func(): _on_choice_pressed(&"b"))
     choice_option_c_button.pressed.connect(func(): _on_choice_pressed(&"c"))
+    seedling_button.pressed.connect(_on_seedling_pressed)
+    deep_dream_button.pressed.connect(_on_deep_dream_pressed)
+    wind_veil_button.pressed.connect(_on_wind_veil_pressed)
+    firepit_button.pressed.connect(func(): _on_facility_pressed(&"human", "firepit_level"))
+    ring_button.pressed.connect(func(): _on_facility_pressed(&"forestfolk", "ring_level"))
+    forge_button.pressed.connect(func(): _on_facility_pressed(&"stoneborn", "forge_level"))
+    totem_pole_button.pressed.connect(func(): _on_facility_pressed(&"wildfolk", "totem_pole_level"))
     GameManager.choice_available.connect(_on_choice_available)
     GameManager.choice_resolved.connect(_on_choice_resolved)
     revive_human_button.pressed.connect(func(): _on_revive_pressed(&"human"))
@@ -211,6 +226,7 @@ func _refresh() -> void:
     _refresh_avatar()
     _refresh_intimate_buttons()
     _refresh_soul()
+    _refresh_m5d2()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -424,4 +440,55 @@ func _on_choice_resolved(choice_id: StringName, option_id: StringName, result_te
     race_event_label.text = result_text
     log_label.text = "（明选·%s）" % option_text
     choice_panel.visible = false
+    _refresh()
+
+func _refresh_m5d2() -> void:
+    var s := GameManager.get_state()
+    seedling_button.visible = s.seedling_level < 3
+    seedling_cost_label.visible = s.seedling_level < 3
+    seedling_cost_label.text = "价格：%d" % GameManager.get_seedling_cost()
+    seedling_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_seedling_cost())))
+    deep_dream_button.visible = not s.deep_dream
+    deep_dream_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(3000.0))
+    wind_veil_button.visible = not s.wind_veil
+    wind_veil_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(2500.0))
+    var facility_pairs := [
+        [&"human", firepit_button, GameManager.get_firepit_cost()],
+        [&"forestfolk", ring_button, GameManager.get_ring_cost()],
+        [&"stoneborn", forge_button, GameManager.get_forge_cost()],
+        [&"wildfolk", totem_pole_button, GameManager.get_totem_pole_cost()],
+    ]
+    for p in facility_pairs:
+        var rid: StringName = p[0]
+        var btn: Button = p[1]
+        btn.visible = s.races.has(rid) and bool(s.races[rid].get("awakened", false))
+        btn.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(p[2])))
+
+func _on_seedling_pressed() -> void:
+    if GameManager.buy_seedling():
+        log_label.text = "嫩叶舒展开了。"
+    _refresh()
+
+func _on_deep_dream_pressed() -> void:
+    if GameManager.buy_deep_dream():
+        race_event_label.text = "你把根须往更深处送。泥下的梦，比河里的更老——老到分不清是记忆，还是地质层。\n你梦见一棵树。不是你自己。是很多年前，一棵真正的、普通的树。\n它不知道什么叫世界。它只知道向上，向光。\n醒来时，你的根须里多了一点暖意。像有什么东西，在你身体里扎了根。"
+        log_label.text = "（深根梦 · 记忆 +15）"
+    _refresh()
+
+func _on_wind_veil_pressed() -> void:
+    if GameManager.buy_wind_veil():
+        race_event_label.text = "风从旧世界的方向吹来。你在风里，听见很远的说话声——\n有人在河边洗衣服。有孩子在追一只蜻蜓。有人在天裂之前，最后看了一眼太阳。\n声音很轻，像隔着水面。\n你听了一整个下午。风停的时候，你发现自己记下了它们的声音——像记下了某种信仰。"
+        log_label.text = "（风语膜 · 信仰 +30）"
+    _refresh()
+
+func _on_facility_pressed(race_id: StringName, field: String) -> void:
+    var ok := false
+    match field:
+        "firepit_level": ok = GameManager.buy_firepit()
+        "ring_level": ok = GameManager.buy_ring()
+        "forge_level": ok = GameManager.buy_forge()
+        "totem_pole_level": ok = GameManager.buy_totem_pole()
+    if ok:
+        var names := {&"human": "火塘", &"forestfolk": "歌之环", &"stoneborn": "铸根坊", &"wildfolk": "图腾柱"}
+        log_label.text = "（%s 立起来了。）" % names.get(race_id, "设施")
     _refresh()

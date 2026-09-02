@@ -366,3 +366,47 @@ text = ""
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
+
+[node name="SeedlingButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "嫩叶（点击采集 +1/级）"
+
+[node name="SeedlingCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "价格：10"
+
+[node name="DeepDreamButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "深根梦（3000 树液 → 记忆 +15）"
+
+[node name="WindVeilButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "风语膜（2500 树液 → 信仰 +30）"
+
+[node name="FirepitButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "火塘（人族设施 · 记忆 +0.1/tick）"
+
+[node name="RingButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "歌之环（林地民设施 · 信仰 +0.3/tick）"
+
+[node name="ForgeButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "铸根坊（石裔设施 · 树液 +0.5/tick）"
+
+[node name="TotemPoleButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "图腾柱（野民设施 · 记忆 +0.1/tick）"
