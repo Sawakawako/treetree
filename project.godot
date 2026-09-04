@@ -3,7 +3,7 @@ config_version=5
 
 [application]
 
-config/name="世界树"
+config/name="treetree"
 run/main_scene="res://features/ui/main.tscn"
 
 [autoload]
