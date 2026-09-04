@@ -4,7 +4,7 @@ signal resources_changed
 signal relic_discovered(relic_name: String, dream_text: String)
 signal race_awakened(race_id: StringName, race_name: String, awaken_text: String)
 signal totem_interpreted(totem_id: int, interpret_text: String)
-signal relation_changed(race_id: StringName, relation: int)
+signal relation_changed(race_id: StringName, relation: float)
 signal plunder_done(race_id: StringName, text: String, revealed: bool)
 signal intimate_done(race_id: StringName, text: String)
 signal choice_available(choice_id: StringName, title: String, intro: String, options: Array)
@@ -12,6 +12,7 @@ signal choice_resolved(choice_id: StringName, option_id: StringName, result_text
 signal soul_changed(soul_river: int)
 signal soul_revived(race_id: StringName, pop_gain: int)
 signal soul_plundered(race_id: StringName, pop_loss: int)
+signal story_heard(story_id: StringName, title: String, story_text: String)
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -19,9 +20,26 @@ const TICK_INTERVAL := 1.0
 var _state: GameState
 var _tick_accumulator := 0.0
 var _pending_choice: StringName = &""
+var _pending_offline_summary: Dictionary = {}
 
 func _ready() -> void:
     _state = SaveManager.load_or_create(SAVE_PATH)
+    var now_unix := int(Time.get_unix_time_from_system())
+    _pending_offline_summary = settle_offline(now_unix)
+    SaveManager.save(_state, SAVE_PATH, now_unix)
+
+func settle_offline(now_unix: int) -> Dictionary:
+    var saved_at := _state.last_saved_unix
+    _state.last_saved_unix = maxi(saved_at, maxi(now_unix, 0))
+    if saved_at <= 0:
+        return {"applied": false, "seconds": 0}
+    var seconds := OfflineProgress.effective_seconds(_state, saved_at, now_unix)
+    return OfflineProgress.apply(_state, seconds)
+
+func take_offline_summary() -> Dictionary:
+    var summary := _pending_offline_summary.duplicate(true)
+    _pending_offline_summary.clear()
+    return summary
 
 func _process(delta: float) -> void:
     _tick_accumulator += delta
@@ -199,7 +217,7 @@ func interpret_totem(totem_id: int) -> Dictionary:
 func interact_relation(race_id: StringName) -> Dictionary:
     var result := RelationActions.interact(_state, race_id)
     if result.get("ok", false):
-        relation_changed.emit(race_id, int(result.get("relation", 0)))
+        relation_changed.emit(race_id, float(result.get("relation", 0.0)))
         resources_changed.emit()
     return result
 
@@ -261,6 +279,13 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     resources_changed.emit()
     return result
 
+func hear_story(story_id: StringName) -> Dictionary:
+    var result := StoryActions.hear(_state, story_id)
+    if result.get("ok", false):
+        story_heard.emit(story_id, str(result.get("title", "")), str(result.get("text", "")))
+        resources_changed.emit()
+    return result
+
 func convert_faith() -> bool:
     var ok := GameActions.convert_sap_to_faith(_state)
     if ok:
@@ -288,6 +313,13 @@ func buy_memory_engine() -> bool:
 func upgrade_life() -> bool:
     var ok := LinguaActions.upgrade_life(_state)
     if ok.get("ok", false):
+        resources_changed.emit()
+        return true
+    return false
+
+func upgrade_memory() -> bool:
+    var result := LinguaActions.upgrade_memory(_state)
+    if result.get("ok", false):
         resources_changed.emit()
         return true
     return false

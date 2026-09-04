@@ -51,6 +51,37 @@ static func capacity(state: GameState) -> float:
 		boom = 1
 	return 100.0 * (1.0 + float(boom))
 
+static func _grow_race(state: GameState, race: RaceData, cap: float) -> void:
+	var pop := float(state.races[race.id]["population"])
+	var growth := pop * race.growth_rate * (1.0 - pop / cap)
+	state.races[race.id]["population"] = minf(pop + growth, cap)
+
+static func _produce_race(state: GameState, race: RaceData) -> void:
+	var pop := float(state.races[race.id]["population"])
+	var song_mult := 1.1 if state.lingua_nodes.has(&"song_resonance") else 1.0
+	state.faith.add(BigNum.new(pop * race.devotion * FAITH_EFF * song_mult))
+	if race.produce_memory:
+		var mem_eff := float(state.race_memory_eff.get(race.id, 1.0))
+		state.memory.add(BigNum.new(pop * MEMORY_EFF * mem_eff * (1.0 + 0.1 * float(state.root_eff_level))))
+	if race.craft_sap > 0.0:
+		state.sap.add(BigNum.new(pop * race.craft_sap))
+
+static func _produce_passive(state: GameState) -> void:
+	# 花盘：独立信仰产出（与人口无关）
+	if state.sunflower_level > 0:
+		state.faith.add(BigNum.new(0.5 * float(state.sunflower_level)))
+	# 二级引擎（云冠/恩泽解锁后购买，独立产出）
+	if state.faith_engine_level > 0:
+		var altar_mult := 2.0 if state.lingua_nodes.has(&"altar") else 1.0
+		state.faith.add(BigNum.new(float(state.faith_engine_level) * altar_mult))
+	if state.memory_engine_level > 0:
+		state.memory.add(BigNum.new(float(state.memory_engine_level) * 0.1))
+	# 四族设施独立产出；聚落之心 ×1.5。
+	var village_mult := 1.5 if state.lingua_nodes.has(&"village_heart") else 1.0
+	state.memory.add(BigNum.new((0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)) * village_mult))
+	state.faith.add(BigNum.new(0.3 * float(state.ring_level) * village_mult))
+	state.sap.add(BigNum.new(0.5 * float(state.forge_level) * village_mult))
+
 static func tick_races(state: GameState) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	# 1) 唤醒判定
@@ -76,33 +107,29 @@ static func tick_races(state: GameState) -> Array[Dictionary]:
 				continue
 			if PlunderActions.is_frozen(state, race.id):
 				continue  # 夺梦揭示后人口冻结
-			var pop := float(state.races[race.id]["population"])
-			var growth := pop * race.growth_rate * (1.0 - pop / cap)
-			state.races[race.id]["population"] = minf(pop + growth, cap)
+			_grow_race(state, race, cap)
 	# 4) 产出
 	for race in all_races():
 		if not _is_awakened(state, race.id):
 			continue
-		var pop := float(state.races[race.id]["population"])
-		var song_mult := 1.1 if state.lingua_nodes.has(&"song_resonance") else 1.0
-		state.faith.add(BigNum.new(pop * race.devotion * FAITH_EFF * song_mult))
-		if race.produce_memory:
-			var mem_eff := float(state.race_memory_eff.get(race.id, 1.0))
-			state.memory.add(BigNum.new(pop * MEMORY_EFF * mem_eff * (1.0 + 0.1 * float(state.root_eff_level))))
-		if race.craft_sap > 0.0:
-			state.sap.add(BigNum.new(pop * race.craft_sap))
-	# 花盘：独立信仰产出（与人口无关）
-	if state.sunflower_level > 0:
-		state.faith.add(BigNum.new(0.5 * float(state.sunflower_level)))
-	# 二级引擎（云冠/恩泽解锁后购买，独立产出）
-	if state.faith_engine_level > 0:
-		var altar_mult := 2.0 if state.lingua_nodes.has(&"altar") else 1.0
-		state.faith.add(BigNum.new(float(state.faith_engine_level) * altar_mult))
-	if state.memory_engine_level > 0:
-		state.memory.add(BigNum.new(float(state.memory_engine_level) * 0.1))
-	# 四族设施（各族唤醒解锁后购买，独立产出——M5d2；聚落之心 ×1.5——M5e）
-	var village_mult := 1.5 if state.lingua_nodes.has(&"village_heart") else 1.0
-	state.memory.add(BigNum.new((0.1 * float(state.firepit_level) + 0.1 * float(state.totem_pole_level)) * village_mult))
-	state.faith.add(BigNum.new(0.3 * float(state.ring_level) * village_mult))
-	state.sap.add(BigNum.new(0.5 * float(state.forge_level) * village_mult))
+		_produce_race(state, race)
+	_produce_passive(state)
 	return events
+
+static func tick_races_offline(state: GameState) -> void:
+	# 离线时不唤醒新种族，也不发事件。每族能付当 tick 供养才参与增长与产出。
+	var supported: Array[RaceData] = []
+	for race in all_races():
+		if not _is_awakened(state, race.id):
+			continue
+		var support := float(state.races[race.id]["population"]) * race.support_cost
+		if state.sap.is_greater_or_equal(BigNum.new(support)):
+			state.sap.sub(BigNum.new(support))
+			supported.append(race)
+	var cap := capacity(state)
+	for race in supported:
+		if not PlunderActions.is_frozen(state, race.id):
+			_grow_race(state, race, cap)
+	for race in supported:
+		_produce_race(state, race)
+	_produce_passive(state)

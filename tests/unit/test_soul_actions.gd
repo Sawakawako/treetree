@@ -75,7 +75,7 @@ func test_plunder_soul_success() -> void:
     assert_that(r.get("ok", false)).is_true()
     assert_that(s.soul_river).is_equal(100)      # 河底 +1（提前归河）
     assert_that(float(s.races["human"]["population"])).is_equal_approx(47.0, 1e-4)  # 50-3
-    assert_that(int(s.relations["human"])).is_equal(-1)  # 1-2（RelationActions clamp）
+    assert_that(float(s.relations["human"])).is_equal_approx(0.0, 1e-4)  # 1-1
 
 func test_plunder_soul_river_caps_at_100() -> void:
     # 守恒：夺魂总量不超过 100（河底存量就是计数器本身，cap 进 can 条件）

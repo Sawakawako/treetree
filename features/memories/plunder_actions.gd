@@ -2,6 +2,7 @@ class_name PlunderActions
 extends RefCounted
 
 const REVEAL_THRESHOLDS := [3, 6, 9]
+const REVEAL_RELATION_LOSS := 0.5
 
 static func _race_awakened(state: GameState, race_id: StringName) -> bool:
 	return state.races.has(race_id) and bool(state.races[race_id].get("awakened", false))
@@ -42,7 +43,7 @@ static func plunder(state: GameState, race_id: StringName) -> Dictionary:
 	if revealed:
 		if not state.plunder_reveals.has(race_id):
 			state.plunder_reveals.append(race_id)
-		RelationActions.apply_change(state, race_id, -1)
+		RelationActions.apply_change(state, race_id, -REVEAL_RELATION_LOSS)
 		if race_id == &"wildfolk" and after == 1:
 			# 惊扰：1 级揭示时人口 -20%（一次性，由 plunder_reveals 保证不重复）
 			var pop := float(state.races[race_id].get("population", 0.0))

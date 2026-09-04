@@ -32,6 +32,8 @@ static func avatar_tier_text(state: GameState) -> String:
 	return AvatarTiers.tier_text(drift_tier(state))
 
 static func can_intimate(state: GameState, race_id: StringName) -> bool:
+	if IntimateEvents.get_event(race_id).is_empty():
+		return false
 	if not is_avatar_awakened(state):
 		return false
 	if not RelationActions.is_intimate(state, race_id):

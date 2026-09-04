@@ -5,6 +5,10 @@ func test_life_costs_table() -> void:
 	assert_that(int(LinguaData.LINGUA_LIFE_COSTS[2])).is_equal(200) # 设计 §5.1
 	assert_that(int(LinguaData.LINGUA_LIFE_COSTS[3])).is_equal(800)
 
+func test_memory_lv1_cost_and_cap() -> void:
+	assert_that(LinguaData.memory_cost(0)).is_equal(500)
+	assert_that(LinguaData.memory_cost(1)).is_equal(-1)
+
 func test_nodes_registered() -> void:
 	var nodes := LinguaData.all_nodes()
 	# 批 1 注册：根枝 3 + 干枝 4 + 叶枝 4 = 11 节点（含聚落之心——M5d2 设施已落地）
@@ -22,4 +26,6 @@ func test_nodes_registered() -> void:
 	assert_that(ids).contains(&"village_heart") # 聚落之心
 	assert_that(ids).contains(&"grace")         # 恩泽
 	assert_that(ids).contains(&"altar")         # 圣坛
-	assert_that(nodes.size()).is_equal(11)
+	assert_that(ids).contains(&"earth_sense")   # 地脉感应
+	assert_that(ids).contains(&"sky_light")     # 天光
+	assert_that(nodes.size()).is_equal(13)

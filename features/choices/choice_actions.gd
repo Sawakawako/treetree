@@ -24,9 +24,12 @@ static func _trigger_met(state: GameState, trigger: Dictionary) -> bool:
 	if trigger.has("insight_gte"):
 		if state.insight < int(trigger["insight_gte"]):
 			return false
+	if trigger.has("relic_found"):
+		if not state.relics_found.has(int(trigger["relic_found"])):
+			return false
 	if trigger.has("relation_gte"):
 		for rid2 in trigger["relation_gte"]:
-			var need := int(trigger["relation_gte"][rid2])
+			var need := float(trigger["relation_gte"][rid2])
 			if RelationActions.get_relation(state, StringName(str(rid2))) < need:
 				return false
 	if trigger.has("plundered_gte"):
@@ -39,6 +42,9 @@ static func _trigger_met(state: GameState, trigger: Dictionary) -> bool:
 			return false  # 河底满 = 从未复活（复活必 -1）
 	if trigger.has("soul_river_lte"):
 		if state.soul_river > int(trigger["soul_river_lte"]):
+			return false
+	if trigger.has("soul_river_gte"):
+		if state.soul_river < int(trigger["soul_river_gte"]):
 			return false
 	return true
 
@@ -94,7 +100,7 @@ static func _apply_effects(state: GameState, effects: Dictionary) -> void:
 		state.faith.add(BigNum.new(state.faith.to_value() * p2))
 	if effects.has("relation"):
 		for rid in effects["relation"]:
-			RelationActions.apply_change(state, StringName(str(rid)), int(effects["relation"][rid]))
+			RelationActions.apply_change(state, StringName(str(rid)), float(effects["relation"][rid]))
 	if effects.has("insight"):
 		state.insight += int(effects["insight"])
 	if effects.has("truth"):
@@ -115,7 +121,7 @@ static func _apply_effects(state: GameState, effects: Dictionary) -> void:
 				state.races[rid3]["population"] = float(state.races[rid3].get("population", 0.0)) + float(soul_op["revive_pop"][rid3])
 		if soul_op.has("relation"):
 			for rid4 in soul_op["relation"]:
-				RelationActions.apply_change(state, StringName(str(rid4)), int(soul_op["relation"][rid4]))
+				RelationActions.apply_change(state, StringName(str(rid4)), float(soul_op["relation"][rid4]))
 	if effects.has("flags"):
 		for f in effects["flags"]:
 			var fn := StringName(str(f))

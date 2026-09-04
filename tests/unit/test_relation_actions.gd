@@ -5,13 +5,19 @@ func _awaken(state: GameState, id: StringName) -> void:
 
 func test_get_relation_default_zero() -> void:
 	var s := GameState.new()
-	assert_that(RelationActions.get_relation(s, &"human")).is_equal(0)
+	assert_that(RelationActions.get_relation(s, &"human")).is_equal_approx(0.0, 1e-4)
 
 func test_apply_change_clamps() -> void:
 	var s := GameState.new()
-	assert_that(RelationActions.apply_change(s, &"human", 5)).is_equal(3)
-	assert_that(RelationActions.apply_change(s, &"human", -8)).is_equal(-3)
-	assert_that(RelationActions.apply_change(s, &"human", 1)).is_equal(-2)
+	assert_that(RelationActions.apply_change(s, &"human", 5.0)).is_equal_approx(3.0, 1e-4)
+	assert_that(RelationActions.apply_change(s, &"human", -8.0)).is_equal_approx(-3.0, 1e-4)
+	assert_that(RelationActions.apply_change(s, &"human", 0.5)).is_equal_approx(-2.5, 1e-4)
+
+func test_apply_change_preserves_half_steps() -> void:
+	var s := GameState.new()
+	assert_that(RelationActions.apply_change(s, &"human", 0.5)).is_equal_approx(0.5, 1e-4)
+	assert_that(RelationActions.apply_change(s, &"human", 1.5)).is_equal_approx(2.0, 1e-4)
+	assert_that(RelationActions.get_relation(s, &"human")).is_equal_approx(2.0, 1e-4)
 
 func test_is_intimate_boundary() -> void:
 	var s := GameState.new()
@@ -46,9 +52,9 @@ func test_interact_gives_relation_and_text() -> void:
 	s.memory = BigNum.new(4.0)
 	var r := RelationActions.interact(s, &"human")
 	assert_that(r.get("ok", false)).is_true()
-	assert_that(int(r.get("relation", 0))).is_equal(1)
+	assert_that(float(r.get("relation", 0.0))).is_equal_approx(0.5, 1e-4)
 	assert_that(str(r.get("text", "")).length()).is_greater(10)
-	assert_that(s.relations["human"]).is_equal(1)
+	assert_that(float(s.relations["human"])).is_equal_approx(0.5, 1e-4)
 	assert_that(s.relation_events).contains(&"human")
 
 func test_interact_idempotent() -> void:
@@ -58,7 +64,7 @@ func test_interact_idempotent() -> void:
 	RelationActions.interact(s, &"human")
 	var again := RelationActions.interact(s, &"human")
 	assert_that(again.get("ok", false)).is_false()
-	assert_that(s.relations["human"]).is_equal(1)  # 不重复 +1
+	assert_that(float(s.relations["human"])).is_equal_approx(0.5, 1e-4)  # 不重复 +0.5
 
 func test_stoneborn_requires_sap() -> void:
 	var s := GameState.new()

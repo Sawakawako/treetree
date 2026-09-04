@@ -35,6 +35,13 @@ func test_drift_tier_boundaries() -> void:
 	s.plundered["human"] = 18  # 9.0 → tier 3
 	assert_that(DriftActions.drift_tier(s)).is_equal(3)
 
+func test_nine_plunders_at_avatar_memory_is_micro_drift() -> void:
+	var s := GameState.new()
+	s.memory = BigNum.new(30.0)
+	s.plundered["human"] = 9
+	assert_that(DriftActions.drift_value(s)).is_equal_approx(4.5, 1e-4)
+	assert_that(DriftActions.drift_tier(s)).is_equal(1)
+
 func test_is_avatar_awakened_boundary() -> void:
 	var s := GameState.new()
 	s.memory = BigNum.new(29.99)
@@ -67,6 +74,15 @@ func test_intimate_once_only() -> void:
 	assert_that(s.intimate_events).contains(&"human")
 	var again := DriftActions.intimate(s, &"human")
 	assert_that(again.get("ok", false)).is_false()
+
+func test_unknown_race_cannot_trigger_intimate_event() -> void:
+	var s := GameState.new()
+	s.memory = BigNum.new(40.0)
+	s.relations["unknown"] = 3.0
+	assert_that(DriftActions.can_intimate(s, &"unknown")).is_false()
+	var before := s.intimate_events.duplicate()
+	assert_that(DriftActions.intimate(s, &"unknown").get("ok", false)).is_false()
+	assert_that(s.intimate_events).is_equal(before)
 
 func test_drift_extra_adds_to_pure_state() -> void:
 	var s := GameState.new()

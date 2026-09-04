@@ -2,11 +2,13 @@
 
 [ext_resource type="Script" path="res://features/ui/main.gd" id="1_main"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="ScrollContainer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+follow_focus = true
+horizontal_scroll_mode = 0
 script = ExtResource("1_main")
 
 [node name="VBox" type="VBoxContainer" parent="."]
@@ -157,6 +159,26 @@ autowrap_mode = 3
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
+autowrap_mode = 3
+
+[node name="StoryStatusLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "说书人的火还没有亮。"
+autowrap_mode = 3
+
+[node name="StoryButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "听说书人讲下一个故事"
+
+[node name="StreamStoryButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "听一个没有署名的故事"
 
 [node name="RaceHumanLabel" type="Label" parent="VBox"]
 unique_name_in_owner = true
@@ -435,6 +457,16 @@ visible = false
 layout_mode = 2
 text = ""
 
+[node name="MemoryLinguaButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "记忆之语 · 醒来"
+
+[node name="MemoryLinguaCostLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "记忆之语 Lv1 · 500 记忆 + 领悟 5（领悟不消耗）"
+
 [node name="FaithEngineButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 visible = false
@@ -471,6 +503,12 @@ visible = false
 layout_mode = 2
 text = "根须共鸣（解锁树液→记忆兑换）"
 
+[node name="EarthSenseButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "地脉感应（8000 树液 · 解锁离线进度）"
+
 [node name="DeepRootButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 visible = false
@@ -500,6 +538,12 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "木质强化（sap 上限 +50%）"
+
+[node name="SkyLightButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "天光（20000 树液 · 离线时间 ×2，封顶 8 小时）"
 
 [node name="SongResonanceButton" type="Button" parent="VBox"]
 unique_name_in_owner = true

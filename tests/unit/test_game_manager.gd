@@ -102,20 +102,20 @@ func test_interact_relation_signal() -> void:
     gm._state = GameState.new()
     gm._state.races["human"] = {"awakened": true, "population": 50.0}
     gm._state.memory = BigNum.new(4.0)
-    var got := {"ok": false, "rel": -99}
-    gm.relation_changed.connect(func(id: StringName, rel: int) -> void:
+    var got := {"ok": false, "rel": -99.0}
+    gm.relation_changed.connect(func(id: StringName, rel: float) -> void:
         got["ok"] = true
         got["rel"] = rel)
     var result: Dictionary = gm.interact_relation(&"human")
     assert_that(result.get("ok", false)).is_true()
     assert_that(got["ok"]).is_true()
-    assert_that(int(got["rel"])).is_equal(1)
-    assert_that(gm.get_state().relations["human"]).is_equal(1)
+    assert_that(float(got["rel"])).is_equal_approx(0.5, 1e-4)
+    assert_that(float(gm.get_state().relations["human"])).is_equal_approx(0.5, 1e-4)
 
 func test_interact_relation_blocked_no_signal() -> void:
     gm._state = GameState.new()  # 人族未醒
     var got := {"ok": false}
-    gm.relation_changed.connect(func(id: StringName, rel: int) -> void: got["ok"] = true)
+    gm.relation_changed.connect(func(id: StringName, rel: float) -> void: got["ok"] = true)
     var result: Dictionary = gm.interact_relation(&"human")
     assert_that(result.get("ok", false)).is_false()
     assert_that(got["ok"]).is_false()
@@ -281,6 +281,21 @@ func test_resolve_choice_no_pending_fails() -> void:
     var r: Dictionary = gm.resolve_choice(&"human_nightmare", &"a")
     assert_that(r.get("ok", false)).is_false()
 
+func test_hear_story_emits_only_on_success() -> void:
+    gm._state = GameState.new()
+    gm._state.choice_flags.assign([&"cave_found", &"human_nightmare_protected"])
+    var got := {"count": 0, "title": "", "text": ""}
+    gm.story_heard.connect(func(id: StringName, title: String, story_text: String) -> void:
+        got["count"] += 1
+        got["title"] = title
+        got["text"] = story_text)
+    assert_that(gm.hear_story(&"story_4").get("ok", false)).is_true()
+    assert_that(got["count"]).is_equal(1)
+    assert_that(str(got["title"])).is_equal("故事④·火边的人")
+    assert_that(str(got["text"])).is_not_empty()
+    assert_that(gm.hear_story(&"story_4").get("ok", false)).is_false()
+    assert_that(got["count"]).is_equal(1)
+
 func test_buy_seedling_entrance() -> void:
     gm._state = GameState.new()
     gm._state.sap = BigNum.new(100.0)
@@ -337,6 +352,58 @@ func test_lingua_entrances() -> void:
     gm._state.sap = BigNum.new(3000.0)
     assert_that(gm.unlock_node(&"tree_canopy")).is_true()
     assert_that(gm.get_state().lingua_nodes).contains(&"tree_canopy")
+
+func test_upgrade_memory_emits_resources_only_on_success() -> void:
+    gm._state = GameState.new()
+    gm._state.memory = BigNum.new(500.0)
+    gm._state.insight = 5
+    var got := {"count": 0}
+    gm.resources_changed.connect(func() -> void: got["count"] += 1)
+    assert_that(gm.upgrade_memory()).is_true()
+    assert_that(got["count"]).is_equal(1)
+    assert_that(gm.get_state().lingua_memory_level).is_equal(1)
+    assert_that(gm.upgrade_memory()).is_false()
+    assert_that(got["count"]).is_equal(1)
+
+func test_settle_offline_is_idempotent_for_same_now() -> void:
+    gm._state = GameState.new()
+    gm._state.lingua_nodes.assign([&"earth_sense"])
+    gm._state.branch_level = 1
+    gm._state.last_saved_unix = 1000
+    var first: Dictionary = gm.settle_offline(1060)
+    var after_first: float = gm.get_state().daylight.to_value()
+    var second: Dictionary = gm.settle_offline(1060)
+    assert_that(first.get("applied", false)).is_true()
+    assert_that(after_first).is_greater(0.0)
+    assert_that(second.get("applied", false)).is_false()
+    assert_that(gm.get_state().daylight.to_value()).is_equal_approx(after_first, 1e-4)
+
+func test_old_save_timestamp_zero_only_records_now() -> void:
+    gm._state = GameState.new()
+    gm._state.lingua_nodes.assign([&"earth_sense"])
+    gm._state.branch_level = 1
+    var result: Dictionary = gm.settle_offline(5000)
+    assert_that(result.get("applied", false)).is_false()
+    assert_that(gm.get_state().last_saved_unix).is_equal(5000)
+    assert_that(gm.get_state().daylight.to_value()).is_equal_approx(0.0, 1e-4)
+
+func test_clock_rollback_does_not_move_timestamp_or_grant() -> void:
+    gm._state = GameState.new()
+    gm._state.lingua_nodes.assign([&"earth_sense"])
+    gm._state.branch_level = 1
+    gm._state.last_saved_unix = 5000
+    var result: Dictionary = gm.settle_offline(4000)
+    assert_that(result.get("applied", false)).is_false()
+    assert_that(gm.get_state().last_saved_unix).is_equal(5000)
+    assert_that(gm.get_state().daylight.to_value()).is_equal_approx(0.0, 1e-4)
+
+func test_offline_summary_can_only_be_taken_once() -> void:
+    gm._pending_offline_summary = {"applied": true, "seconds": 60, "sap": 12.0}
+    var first: Dictionary = gm.take_offline_summary()
+    var second: Dictionary = gm.take_offline_summary()
+    assert_that(first.get("applied", false)).is_true()
+    assert_that(first.get("sap", 0.0)).is_equal(12.0)
+    assert_that(second.is_empty()).is_true()
 
 func test_unlock_blocked() -> void:
     gm._state = GameState.new()

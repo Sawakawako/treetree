@@ -47,7 +47,7 @@ func test_reveal_applies_relation_penalty() -> void:
 	for i in 3:
 		PlunderActions.plunder(s, &"human")
 	assert_that(PlunderActions.reveal_stage(s, &"human")).is_equal(1)
-	assert_that(s.relations["human"]).is_equal(1)  # 关系 -1
+	assert_that(float(s.relations["human"])).is_equal_approx(1.5, 1e-4)  # 关系 -0.5
 	assert_that(s.plunder_reveals).contains(&"human")
 	# 揭示文本（revealed=true 的那次）
 	var last := PlunderActions.plunder(s, &"human")  # 第 4 次，正常信号
@@ -60,7 +60,7 @@ func test_reveal_only_once_per_stage() -> void:
 	for i in 6:
 		PlunderActions.plunder(s, &"human")
 	assert_that(PlunderActions.reveal_stage(s, &"human")).is_equal(2)
-	assert_that(s.relations["human"]).is_equal(0)  # -1 两次 = 累计 -2
+	assert_that(float(s.relations["human"])).is_equal_approx(1.0, 1e-4)  # -0.5 两次 = 累计 -1
 	assert_that(PlunderActions.is_frozen(s, &"human")).is_true()
 
 func test_wildfolk_population_loss_once() -> void:
@@ -93,6 +93,7 @@ func test_plunder_reveals_set_semantics() -> void:
 	for i in 9:
 		PlunderActions.plunder(s, &"human")
 	assert_that(s.plunder_reveals.size()).is_equal(1)
+	assert_that(float(s.relations["human"])).is_equal_approx(-1.5, 1e-4)
 
 func test_root_eff_boosts_plunder() -> void:
 	var s := GameState.new()

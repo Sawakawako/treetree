@@ -31,6 +31,9 @@ func test_trigger_relation_plundered() -> void:
 	s.plundered["forestfolk"] = 1
 	assert_that(ChoiceActions._trigger_met(s, {"relation_gte": {"human": 2}})).is_true()
 	assert_that(ChoiceActions._trigger_met(s, {"relation_gte": {"human": 3}})).is_false()
+	s.relations["human"] = 1.5
+	assert_that(ChoiceActions._trigger_met(s, {"relation_gte": {"human": 1.5}})).is_true()
+	assert_that(ChoiceActions._trigger_met(s, {"relation_gte": {"human": 2.0}})).is_false()
 	assert_that(ChoiceActions._trigger_met(s, {"plundered_gte": {"forestfolk": 1}})).is_true()
 
 func test_trigger_soul_conditions() -> void:
@@ -41,6 +44,15 @@ func test_trigger_soul_conditions() -> void:
 	assert_that(ChoiceActions._trigger_met(s, {"soul_river_lte": 98})).is_false()
 	s.soul_river = 88
 	assert_that(ChoiceActions._trigger_met(s, {"soul_river_lte": 98})).is_true()
+	assert_that(ChoiceActions._trigger_met(s, {"soul_river_gte": 89})).is_false()
+	assert_that(ChoiceActions._trigger_met(s, {"soul_river_gte": 88})).is_true()
+
+func test_trigger_relic_found_requires_exact_relic() -> void:
+	var s := GameState.new()
+	s.relics_found.assign([1, 2, 3, 4, 5, 6])
+	assert_that(ChoiceActions._trigger_met(s, {"relic_found": 7})).is_false()
+	s.relics_found.append(7)
+	assert_that(ChoiceActions._trigger_met(s, {"relic_found": 7})).is_true()
 
 func test_trigger_multiple_all_and() -> void:
 	var s := GameState.new()
@@ -106,15 +118,23 @@ func _ready_choice(state: GameState) -> void:
 func test_resolve_human_nightmare_a() -> void:
 	var s := GameState.new()
 	_awaken(s, &"human")
-	# A 采梦：memory+3 truth+1 relation-2 memory_eff 0.7
+	# A 采梦：memory+3 truth+1 relation-1 memory_eff 0.7
 	var r := ChoiceActions.resolve(s, &"human_nightmare", &"a")
 	assert_that(r.get("ok", false)).is_true()
 	assert_that(s.memory.to_value()).is_equal_approx(3.0, 1e-4)
 	assert_that(s.truth).is_equal(1)
-	assert_that(int(s.relations["human"])).is_equal(-2)
+	assert_that(float(s.relations["human"])).is_equal_approx(-1.0, 1e-4)
 	assert_that(float(s.race_memory_eff["human"])).is_equal_approx(0.7, 1e-4)
 	assert_that(s.choices_done).contains(&"human_nightmare")
 	assert_that(str(r.get("result_text", "")).length()).is_greater(5)
+
+func test_resolve_human_nightmare_b_relation() -> void:
+	var s := GameState.new()
+	_awaken(s, &"human")
+	var r := ChoiceActions.resolve(s, &"human_nightmare", &"b")
+	assert_that(r.get("ok", false)).is_true()
+	assert_that(float(s.relations["human"])).is_equal_approx(1.0, 1e-4)
+	assert_that(s.choice_flags).contains(&"human_nightmare_protected")
 
 func test_resolve_marks_done_and_blocks_rechoose() -> void:
 	var s := GameState.new()
@@ -150,7 +170,7 @@ func test_resolve_norne_now_a_soul_operation() -> void:
 	assert_that(r.get("ok", false)).is_true()
 	assert_that(s.soul_river).is_equal(96)  # -2 缕
 	assert_that(float(s.races["forestfolk"]["population"])).is_equal_approx(53.0, 1e-4)  # 50+3
-	assert_that(int(s.relations["forestfolk"])).is_equal(1)
+	assert_that(float(s.relations["forestfolk"])).is_equal_approx(0.5, 1e-4)
 	assert_that(s.choice_flags).contains(&"norne_now_saved")
 
 func test_resolve_norne_now_b_let_go() -> void:
@@ -160,8 +180,21 @@ func test_resolve_norne_now_b_let_go() -> void:
 	var r := ChoiceActions.resolve(s, &"norne_now", &"b")
 	assert_that(r.get("ok", false)).is_true()
 	assert_that(s.soul_river).is_equal(100)  # 无变化
-	assert_that(int(s.relations["forestfolk"])).is_equal(-1)
+	assert_that(float(s.relations["forestfolk"])).is_equal_approx(-0.5, 1e-4)
 	assert_that(s.choice_flags).contains(&"norne_now_let_go")
+	assert_that(str(r.get("result_text", "")).contains("河底多了一缕")).is_false()
+
+func test_norne_now_a_requires_two_souls_and_fails_without_effect() -> void:
+	var s := GameState.new()
+	_awaken(s, &"forestfolk")
+	s.memory = BigNum.new(40.0)
+	s.soul_river = 1
+	var pop_before := float(s.races["forestfolk"]["population"])
+	assert_that(ChoiceActions.option_unlocked(s, &"norne_now", &"a")).is_false()
+	assert_that(ChoiceActions.resolve(s, &"norne_now", &"a").get("ok", false)).is_false()
+	assert_that(s.soul_river).is_equal(1)
+	assert_that(float(s.races["forestfolk"]["population"])).is_equal_approx(pop_before, 1e-4)
+	assert_that(s.choices_done.has(&"norne_now")).is_false()
 
 func test_resolve_dodder_a_faith_pct_relation() -> void:
 	var s := GameState.new()
@@ -170,8 +203,16 @@ func test_resolve_dodder_a_faith_pct_relation() -> void:
 	var r := ChoiceActions.resolve(s, &"dodder", &"a")
 	assert_that(r.get("ok", false)).is_true()
 	assert_that(s.faith.to_value()).is_equal_approx(140.0, 1e-4)  # -30%
-	assert_that(int(s.relations["forestfolk"])).is_equal(3)
+	assert_that(float(s.relations["forestfolk"])).is_equal_approx(1.5, 1e-4)
 	assert_that(s.choice_flags).contains(&"dodder_released")
+
+func test_resolve_dodder_b_relation() -> void:
+	var s := GameState.new()
+	s.plundered["forestfolk"] = 1
+	var r := ChoiceActions.resolve(s, &"dodder", &"b")
+	assert_that(r.get("ok", false)).is_true()
+	assert_that(float(s.relations["forestfolk"])).is_equal_approx(-1.5, 1e-4)
+	assert_that(s.choice_flags).contains(&"dodder_kept")
 
 func test_resolve_theseus_b_four_race_relations() -> void:
 	var s := GameState.new()
@@ -180,7 +221,7 @@ func test_resolve_theseus_b_four_race_relations() -> void:
 	assert_that(r.get("ok", false)).is_true()
 	assert_that(s.drift_extra).is_equal_approx(1.0, 1e-4)
 	for rid in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
-		assert_that(int(s.relations[rid])).is_equal(1)
+		assert_that(float(s.relations[rid])).is_equal_approx(0.5, 1e-4)
 	assert_that(s.choice_flags).contains(&"theseus_uncertain")
 
 func test_resolve_theseus_c_requires_unlock() -> void:
@@ -194,6 +235,46 @@ func test_resolve_theseus_c_requires_unlock() -> void:
 	assert_that(s.insight).is_equal(10)  # +2
 	assert_that(s.truth).is_equal(1)
 	assert_that(s.choice_flags).contains(&"theseus_remembered")
+
+func test_experience_machine_unavailable_before_relic_seven() -> void:
+	var s := GameState.new()
+	s.relics_found.assign([1, 2, 3, 4, 5, 6])
+	assert_that(ChoiceActions.can_choose(s, &"experience_machine")).is_false()
+	s.relics_found.append(7)
+	assert_that(ChoiceActions.can_choose(s, &"experience_machine")).is_true()
+
+func test_experience_machine_a_requires_and_spends_fifty_faith() -> void:
+	var s := GameState.new()
+	s.relics_found.append(7)
+	s.faith = BigNum.new(49.0)
+	assert_that(ChoiceActions.option_unlocked(s, &"experience_machine", &"a")).is_false()
+	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"a").get("ok", false)).is_false()
+	assert_that(s.faith.to_value()).is_equal_approx(49.0, 1e-4)
+	s.faith = BigNum.new(50.0)
+	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"a").get("ok", false)).is_true()
+	assert_that(s.faith.to_value()).is_equal_approx(0.0, 1e-4)
+	assert_that(s.choice_flags).contains(&"experience_opened")
+
+func test_experience_machine_b_only_rewards_four_relations() -> void:
+	var s := GameState.new()
+	s.relics_found.append(7)
+	var insight_before := s.insight
+	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"b").get("ok", false)).is_true()
+	for rid in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		assert_that(float(s.relations[rid])).is_equal_approx(0.5, 1e-4)
+	assert_that(s.insight).is_equal(insight_before)
+	assert_that(s.choice_flags).contains(&"experience_destroyed")
+
+func test_experience_machine_c_only_rewards_insight_and_is_once_only() -> void:
+	var s := GameState.new()
+	s.relics_found.append(7)
+	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"c").get("ok", false)).is_true()
+	assert_that(s.insight).is_equal(1)
+	for rid in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		assert_that(RelationActions.get_relation(s, rid)).is_equal_approx(0.0, 1e-4)
+	assert_that(s.choice_flags).contains(&"experience_studied")
+	assert_that(s.choices_done).contains(&"experience_machine")
+	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"b").get("ok", false)).is_false()
 
 func test_resolve_before_trigger_fails() -> void:
 	var s := GameState.new()  # 人未醒

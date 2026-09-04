@@ -49,6 +49,11 @@ func mul_scalar(f: float) -> BigNum:
     return out
 
 func is_greater_or_equal(other: BigNum) -> bool:
+    # 零以 exponent=0 规范化，必须在比较指数前单独处理；否则 0 会被误判为 >= 0.1。
+    if mantissa == 0.0:
+        return other.mantissa <= 0.0
+    if other.mantissa == 0.0:
+        return mantissa >= 0.0
     var self_neg := mantissa < 0.0
     var other_neg := other.mantissa < 0.0
     if self_neg != other_neg:

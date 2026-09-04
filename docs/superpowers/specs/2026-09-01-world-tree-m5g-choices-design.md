@@ -110,7 +110,7 @@ static func resolve(state, choice_id, option_id) -> Dictionary     # 应用后�
 | `faith_gte: float` | 信仰 ≥ 阈值 | 同上 |
 | `growth_gte: float` | 树高 ≥ 阈值 | 同上 |
 | `insight_gte: int` | 领悟 ≥ 阈值 | `state.insight >= v` |
-| `relation_gte: {race: int}` | 与某族关系 ≥ 值 | `RelationActions.get_relation >= v` |
+| `relation_gte: {race: float}` | 与某族关系 ≥ 值 | `RelationActions.get_relation >= float(v)` |
 | `plundered_gte: {race: int}` | 对某族夺梦次数 ≥ 值 | `PlunderActions.count >= v` |
 | `soul_revived: bool` | 是否复活过（河底 < 100 即表明发生过） | `state.soul_river < SoulActions.RIVER_TOTAL` |
 | `soul_river_lte: int` | 河底 ≤ 值（河变浅读数） | `state.soul_river <= v` |
@@ -125,7 +125,7 @@ static func resolve(state, choice_id, option_id) -> Dictionary     # 应用后�
 | `faith: float` | 资源 | 信仰 ± | 同上 |
 | `growth_pct: float` | 资源 | 树高 ±%（绝对值按当前值乘） | `growth.add(growth.value × v)`（②A -0.30） |
 | `faith_pct: float` | 资源 | 信仰 ±%（④A -0.30） | 同上 |
-| `relation: {race: int}` | 关系 | 每族 ±（clamp ±3） | `RelationActions.apply_change`（①-2/①+2/④±3/⑤+1） |
+| `relation: {race: float}` | 关系 | 每族按 0.5 步长变化（clamp -3.0..+3.0） | `RelationActions.apply_change`（①±1/③现在±0.5/④±1.5/⑤B+0.5） |
 | `insight: int` | 领悟 | 领悟 ±（⑤C +2） | `state.insight += v` |
 | `truth: int` | 真相 | 真相值 ±（③过去 +2） | `state.truth += v` |
 | `drift: float` | 漂移 | 注入漂移（⑤B +1/②B 献名字） | `state.drift_extra += v`（叠加 DriftActions） |
@@ -137,8 +137,8 @@ static func resolve(state, choice_id, option_id) -> Dictionary     # 应用后�
 
 | soul 子键 | 语义 | 实现 |
 |---|---|---|
-| `{ "revive_pop": {"forestfolk": 3}, "soul_cost": 2, "relation": {"forestfolk": 1} }` | 救：灵魂-2（明选特耗）、林地民人口+3、关系+1 | 直改 state.soul_river/races/relations |
-| `{ "soul_gain": 0, "relation": {"forestfolk": -1} }` | 放手归河：无消耗、林地民关系-1（疏远） | 只改 relations |
+| `{ "revive_pop": {"forestfolk": 3}, "soul_cost": 2, "relation": {"forestfolk": 0.5} }` | 救：灵魂-2（明选特耗）、林地民人口+3、关系+0.5 | 直改 state.soul_river/races/relations |
+| `{ "soul_gain": 0, "relation": {"forestfolk": -0.5} }` | 放手归河：河中可调用灵魂不变、林地民关系-0.5（疏远） | 只改 relations |
 
 > 注：此处「救 1 耗 2 缕」是明选特耗（spec ③现在原文），与 SoulActions.revive（1 缕+500 growth→+10 人口）是两条独立路径——明选不走通用复活接口。数值节奏估值，待试玩调优。
 
@@ -226,8 +226,8 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
 **① 人族噩梦**（成树·第一次）——人族集体梦见"那一天"：天裂、光熄。
 | 选项 | 文本（按钮） | 后果 | 差分（result_text） |
 |---|---|---|---|
-| A 采梦 | 「把梦收下」 | memory +3、truth +1（真相线开启）、relation human -2、memory_eff human 0.7（梦产-30%） | 「没有梦的我们，还算人吗。」——有人梦里睁开了眼（哲学僵尸伏笔） |
-| B 护梦 | 「让它做完」 | relation human +2、flag `nightmare_protected` | 人族的孩子追着光跑。你们围住了梦。（关系+1 差分由后续说书人线承载） |
+| A 采梦 | 「把梦收下」 | memory +3、truth +1（真相线开启）、relation human -1、memory_eff human 0.7（梦产-30%） | 「没有梦的我们，还算人吗。」——有人梦里睁开了眼（哲学僵尸伏笔） |
+| B 护梦 | 「让它做完」 | relation human +1、flag `nightmare_protected` | 人族的孩子追着光跑。你们围住了梦。（后续说书人故事④再给 +0.5） |
 
 **② 奥丁之祭**（巨树·记忆线）——献"你的一部分"换河底完整记忆。
 | 选项 | 文本 | 后果 | 差分 |
@@ -241,8 +241,8 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
   - A 揭开：truth +2（真相大步）、flag `norne_past_revealed` —— 人族噩梦加剧（effects `memory_eff: {"human": 0.7}`；该键幂等——已设 0.7 则保持，不会二次扣减）
   - B 合上：「天裂那天的事，就让它沉在河底。」—— 无真相、无代价（留白）
 - **现在**（`norne_now`）：「夺魂救将死的林地民 / 放手归河」（灵魂守恒拷问）
-  - A 救：soul `{soul_cost: 2, revive_pop: {forestfolk: 3}, relation: {forestfolk: 1}}`、flag `norne_now_saved`
-  - B 放手：soul `{relation: {forestfolk: -1}}`、flag `norne_now_let_go` ——「河底多了一缕。它很轻。」
+  - A 救：soul `{soul_cost: 2, revive_pop: {forestfolk: 3}, relation: {forestfolk: 0.5}}`、flag `norne_now_saved`
+  - B 放手：soul `{soul_gain: 0, relation: {forestfolk: -0.5}}`、flag `norne_now_let_go` ——「风停了一会儿。那片叶子，终于落回土里。」（`soul_river` 不变；河底 100 是可调用池，不等于所有自然死亡）
 - **未来**（`norne_future`）：「是否让石裔造离开这片土地的船」
   - A 造：flag `ship_built`（世界之轴前置）——「石裔开始丈量天空。他们说，船要造得能装下所有歌。」
   - B 不造：flag `ship_refused`（四族分裂隐忧）——「锤声停了。有人在夜里，指着海的方向。」
@@ -250,14 +250,14 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
 **④ 菟丝子**（巨树·夺梦）——你发现自己在吸林地民的歌。
 | 选项 | 文本 | 后果 | 差分 |
 |---|---|---|---|
-| A 松开 | 「松开」 | faith_pct -0.30、relation forestfolk +3、flag `dodder_released` | 萤光重新亮起。歌之环，接上了。 |
-| B 继续 | 「继续吸」 | memory +8、relation forestfolk -3、flag `dodder_kept` | 叶尖挂着半个音。风一吹，就散了。——只剩风声。 |
+| A 松开 | 「松开」 | faith_pct -0.30、relation forestfolk +1.5、flag `dodder_released` | 萤光重新亮起。歌之环，接上了。 |
+| B 继续 | 「继续吸」 | memory +8、relation forestfolk -1.5、flag `dodder_kept` | 叶尖挂着半个音。风一吹，就散了。——只剩风声。 |
 
 **⑤ 忒修斯之树**（巨树·身份）——"你换了十七次根须、九次枝干——还是当初那棵树吗？"
 | 选项 | 文本 | 门槛 | 后果 | 差分 |
 |---|---|---|---|---|
 | A 是 | 「是」 | — | 关系不变、flag `theseus_yes` | 人族学者为此争论了三天。（灵魂即身份） |
-| B 我不知道 | 「我不知道」 | — | drift +1.0、relation 四族各 +1 | 它们靠得更近了些。真实的你，它们认识。 |
+| B 我不知道 | 「我不知道」 | — | drift +1.0、relation 四族各 +0.5 | 它们靠得更近了些。真实的你，它们认识。 |
 | C 我记得 | 「不是，但我记得我是」 | insight ≥ 8 | insight +2、truth +1、flag `theseus_remembered`（真结局伏笔提前亮起） | 说书人看了你很久。她说：'母树，你正在想起自己。' |
 
 ### 4.3 节奏估值声明
@@ -269,7 +269,7 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
 | 套件 | 覆盖 |
 |---|---|
 | `test_choice_library.gd` | JSON 解析：5 卡（7 条目）加载、必填字段校验、id 唯一、文本非空、坏 JSON 不崩溃 |
-| `test_choice_actions.gd` | 触发解释器各条件键（races/memory/faith/growth/insight/relation/plundered/soul）；available 数组序；first_available；can_choose 幂等；option_unlocked（⑤C）；resolve 各 effects 键（memory/faith/growth_pct/faith_pct/relation/insight/truth/drift/memory_eff/soul/flags）；choices_done 防重复 |
+| `test_choice_actions.gd` | 触发解释器各条件键（races/memory/faith/growth/insight/relation/plundered/soul）；关系门槛接受 float；available 数组序；first_available；can_choose 幂等；option_unlocked（⑤C）；resolve 各 effects 键（memory/faith/growth_pct/faith_pct/relation/insight/truth/drift/memory_eff/soul/flags），验证 ±0.5/±1/±1.5 不被取整；choices_done 防重复 |
 | `test_game_state.gd` | 4 新字段（choices_done/truth/drift_extra/race_memory_eff/choice_flags）序列化往返 + 缺省回退 + 损坏防御 |
 | `test_race_manager.gd` | race_memory_eff 并入产出（0.7 → 记忆 ×0.7） |
 | `test_drift_actions.gd` | drift_extra 叠加（plundered 0 + extra 1 → tier 0；extra 4 → tier 1） |
@@ -316,7 +316,7 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
           "effects": {
             "memory": 3.0,
             "truth": 1,
-            "relation": { "human": -2 },
+            "relation": { "human": -1.0 },
             "memory_eff": { "human": 0.7 },
             "flags": ["human_nightmare_harvested"]
           },
@@ -326,7 +326,7 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
           "id": "b",
           "text": "让它做完",
           "effects": {
-            "relation": { "human": 2 },
+            "relation": { "human": 1.0 },
             "flags": ["nightmare_protected"]
           },
           "result_text": "你没有动。\n梦里，人族的孩子追着一道光跑。\n你们围住了那个梦，没有碰它。"

@@ -6,7 +6,7 @@ const REVIVE_COST_SOUL := 1
 const REVIVE_COST_GROWTH := 500.0
 const REVIVE_POP_GAIN := 10
 const PLUNDER_SOUL_POP_LOSS := 3
-const PLUNDER_SOUL_RELATION_LOSS := 2
+const PLUNDER_SOUL_RELATION_LOSS := 1.0
 
 static func _race_awakened(state: GameState, race_id: StringName) -> bool:
 	return state.races.has(race_id) and bool(state.races[race_id].get("awakened", false))

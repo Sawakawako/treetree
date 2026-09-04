@@ -6,14 +6,35 @@ const RACE_ROWS := {
     &"stoneborn": "石裔",
     &"wildfolk": "野民",
 }
-const RELATION_LABELS := {
-    -3: "敌意", -2: "敌意", -1: "冷淡", 0: "平常",
-    1: "友善", 2: "亲近", 3: "挚友",
-}
-const RELATION_COLORS := {
-    -3: Color("#7a8a99"), -2: Color("#7a8a99"), -1: Color("#9aa5ad"),
-    0: Color.WHITE, 1: Color("#c9a25c"), 2: Color("#e6a23c"), 3: Color("#f0b64e"),
-}
+static func relation_label(value: float) -> String:
+    if value <= -2.0:
+        return "敌意"
+    if value <= -0.5:
+        return "冷淡"
+    if value < 0.5:
+        return "平常"
+    if value < 2.0:
+        return "友善"
+    if value < 3.0:
+        return "亲近"
+    return "挚友"
+
+static func relation_color(value: float) -> Color:
+    if value <= -2.0:
+        return Color("#7a8a99")
+    if value <= -0.5:
+        return Color("#9aa5ad")
+    if value < 0.5:
+        return Color.WHITE
+    if value < 2.0:
+        return Color("#c9a25c")
+    if value < 3.0:
+        return Color("#e6a23c")
+    return Color("#f0b64e")
+
+static func format_relation(value: float) -> String:
+    var text := "%.1f" % value
+    return "+" + text if value > 0.0 else text
 
 @onready var daylight_label: Label = %DaylightLabel
 @onready var sap_label: Label = %SapLabel
@@ -28,6 +49,8 @@ const RELATION_COLORS := {
 @onready var root_button: Button = %RootExploreButton
 @onready var dream_text_label: Label = %DreamTextLabel
 @onready var race_event_label: Label = %RaceEventLabel
+@onready var story_button: Button = %StoryButton
+@onready var stream_story_button: Button = %StreamStoryButton
 @onready var race_human_label: Label = %RaceHumanLabel
 @onready var race_forest_label: Label = %RaceForestLabel
 @onready var race_stone_label: Label = %RaceStoneLabel
@@ -87,21 +110,62 @@ const RELATION_COLORS := {
 @onready var memory_convert_button: Button = %MemoryConvertButton
 @onready var life_upgrade_button: Button = %LifeUpgradeButton
 @onready var life_cost_label: Label = %LifeCostLabel
+@onready var memory_lingua_button: Button = %MemoryLinguaButton
+@onready var memory_lingua_cost_label: Label = %MemoryLinguaCostLabel
 @onready var faith_engine_button: Button = %FaithEngineButton
 @onready var faith_engine_cost_label: Label = %FaithEngineCostLabel
 @onready var memory_engine_button: Button = %MemoryEngineButton
 @onready var memory_engine_cost_label: Label = %MemoryEngineCostLabel
 @onready var root_echo_button: Button = %RootEchoButton
 @onready var root_resonance_button: Button = %RootResonanceButton
+@onready var earth_sense_button: Button = %EarthSenseButton
 @onready var deep_root_button: Button = %DeepRootButton
 @onready var tree_canopy_button: Button = %TreeCanopyButton
 @onready var ring_memory_button: Button = %RingMemoryButton
 @onready var cloud_crown_button: Button = %CloudCrownButton
 @onready var wood_heart_button: Button = %WoodHeartButton
+@onready var sky_light_button: Button = %SkyLightButton
 @onready var song_resonance_button: Button = %SongResonanceButton
 @onready var village_heart_button: Button = %VillageHeartButton
 @onready var grace_button: Button = %GraceButton
 @onready var altar_button: Button = %AltarButton
+@onready var story_status_label: Label = %StoryStatusLabel
+
+static func storyteller_view(state: GameState) -> Dictionary:
+    var main_ids := StoryLibrary.main_story_ids()
+    var read_count := 0
+    for story_id in main_ids:
+        if state.storyteller_stories.has(story_id):
+            read_count += 1
+    var discovered := state.choice_flags.has(&"cave_found") or read_count > 0
+    if not discovered:
+        return {"visible": false}
+    var next_id := StoryActions.next_main_story(state)
+    if next_id != &"":
+        return {
+            "visible": true,
+            "disabled": false,
+            "button_text": "听她讲下一个故事（已读 %d/%d）" % [read_count, main_ids.size()],
+            "status_text": "火塘边，有一个故事正等着你。",
+        }
+    if read_count >= main_ids.size():
+        return {
+            "visible": true,
+            "disabled": true,
+            "button_text": "火边的故事 · 已读 %d/%d" % [read_count, main_ids.size()],
+            "status_text": "火已经安静下来。三个故事，都留在年轮里。",
+        }
+    var status := "她在等一个被守住的梦。"
+    if state.storyteller_stories.has(&"story_5"):
+        status = "最后一夜还没来：看见天裂，真相达到 4。"
+    elif state.storyteller_stories.has(&"story_4"):
+        status = "下一夜还没来：人族关系达到 2.0，领悟达到 5。"
+    return {
+        "visible": true,
+        "disabled": true,
+        "button_text": "火边的故事 · 已读 %d/%d" % [read_count, main_ids.size()],
+        "status_text": status,
+    }
 
 func _ready() -> void:
     %GatherButton.pressed.connect(_on_gather_pressed)
@@ -141,6 +205,7 @@ func _ready() -> void:
     faith_convert_button.pressed.connect(_on_convert_faith_pressed)
     memory_convert_button.pressed.connect(_on_convert_memory_pressed)
     life_upgrade_button.pressed.connect(_on_life_upgrade_pressed)
+    memory_lingua_button.pressed.connect(_on_memory_lingua_pressed)
     faith_engine_button.pressed.connect(_on_engine_faith_pressed)
     memory_engine_button.pressed.connect(_on_engine_memory_pressed)
     _wire_node_buttons()
@@ -156,6 +221,9 @@ func _ready() -> void:
     plunder_soul_wild_button.pressed.connect(func(): _on_plunder_soul_pressed(&"wildfolk"))
     GameManager.soul_revived.connect(_on_soul_revived)
     GameManager.soul_plundered.connect(_on_soul_plundered)
+    story_button.pressed.connect(_on_story_pressed)
+    stream_story_button.pressed.connect(_on_stream_story_pressed)
+    GameManager.story_heard.connect(_on_story_heard)
     GameManager.resources_changed.connect(_refresh)
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
@@ -171,6 +239,7 @@ func _ready() -> void:
         if not c.is_empty():
             _on_choice_available(GameManager._pending_choice, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
     _refresh()
+    _show_offline_summary(GameManager.take_offline_summary())
 
 func _on_race_awakened(race_id: StringName, race_name: String, awaken_text: String) -> void:
     race_event_label.text = awaken_text
@@ -216,7 +285,15 @@ func _on_root_eff_pressed() -> void:
 func _on_root_pressed() -> void:
     var result: Dictionary = GameManager.explore_relic()
     if not result.get("ok", false):
-        log_label.text = "树液不够。或者……地下已经空了。"
+        match String(result.get("reason", "")):
+            "insufficient_sap":
+                log_label.text = "树液还不够。根须在浅土里停下。"
+            "no_available_relic":
+                log_label.text = "根须摸到一片安静。这里暂时没有愿意醒来的遗迹。"
+            "all_relics_found":
+                log_label.text = "九处旧梦，都已经收进年轮。土里只剩安静。"
+            _:
+                log_label.text = "根须停下了。土里没有回声。"
 
 func _on_relic_discovered(relic_name: String, dream_text: String) -> void:
     dream_text_label.text = dream_text
@@ -251,6 +328,7 @@ func _refresh() -> void:
     _refresh_avatar()
     _refresh_intimate_buttons()
     _refresh_soul()
+    _refresh_storyteller()
     _refresh_m5d2()
     _refresh_lingua()
 
@@ -269,8 +347,8 @@ func _refresh_race_rows() -> void:
         if s.races.has(id) and bool(s.races[id].get("awakened", false)):
             var pop := float(s.races[id].get("population", 0.0))
             var rel := RelationActions.get_relation(s, id)
-            label.text = "%s：人口 %d · %s" % [RACE_ROWS[id], int(pop), RELATION_LABELS.get(rel, "平常")]
-            label.add_theme_color_override("font_color", RELATION_COLORS.get(rel, Color.WHITE))
+            label.text = "%s：人口 %d · %s（%s）" % [RACE_ROWS[id], int(pop), relation_label(rel), format_relation(rel)]
+            label.add_theme_color_override("font_color", relation_color(rel))
         else:
             label.text = "%s：%s 时苏醒" % [RACE_ROWS[id], _awaken_hint(data)]
             label.add_theme_color_override("font_color", Color.WHITE)
@@ -331,7 +409,7 @@ func _on_interact_pressed(race_id: StringName) -> void:
     var result: Dictionary = GameManager.interact_relation(race_id)
     if result.get("ok", false):
         race_event_label.text = str(result.get("text", ""))
-        log_label.text = "关系 · 亲近了一分。"
+        log_label.text = "关系 · 靠近了半步。"
     _refresh()
 
 func _refresh_plunder_buttons() -> void:
@@ -468,6 +546,37 @@ func _on_choice_resolved(choice_id: StringName, option_id: StringName, result_te
     choice_panel.visible = false
     _refresh()
 
+func _refresh_storyteller() -> void:
+    var s := GameManager.get_state()
+    var view := storyteller_view(s)
+    var visible := bool(view.get("visible", false))
+    story_status_label.visible = visible
+    story_button.visible = visible
+    if visible:
+        story_status_label.text = str(view.get("status_text", ""))
+        story_button.text = str(view.get("button_text", ""))
+        story_button.disabled = bool(view.get("disabled", true))
+    var stream_available := not StoryActions.available_easter_eggs(s).is_empty()
+    var stream_read := s.storyteller_stories.has(&"stream_and_current")
+    stream_story_button.visible = stream_available or stream_read
+    stream_story_button.disabled = not stream_available
+    stream_story_button.text = "听她讲《小溪与激流》" if stream_available else "《小溪与激流》· 已读"
+
+func _on_story_pressed() -> void:
+    var story_id := StoryActions.next_main_story(GameManager.get_state())
+    if story_id != &"":
+        GameManager.hear_story(story_id)
+
+func _on_stream_story_pressed() -> void:
+    var available := StoryActions.available_easter_eggs(GameManager.get_state())
+    if not available.is_empty():
+        GameManager.hear_story(available[0])
+
+func _on_story_heard(story_id: StringName, title: String, story_text: String) -> void:
+    race_event_label.text = "%s\n\n%s" % [title, story_text]
+    log_label.text = "（火塘边，又安静了一会儿。）"
+    _refresh()
+
 func _refresh_m5d2() -> void:
     var s := GameManager.get_state()
     seedling_button.visible = s.seedling_level < 3
@@ -520,15 +629,17 @@ func _on_facility_pressed(race_id: StringName, field: String) -> void:
     _refresh()
 
 func _node_buttons() -> Array:
-    # 与 LinguaData.NODES 注册序一致（M5e 批 1：11 节点）
+    # 与 LinguaData.NODES 注册序一致（M5e 批 1 + M5h：13 节点）
     return [
         [&"root_echo", root_echo_button],
         [&"root_resonance", root_resonance_button],
+        [&"earth_sense", earth_sense_button],
         [&"deep_root", deep_root_button],
         [&"tree_canopy", tree_canopy_button],
         [&"ring_memory", ring_memory_button],
         [&"cloud_crown", cloud_crown_button],
         [&"wood_heart", wood_heart_button],
+        [&"sky_light", sky_light_button],
         [&"song_resonance", song_resonance_button],
         [&"village_heart", village_heart_button],
         [&"grace", grace_button],
@@ -552,6 +663,10 @@ func _refresh_lingua() -> void:
     var lc := LinguaActions.life_cost(s)
     life_cost_label.text = "生命之语 Lv%d → %s" % [s.lingua_life_level, ("免费" if lc == 0 else ("%d 信仰" % lc)) if lc >= 0 else "已满级"]
     life_upgrade_button.disabled = not LinguaActions.can_upgrade_life(s)
+    memory_lingua_button.visible = s.lingua_memory_level < LinguaData.MEMORY_MAX_LEVEL
+    memory_lingua_button.disabled = not LinguaActions.can_upgrade_memory(s)
+    memory_lingua_cost_label.visible = true
+    memory_lingua_cost_label.text = "记忆之语 Lv1 · 500 记忆 + 领悟 5（领悟不消耗）" if s.lingua_memory_level == 0 else "记忆之语 Lv1 · 已醒来"
     # 引擎按钮：对应节点已购才显示；成本 Label 同步
     faith_engine_button.visible = LinguaActions.has_node(s, &"cloud_crown")
     faith_engine_cost_label.visible = LinguaActions.has_node(s, &"cloud_crown")
@@ -568,11 +683,34 @@ func _refresh_node_buttons() -> void:
     for p in _node_buttons():
         var nid: StringName = p[0]
         var btn: Button = p[1]
-        # 显示门槛：未购 + 生命之语达到 requirement；disabled 由 sap 决定
+        # 显示门槛：未购 + 对应树语达到 requirement；disabled 由 sap 决定
         var node := LinguaData.get_node(nid)
         var req := int(node.get("requirement", 99))
-        btn.visible = not LinguaActions.has_node(s, nid) and s.lingua_life_level >= req
+        var language := StringName(node.get("language", &"life"))
+        var level := s.lingua_memory_level if language == &"memory" else s.lingua_life_level
+        btn.visible = not LinguaActions.has_node(s, nid) and level >= req
         btn.disabled = not LinguaActions.can_unlock_node(s, nid)
+
+func _show_offline_summary(summary: Dictionary) -> void:
+    if not summary.get("applied", false):
+        return
+    var gains: Array[String] = []
+    for entry in [["daylight", "日光"], ["sap", "树液"], ["growth", "生长"], ["faith", "信仰"], ["memory", "记忆"]]:
+        var amount := float(summary.get(entry[0], 0.0))
+        if amount > 0.000001:
+            gains.append("%s +%s" % [entry[1], Formatter.format_number(BigNum.new(amount))])
+    var population: Dictionary = summary.get("population", {})
+    for race_id in population:
+        var amount := float(population[race_id])
+        if amount <= 0.000001:
+            continue
+        var race := GameManager.get_race(StringName(str(race_id)))
+        var race_name := str(race.display_name) if race != null else str(race_id)
+        gains.append("%s人口 +%s" % [race_name, Formatter.format_number(BigNum.new(amount))])
+    if gains.is_empty():
+        return
+    var minutes := maxi(int(summary.get("seconds", 0)) / 60, 1)
+    log_label.text = "离开时，根仍听着大地。\n%d 分钟里：%s" % [minutes, " · ".join(gains)]
 
 func _on_convert_faith_pressed() -> void:
     if GameManager.convert_faith():
@@ -597,6 +735,11 @@ func _on_engine_memory_pressed() -> void:
 func _on_life_upgrade_pressed() -> void:
     if GameManager.upgrade_life():
         log_label.text = "（生命之语 · 第 %d 阶）" % GameManager.get_state().lingua_life_level
+    _refresh()
+
+func _on_memory_lingua_pressed() -> void:
+    if GameManager.upgrade_memory():
+        log_label.text = "（旧梦在根间醒来。你仍记得它们。）"
     _refresh()
 
 func _on_node_unlock_pressed(node_id: StringName) -> void:

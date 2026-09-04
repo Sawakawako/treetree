@@ -58,3 +58,50 @@ func test_mid_tier_requires_lv2_and_8000_sap() -> void:
 	assert_that(LinguaActions.can_unlock_node(s, &"cloud_crown")).is_false()  # 需 Lv2
 	s.lingua_life_level = 2
 	assert_that(LinguaActions.can_unlock_node(s, &"cloud_crown")).is_true()
+
+func test_memory_lv1_rejects_499_memory() -> void:
+	var s := _fresh()
+	s.memory = BigNum.new(499.0)
+	s.insight = 5
+	assert_that(LinguaActions.can_upgrade_memory(s)).is_false()
+	assert_that(LinguaActions.upgrade_memory(s).get("ok", false)).is_false()
+
+func test_memory_lv1_rejects_four_insight() -> void:
+	var s := _fresh()
+	s.memory = BigNum.new(500.0)
+	s.insight = 4
+	assert_that(LinguaActions.can_upgrade_memory(s)).is_false()
+	assert_that(s.memory.to_value()).is_equal_approx(500.0, 1e-4)
+
+func test_memory_lv1_boundary_spends_memory_but_keeps_insight() -> void:
+	var s := _fresh()
+	s.memory = BigNum.new(500.0)
+	s.insight = 5
+	assert_that(LinguaActions.memory_cost(s)).is_equal(500)
+	var result: Dictionary = LinguaActions.upgrade_memory(s)
+	assert_that(result.get("ok", false)).is_true()
+	assert_that(s.lingua_memory_level).is_equal(1)
+	assert_that(s.memory.to_value()).is_equal_approx(0.0, 1e-4)
+	assert_that(s.insight).is_equal(5)
+
+func test_memory_lv1_cannot_repeat_or_spend_again() -> void:
+	var s := _fresh()
+	s.memory = BigNum.new(1000.0)
+	s.insight = 8
+	assert_that(LinguaActions.upgrade_memory(s).get("ok", false)).is_true()
+	assert_that(LinguaActions.upgrade_memory(s).get("ok", false)).is_false()
+	assert_that(s.lingua_memory_level).is_equal(1)
+	assert_that(s.memory.to_value()).is_equal_approx(500.0, 1e-4)
+	assert_that(s.insight).is_equal(8)
+
+func test_offline_nodes_use_their_own_language_gate() -> void:
+	var s := _fresh()
+	s.sap = BigNum.new(20000.0)
+	s.lingua_life_level = 1
+	s.lingua_memory_level = 0
+	assert_that(LinguaActions.can_unlock_node(s, &"earth_sense")).is_false()
+	assert_that(LinguaActions.can_unlock_node(s, &"sky_light")).is_false()
+	s.lingua_life_level = 2
+	assert_that(LinguaActions.can_unlock_node(s, &"earth_sense")).is_true()
+	s.lingua_memory_level = 1
+	assert_that(LinguaActions.can_unlock_node(s, &"sky_light")).is_true()

@@ -13,7 +13,7 @@
           "effects": {
             "memory": 3.0,
             "truth": 1,
-            "relation": { "human": -2 },
+            "relation": { "human": -1.0 },
             "memory_eff": { "human": 0.7 },
             "flags": ["human_nightmare_harvested"]
           },
@@ -23,7 +23,7 @@
           "id": "b",
           "text": "让它做完",
           "effects": {
-            "relation": { "human": 2 },
+            "relation": { "human": 1.0 },
             "flags": ["human_nightmare_protected"]
           },
           "result_text": "你没有动。\n梦里，人族的孩子追着一道光跑。\n你们围住了那个梦，没有碰它。"
@@ -104,8 +104,9 @@
         {
           "id": "a",
           "text": "用灵魂救它",
+          "unlock": { "soul_river_gte": 2 },
           "effects": {
-            "soul": { "soul_cost": 2, "revive_pop": { "forestfolk": 3 }, "relation": { "forestfolk": 1 } },
+            "soul": { "soul_cost": 2, "revive_pop": { "forestfolk": 3 }, "relation": { "forestfolk": 0.5 } },
             "flags": ["norne_now_saved"]
           },
           "result_text": "两缕灵魂从河底升起，裹住它。\n它咳出一声歌。\n河，浅了两指。"
@@ -114,10 +115,10 @@
           "id": "b",
           "text": "放手",
           "effects": {
-            "soul": { "relation": { "forestfolk": -1 } },
+            "soul": { "soul_gain": 0, "relation": { "forestfolk": -0.5 } },
             "flags": ["norne_now_let_go"]
           },
-          "result_text": "河底多了一缕。\n它很轻。\n你听完了它的歌。"
+          "result_text": "风停了一会儿。\n那片叶子，终于落回土里。\n你听完了它的歌。"
         }
       ]
     },
@@ -158,7 +159,7 @@
           "text": "松开",
           "effects": {
             "faith_pct": -0.30,
-            "relation": { "forestfolk": 3 },
+            "relation": { "forestfolk": 1.5 },
             "flags": ["dodder_released"]
           },
           "result_text": "萤光重新亮起。\n歌之环，接上了。"
@@ -168,7 +169,7 @@
           "text": "继续",
           "effects": {
             "memory": 8.0,
-            "relation": { "forestfolk": -3 },
+            "relation": { "forestfolk": -1.5 },
             "flags": ["dodder_kept"]
           },
           "result_text": "叶尖挂着半个音。\n风一吹，就散了。\n——只剩风声。"
@@ -195,7 +196,7 @@
           "text": "我不知道",
           "effects": {
             "drift": 1.0,
-            "relation": { "human": 1, "forestfolk": 1, "stoneborn": 1, "wildfolk": 1 },
+            "relation": { "human": 0.5, "forestfolk": 0.5, "stoneborn": 0.5, "wildfolk": 0.5 },
             "flags": ["theseus_uncertain"]
           },
           "result_text": "它们靠得更近了些。\n真实的你，它们认识。"
@@ -210,6 +211,43 @@
             "flags": ["theseus_remembered"]
           },
           "result_text": "说书人看了你很久。\n她说：'母树，你正在想起自己。'"
+        }
+      ]
+    },
+    {
+      "id": "experience_machine",
+      "title": "体验机器",
+      "stage_hint": "巨树·隐藏遗迹",
+      "intro": "梦想机在遗迹深处醒着。\n玻璃里的旧梦没有尘埃。\n只要接通它，四族就能住进从不下雨的春天。",
+      "trigger": { "relic_found": 7 },
+      "options": [
+        {
+          "id": "a",
+          "text": "接通最后一根管子",
+          "unlock": { "faith_gte": 50.0 },
+          "effects": {
+            "faith": -50.0,
+            "flags": ["experience_opened"]
+          },
+          "result_text": "灯一盏盏亮起。\n四族在梦里走进没有尽头的春天。\n火塘还暖着。只是再没有人醒来。"
+        },
+        {
+          "id": "b",
+          "text": "拔掉它的根",
+          "effects": {
+            "relation": { "human": 0.5, "forestfolk": 0.5, "stoneborn": 0.5, "wildfolk": 0.5 },
+            "flags": ["experience_destroyed"]
+          },
+          "result_text": "玻璃里的春天碎了。\n四族站在真正的风里。\n有人牵住你的根，说：这里会下雨，也很好。"
+        },
+        {
+          "id": "c",
+          "text": "听完机器的梦",
+          "effects": {
+            "insight": 1,
+            "flags": ["experience_studied"]
+          },
+          "result_text": "你听见每一场不会醒来的花开。\n完美的梦也是梦。\n树最懂了。"
         }
       ]
     }

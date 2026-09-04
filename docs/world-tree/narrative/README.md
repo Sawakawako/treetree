@@ -2,21 +2,22 @@
 
 > 本目录是游戏内已产出叙事文本的正式资料库：所有文本一字不改照抄自源码，仅做抽取、组织、标注。
 > 供后续写作（延续暗线、补写事件、审查文风）与代码实现引用。
-> 归档日期：2026-09-01
+> 归档日期：2026-09-05
 
 ## 文档清单
 
 | 文件 | 系统 | 条目数 | 源码位置 |
 | --- | --- | --- | --- |
-| [01-relics.md](01-relics.md) | 遗迹碎片 | 4 篇（城市废墟/陵墓/梦田/命运之泉） | `features/dreams/relic_library.gd` |
+| [01-relics.md](01-relics.md) | 遗迹碎片 | 9 篇（4 处基础遗迹 + 5 处隐藏遗迹） | `features/dreams/relic_library.gd` |
 | [02-totems.md](02-totems.md) | 图腾五幅 | 5 幅（含解读文本） | `features/memories/totem_library.gd` |
 | [03-plunder.md](03-plunder.md) | 夺梦文本 | 3 族信号池 ×3 + 揭示 ×3（石裔无梦 1 条） | `features/memories/plunder_data.gd` |
 | [04-race-awakenings.md](04-race-awakenings.md) | 四族唤醒 | 4 篇 | `features/races/data/*.tres` |
 | [05-relations.md](05-relations.md) | 关系仪式互动 | 4 篇 | `features/relations/relation_events.gd` |
 | [06-intimate.md](06-intimate.md) | 亲密事件 | 4 篇（树以人形对坐） | `features/memories/intimate_events.gd` |
 | [07-avatar-tiers.md](07-avatar-tiers.md) | 化身观感 | 4 档（漂移镜子） | `features/memories/avatar_tiers.gd` |
-| [08-choices.md](08-choices.md) | 明选五卡 | 5 组 7 卡 | `features/choices/data/choices.json` |
-| [09-ui-broadcast.md](09-ui-broadcast.md) | UI 叙事播报 | 固定文案（含升级消息/兜底） | `features/ui/main.gd` |
+| [08-choices.md](08-choices.md) | 明选全文 | 6 组 8 卡 | `features/choices/data/choices.json` |
+| [09-ui-broadcast.md](09-ui-broadcast.md) | UI 叙事播报 | 固定文案（含说书人/离线摘要） | `features/ui/main.gd` |
+| [10-storyteller.md](10-storyteller.md) | 说书人故事 | 主线故事④—⑥ + 彩蛋 | `features/narrative/story_library.gd` |
 
 ## 引用约定
 

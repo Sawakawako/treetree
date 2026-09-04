@@ -63,7 +63,7 @@ static func river(state: GameState) -> int                 # soul_river
 static func can_revive(state, race_id) -> bool            # 河底≥1 + growth≥500 + 该族已唤醒
 static func revive(state, race_id) -> Dictionary          # 河底-1 + growth-500 + 人口+10 → {"ok","race_id","pop"}
 static func can_plunder_soul(state, race_id) -> bool      # 该族已夺梦揭示（PlunderActions.reveal_stage≥1）+ 人口≥3 + 河底<100
-static func plunder_soul(state, race_id) -> Dictionary    # 河底+1（cap 100）+ 人口-3 + 关系-2 → {"ok","race_id","pop","relation"}
+static func plunder_soul(state, race_id) -> Dictionary    # 河底+1（cap 100）+ 人口-3 + 关系-1 → {"ok","race_id","pop","relation"}
 ```
 
 - **守恒不变式**：`revive` 河底-1（灵魂离开河底进入生灵）；`plunder_soul` 河底+1（活人灵魂提前归河，cap RIVER_TOTAL）——总量恒 100
@@ -94,7 +94,7 @@ func plunder_soul_race(race_id: StringName) -> Dictionary
 | 复活消耗 | 1 灵魂 + 500 growth | growth 是承载来源——复活→承载降→供养压力 |
 | 复活收益 | 该族人口 +10 | 母亲树之喻 |
 | 夺魂条件 | 已夺梦揭示 + 人口≥3 + 河底<100 | 暗线递进 |
-| 夺魂代价 | 人口 -3 + 关系 -2 | 失魂者 + 惊惧 |
+| 夺魂代价 | 人口 -3 + 关系 -1 | 失魂者 + 惊惧 |
 
 节奏验证：全复活（100 灵魂）→ 人口 +1000（各族分摊）——但 growth 500/次（100 次 = 50000 growth）成本巨大，且承载公式（growth 驱动）同步收缩——「救得越多，自己越矮」的悲剧张力成立。
 
@@ -102,7 +102,7 @@ func plunder_soul_race(race_id: StringName) -> Dictionary
 
 | 套件 | 覆盖 |
 |---|---|
-| `test_soul_actions.gd` | river 默认 100；can_revive（河底/成长/唤醒三条件）；revive（河底-1/growth-500/人口+10/幂等）；can_plunder_soul（揭示/人口/河底 cap）；plunder_soul（河底+1 cap 100/人口-3/关系-2/幂等）；守恒不变式（revive+plunder_soul 后 river 变化正确） |
+| `test_soul_actions.gd` | river 默认 100；can_revive（河底/成长/唤醒三条件）；revive（河底-1/growth-500/人口+10/幂等）；can_plunder_soul（揭示/人口/河底 cap）；plunder_soul（河底+1 cap 100/人口-3/关系-1/幂等）；守恒不变式（revive+plunder_soul 后 river 变化正确） |
 | `test_game_state.gd` | soul_river 序列化往返 + 旧档回退 100 |
 | `test_game_manager.gd` | revive/plunder 入口集成（信号/效果） |
 | 全量回归 | 既有 184 测试无回归；headless 冒烟 |
@@ -114,7 +114,7 @@ func plunder_soul_race(race_id: StringName) -> Dictionary
 3. **复活+夺魂都做**（主人拍板）：守恒闭环（复活=取出、夺魂=提前归河）。
 4. **夺魂门槛 = 夺梦揭示**：暗线递进（偷记忆→抽灵魂）——哲学僵尸伏笔「没有灵魂的人还算人吗」的机制入口。
 5. **守恒不变式**：river + 已复活 = 100 恒（实现内保证，测试验证）。
-6. **夺魂代价**（人口-3 + 关系-2）：失魂者 + 惊惧——比夺梦（人口冻结）更重的直接损失，符合「顶点」定位。
+6. **夺魂代价**（人口-3 + 关系-1）：失魂者 + 惊惧——比夺梦（人口冻结）更重的直接损失，符合「顶点」定位；仍可重复触发，由 -3 下限钳制。
 
 ## 七、衔接
 

@@ -30,6 +30,7 @@ var truth: int = 0
 var drift_extra: float = 0.0
 var race_memory_eff: Dictionary = {}
 var choice_flags: Array[StringName] = []
+var storyteller_stories: Array[StringName] = []
 var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
 var seedling_level: int = 0     # 嫩叶教学链（M5d2）
 var firepit_level: int = 0       # 说书人火塘·人族设施（M5d2）
@@ -43,6 +44,7 @@ var memory_engine_level: int = 0    # 记忆引擎（M5e）
 var lingua_life_level: int = 0      # 生命之语等级（M5e）
 var lingua_memory_level: int = 0    # 记忆之语等级（M5e，批 2 升）
 var lingua_nodes: Array[StringName] = []  # 已购树语节点（M5e）
+var last_saved_unix: int = 0       # 离线结算时间戳；0 表示旧档或尚未保存
 
 func _init() -> void:
     daylight = BigNum.new(0.0)
@@ -77,11 +79,13 @@ func to_dict() -> Dictionary:
         "drift_extra": drift_extra,
         "race_memory_eff": race_memory_eff,
         "choice_flags": choice_flags,
+        "storyteller_stories": storyteller_stories,
         "faith_engine_level": faith_engine_level,
         "memory_engine_level": memory_engine_level,
         "lingua_life_level": lingua_life_level,
         "lingua_memory_level": lingua_memory_level,
         "lingua_nodes": lingua_nodes,
+        "last_saved_unix": last_saved_unix,
         "soul_river": soul_river,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
@@ -145,7 +149,7 @@ static func from_dict(d: Dictionary) -> GameState:
     for rid: Variant in rel:
         var rv: Variant = rel[rid]
         if typeof(rv) == TYPE_INT or typeof(rv) == TYPE_FLOAT:
-            s.relations[rid] = int(rv)
+            s.relations[rid] = clampf(float(rv), RelationActions.RELATION_MIN, RelationActions.RELATION_MAX)
     var re: Array = d.get("relation_events", [])
     var re_cleaned: Array = []
     for x in re:
@@ -196,6 +200,14 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             cf_cleaned.append(StringName(x))
     s.choice_flags.assign(cf_cleaned)
+    var stories: Variant = d.get("storyteller_stories", [])
+    if typeof(stories) != TYPE_ARRAY:
+        stories = []
+    var stories_cleaned: Array = []
+    for x in stories:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            stories_cleaned.append(StringName(x))
+    s.storyteller_stories.assign(stories_cleaned)
     s.chloroplast_level = int(d.get("chloroplast_level", 0))
     s.xylem_level = int(d.get("xylem_level", 0))
     s.sunflower_level = int(d.get("sunflower_level", 0))
@@ -203,7 +215,7 @@ static func from_dict(d: Dictionary) -> GameState:
     s.root_eff_level = int(d.get("root_eff_level", 0))
     var sr: Variant = d.get("soul_river", 100)
     if typeof(sr) == TYPE_INT or typeof(sr) == TYPE_FLOAT:
-        s.soul_river = int(sr)
+        s.soul_river = clampi(int(sr), 0, SoulActions.RIVER_TOTAL)
     else:
         s.soul_river = 100  # 损坏防御（同 relations 防御模式）
     var sl: Variant = d.get("seedling_level", 0)
@@ -234,4 +246,6 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             ln_cleaned.append(StringName(x))
     s.lingua_nodes.assign(ln_cleaned)
+    var saved_at: Variant = d.get("last_saved_unix", 0)
+    s.last_saved_unix = maxi(int(saved_at), 0) if typeof(saved_at) == TYPE_INT or typeof(saved_at) == TYPE_FLOAT else 0
     return s

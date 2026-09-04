@@ -1,12 +1,12 @@
-# 明选五卡全文
+# 明选全文
 
-> 达到条件弹出的一次性重大抉择（choice）：五组七卡，玩家从有限选项选一，事件一次性落定并写入 flag。五卡分别锚定五条线——人族噩梦（夺梦代价）、奥丁之祭（身份献祭）、诺恩三问（过去/现在/未来，命运）、菟丝子（夺梦成瘾）、忒修斯之树（身份哲学）。
-> 来源：`features/choices/data/choices.json`（`choices[]` 数组） | 归档日期：2026-09-01
+> 达到条件弹出的一次性重大抉择（choice）：六组八卡，玩家从有限选项选一，事件一次性落定并写入 flag。六组分别锚定人族噩梦、奥丁之祭、诺恩三问、菟丝子、忒修斯之树与体验机器。
+> 来源：`features/choices/data/choices.json`（`choices[]` 数组） | 更新日期：2026-09-05
 
 结构与标注（来自 `choices.json` 字段 + `features/choices/choice_actions.gd`）：
 
 - 每卡含 `title` / `stage_hint`（阶段提示）/ `intro`（卡面正文）/ `options[]`（`id` / `text` / `effects` / `result_text`）。
-- 触发条件按 `trigger` 字段判定（`races_awakened` 需全部苏醒；`memory_gte` / `faith_gte` / `growth_gte` / `insight_gte` 数值下限；`plundered_gte` 夺梦次数；关系下限等），完成即入 `choices_done`，不重复。
+- 触发条件按 `trigger` 字段判定（`races_awakened` 需全部苏醒；`memory_gte` / `faith_gte` / `growth_gte` / `insight_gte` 数值下限；`relic_found` 精确遗迹；`plundered_gte` 夺梦次数；关系下限等），完成即入 `choices_done`，不重复。
 - `effects` 为实际后果：`memory/faith/insight/truth/drift` 增减、`growth_pct/faith_pct` 比例、`relation` 各族关系、`memory_eff` 记忆效率、`soul` 灵魂操作、`flags` 写入的 flag 名。
 - 选项可带 `unlock`（隐藏条件，如"领悟 ≥ 8"），不满足时按钮锁定。
 - 选项文本 `text` 显示于按钮，`intro` 与 `result_text` 逐行显示；result 后 UI 附加"（明选·<选项文本>）"（见 09-ui-broadcast.md）。
@@ -27,7 +27,7 @@ intro：
 
 ### 选项 a「把梦收下」
 
-effects：记忆 +3.0 ｜ 真相 +1 ｜ 人族关系 −2 ｜ 人族记忆效率 0.7 ｜ flag `human_nightmare_harvested`
+effects：记忆 +3.0 ｜ 真相 +1 ｜ 人族关系 −1 ｜ 人族记忆效率 0.7 ｜ flag `human_nightmare_harvested`
 
 > 梦很沉。
 > 醒来的它们眼神发直。
@@ -35,7 +35,7 @@ effects：记忆 +3.0 ｜ 真相 +1 ｜ 人族关系 −2 ｜ 人族记忆效率
 
 ### 选项 b「让它做完」
 
-effects：人族关系 +2 ｜ flag `human_nightmare_protected`
+effects：人族关系 +1 ｜ flag `human_nightmare_protected`
 
 > 你没有动。
 > 梦里，人族的孩子追着一道光跑。
@@ -125,7 +125,9 @@ intro：
 
 ### 选项 a「用灵魂救它」
 
-effects：灵魂 −2、林地民人口 +3、林地民关系 +1 ｜ flag `norne_now_saved`
+unlock：河底可调用灵魂 ≥2
+
+effects：灵魂 −2、林地民人口 +3、林地民关系 +0.5 ｜ flag `norne_now_saved`
 
 > 两缕灵魂从河底升起，裹住它。
 > 它咳出一声歌。
@@ -133,10 +135,10 @@ effects：灵魂 −2、林地民人口 +3、林地民关系 +1 ｜ flag `norne_
 
 ### 选项 b「放手」
 
-effects：林地民关系 −1 ｜ flag `norne_now_let_go`
+effects：河底灵魂不变、林地民关系 −0.5 ｜ flag `norne_now_let_go`
 
-> 河底多了一缕。
-> 它很轻。
+> 风停了一会儿。
+> 那片叶子，终于落回土里。
 > 你听完了它的歌。
 
 **文风注**："别让我听完"是全游戏最痛的祈使句——林地民以自己的死为代价拒绝被夺走最后的歌；"河，浅了两指"把灵魂归还写成水文变化，柔和如风；"你听完了它的歌"以倾听完成最后的温柔，是少数允许悲剧完整落下的写法。
@@ -185,14 +187,14 @@ intro：
 
 ### 选项 a「松开」
 
-effects：信仰 −30% ｜ 林地民关系 +3 ｜ flag `dodder_released`
+effects：信仰 −30% ｜ 林地民关系 +1.5 ｜ flag `dodder_released`
 
 > 萤光重新亮起。
 > 歌之环，接上了。
 
 ### 选项 b「继续」
 
-effects：记忆 +8.0 ｜ 林地民关系 −3 ｜ flag `dodder_kept`
+effects：记忆 +8.0 ｜ 林地民关系 −1.5 ｜ flag `dodder_kept`
 
 > 叶尖挂着半个音。
 > 风一吹，就散了。
@@ -222,7 +224,7 @@ effects：flag `theseus_yes`
 
 ### 选项 b「我不知道」
 
-effects：漂移 +1.0 ｜ 四族关系各 +1 ｜ flag `theseus_uncertain`
+effects：漂移 +1.0 ｜ 四族关系各 +0.5 ｜ flag `theseus_uncertain`
 
 > 它们靠得更近了些。
 > 真实的你，它们认识。
@@ -234,4 +236,43 @@ effects：领悟 +2 ｜ 真相 +1 ｜ flag `theseus_remembered`
 > 说书人看了你很久。
 > 她说：'母树，你正在想起自己。'
 
-**文风注**：身份线总卡——"我不知道"反而带来四族全 +1（"真实的你，它们认识"），坦诚即亲密；隐藏选项 c 需要领悟 8，是三问里唯一的"记忆派"答案，"正在想起自己"落回图腾第五幅"你忘了你也是它"，把身份答案指向记忆而非存在。
+**文风注**：身份线总卡——"我不知道"反而让四族各靠近半步（"真实的你，它们认识"），坦诚即亲密；隐藏选项 c 需要领悟 8，是三问里唯一的"记忆派"答案，"正在想起自己"落回图腾第五幅"你忘了你也是它"，把身份答案指向记忆而非存在。
+
+---
+
+## 明选·体验机器（stage_hint：巨树·隐藏遗迹）
+
+> trigger：`relic_found: 7`
+> 触发时机：发现遗迹「梦想机」后弹出。
+
+intro：
+
+> 梦想机在遗迹深处醒着。
+> 玻璃里的旧梦没有尘埃。
+> 只要接通它，四族就能住进从不下雨的春天。
+
+### 选项 a「接通最后一根管子」（unlock：信仰 ≥50）
+
+effects：信仰 −50 ｜ flag `experience_opened`
+
+> 灯一盏盏亮起。
+> 四族在梦里走进没有尽头的春天。
+> 火塘还暖着。只是再没有人醒来。
+
+### 选项 b「拔掉它的根」
+
+effects：四族关系各 +0.5 ｜ flag `experience_destroyed`
+
+> 玻璃里的春天碎了。
+> 四族站在真正的风里。
+> 有人牵住你的根，说：这里会下雨，也很好。
+
+### 选项 c「听完机器的梦」
+
+effects：领悟 +1 ｜ flag `experience_studied`
+
+> 你听见每一场不会醒来的花开。
+> 完美的梦也是梦。
+> 树最懂了。
+
+**文风注**：三个选项不评判幸福，只把代价留下。A 的春天没有雨，也没有醒来；B 接受真正的风雨；C 只听，不替任何人选择。关系与领悟严格分路，不重复发奖。

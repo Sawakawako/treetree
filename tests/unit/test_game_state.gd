@@ -89,11 +89,11 @@ func test_from_dict_filters_invalid_totem_ids() -> void:
 func test_relations_roundtrip() -> void:
     var s := GameState.new()
     s.relations["human"] = 2
-    s.relations["wildfolk"] = -1
+    s.relations["wildfolk"] = -1.5
     s.relation_events.assign([&"human", &"wildfolk"])
     var back := GameState.from_dict(s.to_dict())
-    assert_that(int(back.relations["human"])).is_equal(2)
-    assert_that(int(back.relations["wildfolk"])).is_equal(-1)
+    assert_that(float(back.relations["human"])).is_equal_approx(2.0, 1e-4)
+    assert_that(float(back.relations["wildfolk"])).is_equal_approx(-1.5, 1e-4)
     assert_that(back.relation_events).contains(&"human")
     assert_that(back.relation_events).contains(&"wildfolk")
 
@@ -108,7 +108,14 @@ func test_from_dict_guards_corrupt_relations() -> void:
     assert_that(back.relations.is_empty()).is_true()
     var back2 := GameState.from_dict({"relations": {"human": "x", "wildfolk": 1.5}})
     assert_that(int(back2.relations.get("human", 0))).is_equal(0)
-    assert_that(int(back2.relations["wildfolk"])).is_equal(1)
+    assert_that(float(back2.relations["wildfolk"])).is_equal_approx(1.5, 1e-4)
+
+func test_relations_from_dict_clamps_and_keeps_old_integers() -> void:
+    var back := GameState.from_dict({"relations": {"human": 2, "forestfolk": 0.5, "stoneborn": 9.0, "wildfolk": -8}})
+    assert_that(float(back.relations["human"])).is_equal_approx(2.0, 1e-4)
+    assert_that(float(back.relations["forestfolk"])).is_equal_approx(0.5, 1e-4)
+    assert_that(float(back.relations["stoneborn"])).is_equal_approx(3.0, 1e-4)
+    assert_that(float(back.relations["wildfolk"])).is_equal_approx(-3.0, 1e-4)
 
 func test_races_serialization_roundtrip() -> void:
     var s := GameState.new()
@@ -219,6 +226,11 @@ func test_soul_river_corrupt_fallback() -> void:
     var back := GameState.from_dict({"soul_river": "corrupt"})
     assert_that(back.soul_river).is_equal(100)
 
+func test_soul_river_from_dict_clamps_numeric_values() -> void:
+    assert_that(GameState.from_dict({"soul_river": 101}).soul_river).is_equal(100)
+    assert_that(GameState.from_dict({"soul_river": -1}).soul_river).is_equal(0)
+    assert_that(GameState.from_dict({"soul_river": 42.9}).soul_river).is_equal(42)
+
 func test_m5g_fields_roundtrip() -> void:
     var s := GameState.new()
     s.choices_done.assign([&"human_nightmare", &"odin_sacrifice"])
@@ -253,6 +265,16 @@ func test_m5g_stringname_arrays_filter_invalid() -> void:
     assert_that(back.choices_done).contains(&"a")
     assert_that(back.choice_flags.size()).is_equal(1)
     assert_that(back.choice_flags).contains(&"b")
+
+func test_storyteller_stories_roundtrip_and_filter() -> void:
+    var s := GameState.new()
+    s.storyteller_stories.assign([&"story_4", &"stream_and_current"])
+    var back := GameState.from_dict(s.to_dict())
+    assert_that(back.storyteller_stories).contains(&"story_4")
+    assert_that(back.storyteller_stories).contains(&"stream_and_current")
+    var filtered := GameState.from_dict({"storyteller_stories": ["story_5", 7, {"bad": true}]})
+    assert_that(filtered.storyteller_stories).is_equal([&"story_5"])
+    assert_that(GameState.from_dict({}).storyteller_stories).is_empty()
 
 func test_m5d2_fields_roundtrip() -> void:
     var s := GameState.new()
@@ -293,15 +315,22 @@ func test_m5e_fields_roundtrip() -> void:
     s.faith_engine_level = 2
     s.memory_engine_level = 1
     s.lingua_life_level = 2
-    s.lingua_memory_level = 0
+    s.lingua_memory_level = 1
     s.lingua_nodes.assign([&"tree_canopy", &"ring_memory"])
     var back := GameState.from_dict(s.to_dict())
     assert_that(back.faith_engine_level).is_equal(2)
     assert_that(back.memory_engine_level).is_equal(1)
     assert_that(back.lingua_life_level).is_equal(2)
-    assert_that(back.lingua_memory_level).is_equal(0)
+    assert_that(back.lingua_memory_level).is_equal(1)
     assert_that(back.lingua_nodes).contains(&"tree_canopy")
     assert_that(back.lingua_nodes).contains(&"ring_memory")
+
+func test_last_saved_unix_roundtrip_missing_and_corrupt() -> void:
+    var state := GameState.new()
+    state.last_saved_unix = 123456
+    assert_that(GameState.from_dict(state.to_dict()).last_saved_unix).is_equal(123456)
+    assert_that(GameState.from_dict({}).last_saved_unix).is_equal(0)
+    assert_that(GameState.from_dict({"last_saved_unix": "bad"}).last_saved_unix).is_equal(0)
 
 func test_m5e_fields_missing_fallback() -> void:
     var back := GameState.from_dict({"tick": 5})

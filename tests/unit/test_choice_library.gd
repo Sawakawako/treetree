@@ -1,12 +1,12 @@
 extends GdUnitTestSuite
 
-func test_load_all_returns_seven_choices() -> void:
+func test_load_all_returns_eight_choices() -> void:
 	var choices := ChoiceLibrary.load_all()
-	assert_that(choices.size()).is_equal(7)
+	assert_that(choices.size()).is_equal(8)
 
 func test_choice_ids_unique_and_valid() -> void:
 	var ids := ChoiceLibrary.valid_choice_ids()
-	assert_that(ids.size()).is_equal(7)
+	assert_that(ids.size()).is_equal(8)
 	assert_that(ids).contains(&"human_nightmare")
 	assert_that(ids).contains(&"odin_sacrifice")
 	assert_that(ids).contains(&"norne_past")
@@ -14,9 +14,20 @@ func test_choice_ids_unique_and_valid() -> void:
 	assert_that(ids).contains(&"norne_future")
 	assert_that(ids).contains(&"dodder")
 	assert_that(ids).contains(&"theseus")
+	assert_that(ids).contains(&"experience_machine")
 
 func test_choice_count() -> void:
-	assert_that(ChoiceLibrary.choice_count()).is_equal(7)
+	assert_that(ChoiceLibrary.choice_count()).is_equal(8)
+
+func test_experience_machine_has_three_frozen_routes() -> void:
+	var c := ChoiceLibrary.get_choice(&"experience_machine")
+	assert_that(int(c.get("trigger", {}).get("relic_found", 0))).is_equal(7)
+	var opts: Array = c.get("options", [])
+	assert_that(opts.size()).is_equal(3)
+	assert_that(float(opts[0].get("unlock", {}).get("faith_gte", 0.0))).is_equal_approx(50.0, 1e-4)
+	assert_that(opts[0].get("effects", {}).get("flags", [])).contains("experience_opened")
+	assert_that(opts[1].get("effects", {}).get("flags", [])).contains("experience_destroyed")
+	assert_that(opts[2].get("effects", {}).get("flags", [])).contains("experience_studied")
 
 func test_get_choice_returns_struct() -> void:
 	var c := ChoiceLibrary.get_choice(&"human_nightmare")
