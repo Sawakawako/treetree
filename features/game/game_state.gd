@@ -32,6 +32,8 @@ var race_memory_eff: Dictionary = {}
 var choice_flags: Array[StringName] = []
 var storyteller_stories: Array[StringName] = []
 var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
+var run_number: int = 1                # 当前周目（M6，1 起始；周目门控/文本层叠依据）
+var ending_seen: Array[StringName] = []  # 已达成结局 id（bad/normal/good/true，M6）
 var seedling_level: int = 0     # 嫩叶教学链（M5d2）
 var firepit_level: int = 0       # 说书人火塘·人族设施（M5d2）
 var ring_level: int = 0          # 歌之环·林地民设施（M5d2）
@@ -87,6 +89,8 @@ func to_dict() -> Dictionary:
         "lingua_nodes": lingua_nodes,
         "last_saved_unix": last_saved_unix,
         "soul_river": soul_river,
+        "run_number": run_number,
+        "ending_seen": ending_seen,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
         "sunflower_level": sunflower_level,
@@ -218,6 +222,13 @@ static func from_dict(d: Dictionary) -> GameState:
         s.soul_river = clampi(int(sr), 0, SoulActions.RIVER_TOTAL)
     else:
         s.soul_river = 100  # 损坏防御（同 relations 防御模式）
+    s.run_number = int(d.get("run_number", 1))
+    var es: Array = d.get("ending_seen", [])
+    var es_cleaned: Array = []
+    for x in es:
+        if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
+            es_cleaned.append(StringName(x))
+    s.ending_seen.assign(es_cleaned)
     var sl: Variant = d.get("seedling_level", 0)
     s.seedling_level = int(sl) if typeof(sl) == TYPE_INT or typeof(sl) == TYPE_FLOAT else 0
     var fpl: Variant = d.get("firepit_level", 0)
@@ -248,4 +259,18 @@ static func from_dict(d: Dictionary) -> GameState:
     s.lingua_nodes.assign(ln_cleaned)
     var saved_at: Variant = d.get("last_saved_unix", 0)
     s.last_saved_unix = maxi(int(saved_at), 0) if typeof(saved_at) == TYPE_INT or typeof(saved_at) == TYPE_FLOAT else 0
+    return s
+
+# M6 周目重置：新建一局的 GameState，仅拷贝跨周目保留字段（记忆余烬）
+static func new_run_preserved(prev: GameState) -> GameState:
+    var s := GameState.new()
+    # 保留：希望 / 领悟 / 真相 / 知识解锁标记
+    s.hope = prev.hope
+    s.insight = prev.insight
+    s.truth = prev.truth
+    s.run_number = prev.run_number + 1
+    s.ending_seen.assign(prev.ending_seen)
+    s.choice_flags.assign(prev.choice_flags)          # 知识型 flag 保留
+    s.totem_interpreted.assign(prev.totem_interpreted)
+    s.storyteller_stories.assign(prev.storyteller_stories)
     return s

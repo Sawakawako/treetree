@@ -344,3 +344,48 @@ func test_m5e_fields_corrupt_fallback() -> void:
     var back := GameState.from_dict({"faith_engine_level": "corrupt", "lingua_nodes": [1, {"a": 1}]})
     assert_that(back.faith_engine_level).is_equal(0)
     assert_that(back.lingua_nodes.size()).is_equal(0)
+
+func test_m6_run_number_default_and_roundtrip() -> void:
+    var s := GameState.new()
+    assert_that(s.run_number).is_equal(1)
+    assert_that(s.ending_seen).is_empty()
+    s.run_number = 2
+    s.ending_seen.append(&"good")
+    var s2 := GameState.from_dict(s.to_dict())
+    assert_that(s2.run_number).is_equal(2)
+    assert_that(s2.ending_seen).contains(&"good")
+
+func test_m6_old_save_defaults() -> void:
+    # 无 run_number/ending_seen 的旧档 → 缺省回退
+    var s := GameState.from_dict({"hope": 1})
+    assert_that(s.run_number).is_equal(1)
+    assert_that(s.ending_seen).is_empty()
+
+func test_m6_new_run_preserves_only_knowledge() -> void:
+    var s := GameState.new()
+    s.hope = 2
+    s.insight = 11
+    s.truth = 6
+    s.run_number = 1
+    s.choice_flags.append(&"theseus_remembered")
+    s.storyteller_stories.append(&"story_6")
+    s.relations[&"human"] = 3.0
+    s.memory = BigNum.new(99.0)
+    s.growth = BigNum.new(5000.0)
+    s.leaf_level = 5
+    s.races[&"human"] = {"awakened": true, "population": 50.0}
+    s.soul_river = 80
+    var s2 := GameState.new_run_preserved(s)
+    assert_that(s2.run_number).is_equal(2)
+    assert_that(s2.hope).is_equal(2)
+    assert_that(s2.insight).is_equal(11)
+    assert_that(s2.truth).is_equal(6)
+    assert_that(s2.choice_flags).contains(&"theseus_remembered")
+    assert_that(s2.storyteller_stories).contains(&"story_6")
+    assert_that(s2.relations).is_empty()
+    assert_that(s2.relation_events).is_empty()
+    assert_that(float(s2.memory.to_value())).is_equal_approx(0.0, 1e-4)
+    assert_that(float(s2.growth.to_value())).is_equal_approx(0.0, 1e-4)
+    assert_that(s2.leaf_level).is_equal(0)
+    assert_that(s2.races).is_empty()
+    assert_that(s2.soul_river).is_equal(100)
