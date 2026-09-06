@@ -79,12 +79,14 @@ DSH 编程模式（Programming Mode）的系统规则（技能先行、设计先
 新会话接手本项目时，必须先读 `docs/world-tree/CONTINUE.md`（项目状态与下一步），
 再按本文件铁律执行。
 
-## 当前交接基线（2026-09-05）
+## 当前交接基线（2026-09-06）
 
-- M5 已封板：T0—T8 全部完成，最终验收为 34 个测试套件、366 个测试全部通过。
-- 当前下一里程碑为 M6「终局 + 多周目」；开始实现前，先按
-  `docs/world-tree/CONTINUE.md` 的 M6 输入基线复核范围与顺序。
-- M5 的设计决策、实现记录、验收证据与已知环境警告，以
-  `docs/superpowers/plans/2026-09-05-m5-completion.md` 为准。
+- M5 已封板（2026-09-05）：34 套件 / 366 测试；M6 主闭环已封板（2026-09-06）：**37 套件 / 428 测试**全部通过。
+- M6 完成内容：终局状态机（世界之轴成型/四结局判定/希望结算）、归还序列 7 步×3 周目差分、周目切换（new_run_preserved 余烬保留）、二周目六关系事件（石裔3+野民3）、三周目 RunBoost 浓缩快进、明选⑦世界之轴卡、UI 终局链。
+- 当前下一里程碑为 **M6-D「九界 + 世界之语 + 奇迹」**（内容扩展，见 ROADMAP 步 8）+ 后续打磨（正式标题场景/记忆图书馆画廊）。
+- M6 主闭环的设计决策、实现记录与已知缺口（含 reset_to_title 回标题语义、condense-good 判定、run≥4 归还文本空白），以
+  `docs/superpowers/specs/2026-09-05-world-tree-m6-ending-multirun-design.md`、
+  `docs/superpowers/plans/2026-09-05-m6-ending-multirun.md` 与
+  `docs/world-tree/CONTINUE.md` §七·五 为准。
 - 路线状态以 `docs/world-tree/ROADMAP.md` 为准；如实现改变里程碑状态，必须同步更新
   计划、继续指南、路线图和本节。

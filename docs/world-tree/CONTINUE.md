@@ -62,8 +62,9 @@
 | **里程碑 5f** | ✅ 完成（灵魂系统：河底守恒 100/复活/夺魂，201 测试全绿 + M5F E2E PASSED，2026-09-01 实施） |
 | **里程碑 5g** | ✅ 完成（明选引擎+五卡：ChoiceLibrary/ChoiceActions/choices.json 文本外置/GameState 五账本/GameManager 停顿点明选/UI 弹层，245 测试全绿 + M5G E2E 29 项 PASS，2026-09-01 实施） |
 | **里程碑 5d2** | ✅ 完成（增量缺口补齐：嫩叶教学链 3 级/深根梦/风语膜一次性/四族设施 4 个，265 测试全绿 + M5D2 E2E 20 项 PASS，2026-09-01 实施） |
-| **里程碑 5h** | 🚧 实施中（T1—T5 已完成：半点制与边界/遗迹/体验机器/说书人/记忆之语；下一步离线进度；2026-09-05） |
-| **文本归档** | ⏳ 未做（对话产出的五阶段文本待落成 narrative 文档） |
+| **里程碑 5h** | ✅ 完成（M5 封板：半点制迁移/遗迹 5-9/体验机器/说书人/记忆之语/离线进度/UI 归档，366 测试全绿 + 66 E2E，2026-09-05 封板） |
+| **里程碑 6（M6）** | ✅ 完成（终局+多周目+真结局：EndingStateMachine 四结局判定/归还序列 7 步×3 周目差分/周目切换 new_run_preserved/二周目六事件（石裔3+野民3）/三周目 RunBoost 快进/明选⑦世界之轴卡/UI 终局链，428 测试全绿 + 37 套件 + M6 E2E 21 项 PASS，2026-09-06 封板） |
+| **文本归档** | ✅ 已做（narrative/ 01-11 全归档：遗迹/图腾/夺梦/唤醒/关系(含二周目6事件)/亲密/化身/明选/UI 播报/说书人/归还序列） |
 
 ## 三、关键文档索引
 
@@ -78,6 +79,8 @@
 | M4 实施计划 | `docs/superpowers/plans/2026-08-31-m4-totem.md`（6 任务 TDD，Inline 执行） |
 | M5h 收尾设计 | `docs/superpowers/specs/2026-09-05-world-tree-m5h-content-completion-design.md`（关系/遗迹/体验机器/说书人/领悟/离线规则冻结） |
 | M5 收尾实施计划 | `docs/superpowers/plans/2026-09-05-m5-completion.md`（T0—T8，T0 决策已冻结） |
+| M6 主设计文档 | `docs/superpowers/specs/2026-09-05-world-tree-m6-ending-multirun-design.md`（终局+多周目+真结局：终局触发里程碑门/四结局判定/归还序列周目差分/周目门控 9→12/真结局循环终止/决策记录） |
+| M6 实施计划 | `docs/superpowers/plans/2026-09-05-m6-ending-multirun.md`（11 任务 TDD：GameState 周目/EndingStateMachine/ReturnSequence/六事件/world_axis 卡/restart_run/RunBoost/UI/封板） |
 | 项目铁律 | `AGENTS.md`（铁律 1 读写作 skill / 铁律 2 读 godot-master / 铁律 5 文风 / 铁律 6 本文件） |
 | SDD 审查记录（M1） | `.superpowers/sdd/2026-08-31-mvp-text-prototype/`（每任务 brief/report/review，含全部 ruling） |
 
@@ -105,13 +108,17 @@
 autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）+ resources_changed/race_awakened 信号 + 60tick 存档 + explore_relic 入口 + RaceManager.tick_races
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契+指数+线性成本：叶序/分枝/叶绿体/木质部/花盘/螺舱/根须）/ Formatter（格式化）/ actions（GameActions 购买动作）
 features/game/              # GameState（状态：memory/faith/root_depth/races/relics/totem/relations/plundered/升级等级）/ GameLoop（tick 逻辑：光合/生长/储量 clamp）/ SaveManager
-features/dreams/            # RelicLibrary（4 遗迹数据+梦境文本）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
+features/dreams/            # RelicLibrary（9 遗迹数据+梦境文本，M5h 扩）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
 features/memories/          # TotemLibrary+TotemActions（图腾）/ PlunderData+PlunderActions（夺梦）/ DriftActions+AvatarTiers+IntimateEvents（意志漂移+化身）
 features/soul/              # SoulActions（灵魂：河底守恒/复活/夺魂）——M5f 已完成（2026-09-01）
-features/relations/         # RelationEvents（4 族仪式互动）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
+features/relations/         # RelationEvents（4 族仪式互动 + EXTRA_EVENTS 二周目 6 事件，run_gte 门控）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
-features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮）
-tests/unit/                 # GdUnit4 当前实测：343 测试，32 套件（M5h T5 后；原源码基线 302/29）
+features/choices/           # ChoiceLibrary/ChoiceActions + data/choices.json（M5g 明选①-⑤ + M5h ⑥体验机器 + M6 ⑦世界之轴，文本外置）
+features/narrative/         # StoryLibrary/StoryActions（说书人主线④-⑥ + 彩蛋）
+features/lingua/            # LinguaData/LinguaActions（树语：生命之语/记忆之语 Lv1 + 13 节点，能力解锁）
+features/ending/            # EndingStateMachine（世界之轴成型/四结局判定/希望结算）/ ReturnSequence（归还 7 步×3 周目差分）/ RunBoost（三周目浓缩快进）——M6（2026-09-06）
+features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮/世界之轴终局链）
+tests/unit/                 # GdUnit4 当前实测：428 测试，37 套件（M6 封板后；M5 基线 366/34）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -282,6 +289,25 @@ M6 接手：世界之语、九界、奇迹、终局、多周目；领悟跨周�
 **已知环境问题（不阻塞当前 GDScript 项目）**：Godot 4.7.1 Mono 安装包缺少 `Microsoft.VisualStudio.SolutionPersistence.dll`，`--import` 会在 C# 编辑器插件阶段记录 `FileNotFoundException`，但资源扫描完成且退出码为 0。若 M6 采用 C#，需先修复安装包；继续使用 GDScript 不受影响。
 
 **M6 起点**：世界之语、九界、奇迹、终局、多周目。输入基线为体验机器结果、环形废墟、说书人最终 flag、领悟、关系、`truth`、`choice_flags`、`hope`、`soul_river`；周目契约继续遵守关系清零、领悟跨周目保留、二周目新增六个关系事件、三个周目文本差分。
+
+## 七·五、M6 已封板（2026-09-06）；下一步 M6-D
+
+**M6 主闭环完成**（按 `docs/superpowers/plans/2026-09-05-m6-ending-multirun.md`，11 任务 SDD 执行）：
+- **终局**：EndingStateMachine（世界之轴成型 5 闸门/四结局判定 领悟×羁绊×希望/希望结算）+ 明选⑦世界之轴卡（4 路径 a凝/b拒/c还河/d隐藏真结局，available 排除只走主动入口）
+- **归还序列**：ReturnSequence 7 步 × 3 周目 21 段差分 + 3 停步（好 7 步/普通坏 4 步停/真不拆）
+- **多周目**：GameState run_number/ending_seen + new_run_preserved 周目重置（余烬=hope/insight/truth/知识解锁）+ restart_run + 三周目 RunBoost 浓缩快进（资源赠予 + 4 树语节点解锁 lingua_nodes）
+- **二周目六事件**：RelationEvents.EXTRA_EVENTS（石裔 3 + 野民 3，各 +0.5，run_gte 2 门控 → 12/12）
+- **真结局**：run3 + 领悟满 + 关系满 + 希望≥2 → 隐藏 d 亮起 → 结束循环（reset_to_title，无独立标题场景的替代语义）
+
+**M6 封板验证**：最终 **37 套件 / 428 测试全绿**（0 失败 0 orphan；M5 基线 366 → M6 新增 62）；headless 冒烟无 SCRIPT ERROR；临时 E2E 21 项链路 PASS（axis→归还→restart→boost→good→condense-good→true→reset，脚本已删）。
+
+**M6 已知缺口（待后续）**：
+1. **正式标题场景不存在**：真结局「回到标题」现为 `reset_to_title()` 整档回 run1 数据语义；未来做标题界面/记忆图书馆重读画廊（设计 §6.3）需另建持久层（真结局元进度当前被重置清除）。
+2. **condense（选项 a）在领悟+关系满时可 grade good**（ESM 判定层语义）：此时 UI 走结算画面非归还序列；若产品要求「a 永不到 good」需改 ESM。
+3. **run≥4 归还序列文本空白**（TEXTS 仅覆盖 1-3 周目；run4 需 run3 拒 d 再循环 good 才可达）——建议 fallback run3 文本。
+4. **M6-D 未做**：九界探索层（冥河/天界）+ 世界之语（九界驱动第三主枝）+ 奇迹（信仰消耗：绿洲化/唤雨/驱影/塑形/唤灵）——独立设计文档待写（见 ROADMAP）。
+
+**下一步 M6-D**：九界 + 世界之语 + 奇迹（设计 §13.10 + M6 主设计范围后置块）。流程：brainstorming → writing-plans → SDD 执行（同本次）。
 
 **实施流程**（按 DSH 编程模式，铁律 4）：先读写作 skill（铁律 1）与 godot-master（铁律 2）→ writing-plans 写实施计划 → 主人确认 → TDD/SDD 逐任务执行（先失败测试 → 实现 → 验证 → commit）。
 
