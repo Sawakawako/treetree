@@ -1210,3 +1210,16 @@ git commit -m "docs: M6 终局+多周目封板记录 + 路线图同步"
 3. Task 4/6 是写作任务，占位符替换需保证测试长度断言（>10 字）满足。
 4. `resolve_choice` 改造（Task 7 Step 7）影响既有 choice 流程——实施时确保非 world_axis 卡行为不变（新增分支只在 choice_id==world_axis 触发）。
 5. world_axis 卡会进 `_check_choice_trigger` tick 轮询（growth≥1000 + relic9 满足即自动弹）——设计上「里程碑门 + 明选常驻」两路径并存可接受；若主人不想要 tick 自动弹，可后续把 world_axis 从 available() 排除、只走 try_start_world_axis（一行守卫，实施时确认）。
+
+---
+
+## 首轮 Code Review 修复记录（2026-09-06）
+
+- [x] 二周目六个关系事件接入 `GameManager.interact_relation()` 和 UI 可用性判定，并验证同族三事件顺序推进。
+- [x] `GameState` 新增持久化 `pending_ending`；世界之轴结算与归还步进即时保存，启动后可恢复，兼容迁移已锁死的旧存档。
+- [x] `EndingStateMachine` 的归还分支补领悟门槛：领悟不足判为坏结局。
+- [x] 忒修斯/体验机器的知识奖励增加稳定 `knowledge_id`，领悟与真相只在首次掌握时发放。
+- [x] 归还序列增加 `树留存度 ↓ / 世界复苏度 ↑` 的互补进度，UI 同步显示并保证合计 100%。
+- [x] 交接文档分支名统一为 `main`。
+
+**验证结果**：37 套件 / 435 测试全绿（0 失败、0 flaky、0 skipped、0 orphan）；隔离 `user://` 的 headless 主场景启动与存档写入成功，无 SCRIPT ERROR。沙箱内仍会记录 Windows 根证书库不可读，不影响离线 GDScript 游戏逻辑。

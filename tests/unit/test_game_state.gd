@@ -355,6 +355,29 @@ func test_m6_run_number_default_and_roundtrip() -> void:
     assert_that(s2.run_number).is_equal(2)
     assert_that(s2.ending_seen).contains(&"good")
 
+func test_m6_pending_ending_roundtrip_and_old_save_fallback() -> void:
+    var s := GameState.new()
+    s.pending_ending = {
+        "outcome": &"good", "intent": &"return", "hope_before": 1,
+        "phase": &"return", "return_step": 4, "return_halted": false,
+    }
+    var restored := GameState.from_dict(s.to_dict())
+    assert_that(restored.pending_ending.get("outcome")).is_equal(&"good")
+    assert_that(restored.pending_ending.get("return_step")).is_equal(4)
+    assert_that(GameState.from_dict({"pending_ending": "corrupt"}).pending_ending).is_empty()
+
+func test_m6_migrates_axis_settled_save_without_pending_snapshot() -> void:
+    var restored := GameState.from_dict({
+        "hope": 2,
+        "choices_done": ["world_axis"],
+        "choice_flags": ["world_axis_intent_return"],
+        "ending_seen": ["good"],
+    })
+    assert_that(restored.pending_ending.get("outcome")).is_equal(&"good")
+    assert_that(restored.pending_ending.get("intent")).is_equal(&"return")
+    assert_that(restored.pending_ending.get("phase")).is_equal(&"return")
+    assert_that(restored.pending_ending.get("return_step")).is_equal(1)
+
 func test_m6_old_save_defaults() -> void:
     # 无 run_number/ending_seen 的旧档 → 缺省回退
     var s := GameState.from_dict({"hope": 1})

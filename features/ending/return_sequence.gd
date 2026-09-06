@@ -50,6 +50,14 @@ static func text_for(run: int, step: int) -> String:
 static func halt_text(run: int) -> String:
 	return str(HALT_TEXTS.get(run, ""))
 
+static func progress_for(step: int) -> Dictionary:
+	var safe_step := clampi(step, 0, STEPS)
+	var world_restored := roundi(float(safe_step) * 100.0 / float(STEPS))
+	return {
+		"tree_remaining": 100 - world_restored,
+		"world_restored": world_restored,
+	}
+
 static func max_step_for(outcome: StringName) -> int:
 	if outcome == &"good" or outcome == &"true":
 		return STEPS

@@ -65,6 +65,7 @@ func test_m6_ending_scene_nodes_exist() -> void:
     assert_that(root.find_child("ChoiceOptionDButton", true, false)).is_not_null()
     # 归还序列面板（逐步点击推进）+ 结算画面（结局文案/希望/再次醒来|回到标题）
     assert_that(root.find_child("ReturnPanel", true, false)).is_not_null()
+    assert_that(root.find_child("ReturnProgressLabel", true, false)).is_not_null()
     assert_that(root.find_child("EndingPanel", true, false)).is_not_null()
     root.free()
 

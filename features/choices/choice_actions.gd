@@ -102,6 +102,8 @@ static func option_unlocked(state: GameState, choice_id: StringName, option_id: 
 	return false
 
 static func _apply_effects(state: GameState, effects: Dictionary) -> void:
+	var knowledge_id := StringName(str(effects.get("knowledge_id", "")))
+	var knowledge_is_new := knowledge_id == &"" or not state.choice_flags.has(knowledge_id)
 	if effects.has("memory"):
 		state.memory.add(BigNum.new(float(effects["memory"])))
 	if effects.has("faith"):
@@ -115,9 +117,9 @@ static func _apply_effects(state: GameState, effects: Dictionary) -> void:
 	if effects.has("relation"):
 		for rid in effects["relation"]:
 			RelationActions.apply_change(state, StringName(str(rid)), float(effects["relation"][rid]))
-	if effects.has("insight"):
+	if effects.has("insight") and knowledge_is_new:
 		state.insight += int(effects["insight"])
-	if effects.has("truth"):
+	if effects.has("truth") and knowledge_is_new:
 		state.truth += int(effects["truth"])
 	if effects.has("drift"):
 		state.drift_extra += float(effects["drift"])

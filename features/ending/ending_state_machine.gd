@@ -55,7 +55,7 @@ static func outcome_of(state: GameState, intent: StringName) -> StringName:
 		&"return":
 			if state.insight >= INSIGHT_GOOD and _bonds_full(state):
 				return &"good"
-			return &"normal"
+			return &"normal" if state.insight >= INSIGHT_GOOD else &"bad"
 		&"condense":
 			return &"good" if state.insight >= INSIGHT_GOOD and _bonds_full(state) else (&"normal" if state.insight >= INSIGHT_GOOD else &"bad")
 		_:

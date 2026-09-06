@@ -421,6 +421,12 @@ layout_mode = 2
 text = ""
 autowrap_mode = 3
 
+[node name="ReturnProgressLabel" type="Label" parent="VBox/ReturnPanel/ReturnVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "树的余形 100% · 世界复苏 0%"
+horizontal_alignment = 1
+
 [node name="ReturnAdvanceButton" type="Button" parent="VBox/ReturnPanel/ReturnVBox"]
 unique_name_in_owner = true
 layout_mode = 2

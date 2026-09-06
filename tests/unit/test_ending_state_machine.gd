@@ -66,6 +66,13 @@ func test_return_without_full_bonds_is_normal() -> void:
 	assert_that(str(r.get("outcome", ""))).is_equal("normal")
 	assert_that(int(r.get("hope_after", 0))).is_equal(1)
 
+func test_return_without_enough_insight_is_bad() -> void:
+	var s := _state_axis_ready()
+	s.insight = 9
+	var r := EndingStateMachine.resolve_ending(s, &"return")
+	assert_that(str(r.get("outcome", ""))).is_equal("bad")
+	assert_that(int(r.get("hope_after", 0))).is_equal(1)
+
 func test_refuse_is_bad() -> void:
 	var s := _state_axis_ready()
 	s.insight = 10

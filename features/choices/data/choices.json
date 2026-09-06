@@ -206,6 +206,7 @@
           "text": "不是，但我记得我是",
           "unlock": { "insight_gte": 8 },
           "effects": {
+            "knowledge_id": "theseus_remembered",
             "insight": 2,
             "truth": 1,
             "flags": ["theseus_remembered"]
@@ -244,6 +245,7 @@
           "id": "c",
           "text": "听完机器的梦",
           "effects": {
+            "knowledge_id": "experience_studied",
             "insight": 1,
             "flags": ["experience_studied"]
           },

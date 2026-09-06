@@ -62,6 +62,25 @@ func test_getters() -> void:
     assert_that(gm.get_root_depth()).is_equal(2)
     assert_that(gm.is_human_awakened()).is_true()
 
+func test_interact_relation_advances_into_run2_extra_events() -> void:
+    gm._state = GameState.new()
+    gm._state.run_number = 2
+    gm._state.races[&"stoneborn"] = {"awakened": true, "population": 10.0}
+    gm._state.sap = BigNum.new(9999.0)
+    gm._state.relation_events.append(&"stoneborn")  # 基础互动已完成
+
+    assert_that(gm.can_interact_relation(&"stoneborn")).is_true()
+    var first: Dictionary = gm.interact_relation(&"stoneborn")
+    assert_that(first.get("ok", false)).is_true()
+    assert_that(gm._state.relation_events).contains(&"stoneborn_r2a")
+
+    gm.interact_relation(&"stoneborn")
+    gm.interact_relation(&"stoneborn")
+    assert_that(gm._state.relation_events).contains(&"stoneborn_r2b")
+    assert_that(gm._state.relation_events).contains(&"stoneborn_r2c")
+    assert_that(gm.can_interact_relation(&"stoneborn")).is_false()
+    assert_that(RelationActions.get_relation(gm._state, &"stoneborn")).is_equal_approx(1.5, 1e-4)
+
 func test_human_awakens_during_play() -> void:
     # C1 回归（M3 语义）：游戏中记忆≥2 后，tick 链路必须触发唤醒
     gm._state = GameState.new()
@@ -516,6 +535,28 @@ func test_resolve_world_axis_condense_emits_good() -> void:
     assert_that(str(r.get("outcome", ""))).is_equal("good")
     assert_that(got["ended"]).is_true()
     assert_that(int(got["hope_after"])).is_equal(2)
+    var pending: Dictionary = gm.get_pending_ending()
+    assert_that(pending.get("outcome")).is_equal(&"good")
+    assert_that(pending.get("intent")).is_equal(&"condense")
+    assert_that(pending.get("phase")).is_equal(&"settlement")
+
+func test_return_ending_progress_is_saved_and_restored() -> void:
+    gm._state = _state_axis_ready()
+    gm._state.insight = 10
+    for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+        gm._state.relations[rid] = 3.0
+    gm._pending_choice = &"world_axis"
+    var settled: Dictionary = gm.resolve_choice(&"world_axis", &"c")
+    assert_that(settled.get("ok", false)).is_true()
+    assert_that(gm.get_pending_ending().get("return_step")).is_equal(1)
+
+    gm.advance_return_sequence()
+    gm.advance_return_sequence()
+    var restored := SaveManager.load_or_create("user://save.json")
+    assert_that(restored.pending_ending.get("outcome")).is_equal(&"good")
+    assert_that(restored.pending_ending.get("intent")).is_equal(&"return")
+    assert_that(restored.pending_ending.get("phase")).is_equal(&"return")
+    assert_that(restored.pending_ending.get("return_step")).is_equal(3)
 
 func test_resolve_world_axis_still_requires_pending() -> void:
     gm._state = _state_axis_ready()  # axis 全就绪

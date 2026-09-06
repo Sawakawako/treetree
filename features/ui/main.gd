@@ -103,6 +103,7 @@ static func format_relation(value: float) -> String:
 @onready var return_panel: PanelContainer = %ReturnPanel
 @onready var return_title_label: Label = %ReturnTitleLabel
 @onready var return_text_label: Label = %ReturnTextLabel
+@onready var return_progress_label: Label = %ReturnProgressLabel
 @onready var return_advance_button: Button = %ReturnAdvanceButton
 @onready var ending_panel: PanelContainer = %EndingPanel
 @onready var ending_title_label: Label = %EndingTitleLabel
@@ -319,6 +320,7 @@ func _ready() -> void:
         if not c.is_empty():
             _on_choice_available(GameManager._pending_choice, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
     _refresh()
+    _resume_pending_ending()
     _show_offline_summary(GameManager.take_offline_summary())
 
 func _on_race_awakened(race_id: StringName, race_name: String, awaken_text: String) -> void:
@@ -484,7 +486,7 @@ func _refresh_interact_buttons() -> void:
     for p in pairs:
         var rid: StringName = p[0]
         var btn: Button = p[1]
-        btn.visible = RelationActions.can_interact(s, rid)
+        btn.visible = GameManager.can_interact_relation(rid)
 
 func _on_interact_pressed(race_id: StringName) -> void:
     var result: Dictionary = GameManager.interact_relation(race_id)
@@ -617,10 +619,6 @@ func _on_choice_available(choice_id: StringName, title: String, intro: String, o
 func _on_choice_pressed(option_id: StringName) -> void:
     # 当前弹层的 choice_id 由 GameManager._pending_choice 持有，经 resolve_choice 校验
     var cid := GameManager._pending_choice
-    if cid == &"world_axis":
-        # 明选⑦：记录所选路径——c「把记忆还给河」走归还序列；a/b/d 直接结算
-        _axis_option = option_id
-        _axis_hope_before = GameManager.get_state().hope
     var result: Dictionary = GameManager.resolve_choice(cid, option_id)
     if bool(result.get("ok", false)) and cid == &"world_axis":
         # world_axis 结算不发 choice_resolved——把选项叙事桥（凝/拒/还/自）播进事件位，
@@ -636,12 +634,6 @@ func _on_choice_resolved(choice_id: StringName, option_id: StringName, result_te
 
 # ---------- M6 终局 UI：世界之轴入口 / 归还序列 / 结算 / 周目层叠 ----------
 
-var _axis_option: StringName = &""      # 明选⑦ 本次所选（a 凝记忆/b 拒绝/c 归还/d 隐藏真结局）
-var _axis_hope_before := 1              # resolve 前 hope（结算「x-1 → x」差值的来源）
-var _return_run := 1                    # 归还序列当前周目（ReturnSequence 差分取用）
-var _return_outcome: StringName = &""   # 归还序列对应结局（good=满 7 步；normal/bad=4 步停）
-var _return_step := 0                   # 当前步（0=未开始）
-var _return_halted := false             # normal/bad 已展示「忽然舍不得」停步文本
 var _ending_loops := true               # 结算动作：true=再次醒来（restart_run）；false=回到标题
 
 # 世界之轴入口按钮 pressed → 主动进入终局（GameManager 内 axis_ready 完整门控）
@@ -656,49 +648,44 @@ func _refresh_world_axis() -> void:
 
 # ending_resolved（明选⑦ 结算）：仅 c「把记忆还给河」进归还序列（good 满 7 / normal+bad 4 步停）；
 # a/b（凝/拒）与 d（真）直接结算画面（spec §8.3：归还序列只在「还给河」路径触发）
-func _on_ending_resolved(outcome: StringName, hope_after: int) -> void:
+func _on_ending_resolved(_outcome: StringName, _hope_after: int) -> void:
     choice_panel.visible = false
-    if _axis_option == &"c":
-        _start_return_sequence(outcome, GameManager.get_state().run_number)
-        return
-    # a/b/d（凝/拒/自）不走归还序列——直接结算画面（spec §8.3：拆解只在「还给河」触发）
-    _show_settlement(settlement_view(outcome, _axis_hope_before, hope_after))
+    _resume_pending_ending()
 
-func _start_return_sequence(outcome: StringName, run_number: int) -> void:
-    _return_outcome = outcome
-    _return_run = run_number
-    _return_step = 1
-    _return_halted = false
+func _resume_pending_ending() -> void:
+    var pending := GameManager.get_pending_ending()
+    if pending.is_empty():
+        return
+    var outcome := StringName(str(pending.get("outcome", &"")))
+    var phase := StringName(str(pending.get("phase", &"settlement")))
+    if phase != &"return":
+        return_panel.visible = false
+        _show_settlement(settlement_view(outcome, int(pending.get("hope_before", 1)), GameManager.get_state().hope))
+        return
+    var run_number := GameManager.get_state().run_number
+    var step := int(pending.get("return_step", 1))
+    var halted := bool(pending.get("return_halted", false))
+    var max_step := ReturnSequence.max_step_for(outcome)
     choice_panel.visible = false
     ending_panel.visible = false
     return_panel.visible = true
     return_title_label.text = "归还序列 · 周目 %d" % run_number
-    return_text_label.text = ReturnSequence.text_for(run_number, 1)
+    return_text_label.text = ReturnSequence.halt_text(run_number) if halted else ReturnSequence.text_for(run_number, step)
+    var progress := ReturnSequence.progress_for(step)
+    return_progress_label.text = "树的余形 %d%% · 世界复苏 %d%%" % [
+        int(progress.get("tree_remaining", 100)), int(progress.get("world_restored", 0))]
     return_advance_button.visible = true
-    return_advance_button.text = "继续归还" if ReturnSequence.max_step_for(outcome) > 1 else "完成归还"
+    if halted or (outcome == &"good" and step >= max_step):
+        return_advance_button.text = "完成归还"
+    elif step >= max_step:
+        return_advance_button.text = "停在这里"
+    else:
+        return_advance_button.text = "继续归还"
 
 func _on_return_advance_pressed() -> void:
-    var max_step := ReturnSequence.max_step_for(_return_outcome)
-    if _return_step < max_step:
-        # 还有可拆的步（good 走满 7；normal/bad 走到 4）
-        _return_step += 1
-        return_text_label.text = ReturnSequence.text_for(_return_run, _return_step)
-        if _return_step == max_step:
-            return_advance_button.text = "完成归还" if _return_outcome == &"good" else "停在这里"
-        return
-    if _return_outcome != &"good" and not _return_halted:
-        # normal/bad：拆到一半忽然舍不得——停步文本（spec §8.3），再点进入结算
-        _return_halted = true
-        return_text_label.text = ReturnSequence.halt_text(_return_run)
-        return_advance_button.text = "完成归还"
-        return
-    _finish_return_to_settlement()
-
-func _finish_return_to_settlement() -> void:
-    # hope 已在 resolve 时结算落盘：good +1 / normal·bad 不变
-    var hope_after := GameManager.get_state().hope
-    return_panel.visible = false
-    _show_settlement(settlement_view(_return_outcome, _axis_hope_before, hope_after))
+    var result := GameManager.advance_return_sequence()
+    if result.get("ok", false):
+        _resume_pending_ending()
 
 func _show_settlement(view: Dictionary) -> void:
     ending_title_label.text = str(view.get("title", ""))

@@ -217,8 +217,28 @@ func interpret_totem(totem_id: int) -> Dictionary:
         resources_changed.emit()
     return result
 
+func can_interact_relation(race_id: StringName) -> bool:
+    if RelationActions.can_interact(_state, race_id):
+        return true
+    for event: Dictionary in RelationEvents.extra_events():
+        if StringName(str(event.get("race_id", &""))) != race_id:
+            continue
+        var event_id := StringName(str(event.get("event_id", &"")))
+        if RelationActions.can_interact_event(_state, event_id):
+            return true
+    return false
+
 func interact_relation(race_id: StringName) -> Dictionary:
     var result := RelationActions.interact(_state, race_id)
+    if not result.get("ok", false):
+        for event: Dictionary in RelationEvents.extra_events():
+            if StringName(str(event.get("race_id", &""))) != race_id:
+                continue
+            var event_id := StringName(str(event.get("event_id", &"")))
+            if not RelationActions.can_interact_event(_state, event_id):
+                continue
+            result = RelationActions.interact_event(_state, event_id)
+            break
     if result.get("ok", false):
         relation_changed.emit(race_id, float(result.get("relation", 0.0)))
         resources_changed.emit()
@@ -312,9 +332,44 @@ func _settle_world_axis(option_id: StringName, result: Dictionary) -> Dictionary
     var er := EndingStateMachine.resolve_ending(_state, intent)
     if not er.get("ok", false):
         return {"ok": false, "reason": "ending_blocked"}
-    ending_resolved.emit(StringName(str(er.get("outcome", &""))), int(er.get("hope_after", 0)))
+    var outcome := StringName(str(er.get("outcome", &"")))
+    _state.pending_ending = {
+        "outcome": outcome,
+        "intent": intent,
+        "hope_before": int(er.get("hope_before", _state.hope)),
+        "phase": &"return" if intent == &"return" else &"settlement",
+        "return_step": 1 if intent == &"return" else 0,
+        "return_halted": false,
+    }
     SaveManager.save(_state, SAVE_PATH)
+    ending_resolved.emit(outcome, int(er.get("hope_after", 0)))
     return er
+
+func get_pending_ending() -> Dictionary:
+    return _state.pending_ending.duplicate(true)
+
+func advance_return_sequence() -> Dictionary:
+    if _state.pending_ending.is_empty():
+        return {"ok": false}
+    var pending: Dictionary = _state.pending_ending
+    if StringName(str(pending.get("intent", &""))) != &"return" \
+            or StringName(str(pending.get("phase", &""))) != &"return":
+        return {"ok": false}
+    var outcome := StringName(str(pending.get("outcome", &"")))
+    var max_step := ReturnSequence.max_step_for(outcome)
+    var step := clampi(int(pending.get("return_step", 1)), 1, max_step)
+    var halted := bool(pending.get("return_halted", false))
+    if step < max_step:
+        pending["return_step"] = step + 1
+    elif outcome != &"good" and not halted:
+        pending["return_halted"] = true
+    else:
+        pending["phase"] = &"settlement"
+    _state.pending_ending = pending
+    SaveManager.save(_state, SAVE_PATH)
+    var result := pending.duplicate(true)
+    result["ok"] = true
+    return result
 
 # M6 周目切换：余烬保留重置（GameState.new_run_preserved），清待决明选，落盘，广播 run_restarted
 func restart_run() -> Dictionary:

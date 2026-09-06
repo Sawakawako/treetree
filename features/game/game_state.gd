@@ -34,6 +34,7 @@ var storyteller_stories: Array[StringName] = []
 var soul_river: int = 100   # 河底灵魂存量（守恒：河底 + 已复活 = 100 恒，M5f）
 var run_number: int = 1                # 当前周目（M6，1 起始；周目门控/文本层叠依据）
 var ending_seen: Array[StringName] = []  # 已达成结局 id（bad/normal/good/true，M6）
+var pending_ending: Dictionary = {}      # 尚未完成结算的终局快照（支持退出后恢复）
 var seedling_level: int = 0     # 嫩叶教学链（M5d2）
 var firepit_level: int = 0       # 说书人火塘·人族设施（M5d2）
 var ring_level: int = 0          # 歌之环·林地民设施（M5d2）
@@ -91,6 +92,7 @@ func to_dict() -> Dictionary:
         "soul_river": soul_river,
         "run_number": run_number,
         "ending_seen": ending_seen,
+        "pending_ending": pending_ending,
         "chloroplast_level": chloroplast_level,
         "xylem_level": xylem_level,
         "sunflower_level": sunflower_level,
@@ -229,6 +231,24 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             es_cleaned.append(StringName(x))
     s.ending_seen.assign(es_cleaned)
+    s.pending_ending = _sanitize_pending_ending(d.get("pending_ending", {}))
+    # M6 已发布旧档迁移：world_axis 已结算却没有终局快照时，恢复到可继续的界面。
+    if s.pending_ending.is_empty() and s.choices_done.has(&"world_axis"):
+        var legacy_intent := &""
+        for flag: StringName in s.choice_flags:
+            var flag_text := str(flag)
+            if flag_text.begins_with("world_axis_intent_"):
+                legacy_intent = StringName(flag_text.trim_prefix("world_axis_intent_"))
+        if legacy_intent != &"" and not s.ending_seen.is_empty():
+            var legacy_outcome: StringName = s.ending_seen[-1]
+            s.pending_ending = {
+                "outcome": legacy_outcome,
+                "intent": legacy_intent,
+                "hope_before": maxi(s.hope - 1, 0) if legacy_outcome == &"good" else s.hope,
+                "phase": &"return" if legacy_intent == &"return" else &"settlement",
+                "return_step": 1 if legacy_intent == &"return" else 0,
+                "return_halted": false,
+            }
     var sl: Variant = d.get("seedling_level", 0)
     s.seedling_level = int(sl) if typeof(sl) == TYPE_INT or typeof(sl) == TYPE_FLOAT else 0
     var fpl: Variant = d.get("firepit_level", 0)
@@ -260,6 +280,31 @@ static func from_dict(d: Dictionary) -> GameState:
     var saved_at: Variant = d.get("last_saved_unix", 0)
     s.last_saved_unix = maxi(int(saved_at), 0) if typeof(saved_at) == TYPE_INT or typeof(saved_at) == TYPE_FLOAT else 0
     return s
+
+static func _sanitize_pending_ending(raw: Variant) -> Dictionary:
+    if typeof(raw) != TYPE_DICTIONARY:
+        return {}
+    var data: Dictionary = raw
+    var outcome := StringName(str(data.get("outcome", "")))
+    var intent := StringName(str(data.get("intent", "")))
+    var phase := StringName(str(data.get("phase", "")))
+    if not [&"bad", &"normal", &"good", &"true"].has(outcome):
+        return {}
+    if not [&"condense", &"refuse", &"return", &"self"].has(intent):
+        return {}
+    if phase != &"return" and phase != &"settlement":
+        return {}
+    var hope_before_raw: Variant = data.get("hope_before", 1)
+    var step_raw: Variant = data.get("return_step", 0)
+    var halted_raw: Variant = data.get("return_halted", false)
+    return {
+        "outcome": outcome,
+        "intent": intent,
+        "hope_before": maxi(int(hope_before_raw), 0) if typeof(hope_before_raw) == TYPE_INT or typeof(hope_before_raw) == TYPE_FLOAT else 1,
+        "phase": phase,
+        "return_step": clampi(int(step_raw), 0, ReturnSequence.STEPS) if typeof(step_raw) == TYPE_INT or typeof(step_raw) == TYPE_FLOAT else 0,
+        "return_halted": bool(halted_raw) if typeof(halted_raw) == TYPE_BOOL else false,
+    }
 
 # M6 周目重置：新建一局的 GameState，仅拷贝跨周目保留字段（记忆余烬）
 static func new_run_preserved(prev: GameState) -> GameState:

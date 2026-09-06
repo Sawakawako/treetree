@@ -322,6 +322,28 @@ func test_experience_machine_c_only_rewards_insight_and_is_once_only() -> void:
 	assert_that(s.choices_done).contains(&"experience_machine")
 	assert_that(ChoiceActions.resolve(s, &"experience_machine", &"b").get("ok", false)).is_false()
 
+func test_knowledge_rewards_do_not_repeat_across_runs() -> void:
+	var first := GameState.new()
+	first.memory = BigNum.new(30.0)
+	first.insight = 8
+	assert_that(ChoiceActions.resolve(first, &"theseus", &"c").get("ok", false)).is_true()
+	assert_that(first.insight).is_equal(10)
+	assert_that(first.truth).is_equal(1)
+
+	var second := GameState.new_run_preserved(first)
+	second.memory = BigNum.new(30.0)
+	assert_that(ChoiceActions.resolve(second, &"theseus", &"c").get("ok", false)).is_true()
+	assert_that(second.insight).is_equal(10)
+	assert_that(second.truth).is_equal(1)
+
+	second.relics_found.append(7)
+	assert_that(ChoiceActions.resolve(second, &"experience_machine", &"c").get("ok", false)).is_true()
+	assert_that(second.insight).is_equal(11)
+	var third := GameState.new_run_preserved(second)
+	third.relics_found.append(7)
+	assert_that(ChoiceActions.resolve(third, &"experience_machine", &"c").get("ok", false)).is_true()
+	assert_that(third.insight).is_equal(11)
+
 func test_resolve_before_trigger_fails() -> void:
 	var s := GameState.new()  # 人未醒
 	assert_that(ChoiceActions.resolve(s, &"human_nightmare", &"a").get("ok", false)).is_false()
