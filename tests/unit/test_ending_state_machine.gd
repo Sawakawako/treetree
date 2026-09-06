@@ -46,6 +46,15 @@ func test_normal_when_insight_no_bonds() -> void:
 	var r := EndingStateMachine.resolve_ending(s, &"condense")
 	assert_that(str(r.get("outcome", ""))).is_equal("normal")
 
+func test_condense_stays_normal_even_with_full_bonds() -> void:
+	var s := _state_axis_ready()
+	s.insight = 10
+	for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		s.relations[rid] = 3.0
+	var r := EndingStateMachine.resolve_ending(s, &"condense")
+	assert_that(str(r.get("outcome", ""))).is_equal("normal")
+	assert_that(int(r.get("hope_after", 0))).is_equal(1)
+
 func test_bonds_require_all_three() -> void:
 	var s := _state_axis_ready()
 	s.insight = 10

@@ -516,8 +516,8 @@ func test_resolve_world_axis_settles_via_ending_machine() -> void:
     assert_that(gm._pending_choice).is_equal(&"")
     assert_that(gm.get_state().choices_done).contains(&"world_axis")
 
-func test_resolve_world_axis_condense_emits_good() -> void:
-    # 三周目希望不靠 d；用 condense 验证 hope+1 后结算通路
+func test_resolve_world_axis_condense_emits_normal() -> void:
+    # 凝结记忆只走普通/坏结局线；即使领悟与羁绊双满也不能替代归还路径。
     gm._state = _state_axis_ready()
     gm._state.run_number = 3
     gm._state.insight = 10
@@ -532,11 +532,11 @@ func test_resolve_world_axis_condense_emits_good() -> void:
         got["hope_after"] = hope_after)
     var r: Dictionary = gm.resolve_choice(&"world_axis", &"a")
     assert_that(r.get("ok", false)).is_true()
-    assert_that(str(r.get("outcome", ""))).is_equal("good")
+    assert_that(str(r.get("outcome", ""))).is_equal("normal")
     assert_that(got["ended"]).is_true()
-    assert_that(int(got["hope_after"])).is_equal(2)
+    assert_that(int(got["hope_after"])).is_equal(1)
     var pending: Dictionary = gm.get_pending_ending()
-    assert_that(pending.get("outcome")).is_equal(&"good")
+    assert_that(pending.get("outcome")).is_equal(&"normal")
     assert_that(pending.get("intent")).is_equal(&"condense")
     assert_that(pending.get("phase")).is_equal(&"settlement")
 

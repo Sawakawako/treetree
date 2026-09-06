@@ -63,7 +63,7 @@
 | **里程碑 5g** | ✅ 完成（明选引擎+五卡：ChoiceLibrary/ChoiceActions/choices.json 文本外置/GameState 五账本/GameManager 停顿点明选/UI 弹层，245 测试全绿 + M5G E2E 29 项 PASS，2026-09-01 实施） |
 | **里程碑 5d2** | ✅ 完成（增量缺口补齐：嫩叶教学链 3 级/深根梦/风语膜一次性/四族设施 4 个，265 测试全绿 + M5D2 E2E 20 项 PASS，2026-09-01 实施） |
 | **里程碑 5h** | ✅ 完成（M5 封板：半点制迁移/遗迹 5-9/体验机器/说书人/记忆之语/离线进度/UI 归档，366 测试全绿 + 66 E2E，2026-09-05 封板） |
-| **里程碑 6（M6）** | ✅ 完成（终局+多周目+真结局：EndingStateMachine 四结局判定/可恢复归还序列 7 步×3 周目差分/周目切换 new_run_preserved/二周目六事件（石裔3+野民3）/三周目 RunBoost 快进/明选⑦世界之轴卡/UI 终局链，436 测试全绿 + 37 套件 + M6 E2E 21 项 PASS，2026-09-06 封板并完成首轮 Code Review 修复） |
+| **里程碑 6（M6）** | ✅ 完成（终局+多周目+真结局：EndingStateMachine 四结局判定/可恢复归还序列 7 步×3 周目差分/周目切换 new_run_preserved/二周目六事件（石裔3+野民3）/三周目 RunBoost 快进/明选⑦世界之轴卡/UI 终局链，437 测试全绿 + 37 套件 + M6 E2E 21 项 PASS，2026-09-06 封板并完成首轮 Code Review 修复） |
 | **文本归档** | ✅ 已做（narrative/ 01-11 全归档：遗迹/图腾/夺梦/唤醒/关系(含二周目6事件)/亲密/化身/明选/UI 播报/说书人/归还序列） |
 
 ## 三、关键文档索引
@@ -118,7 +118,7 @@ features/narrative/         # StoryLibrary/StoryActions（说书人主线④-⑥
 features/lingua/            # LinguaData/LinguaActions（树语：生命之语/记忆之语 Lv1 + 13 节点，能力解锁）
 features/ending/            # EndingStateMachine（世界之轴成型/四结局判定/希望结算）/ ReturnSequence（归还 7 步×3 周目差分）/ RunBoost（三周目浓缩快进）——M6（2026-09-06）
 features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮/世界之轴终局链）
-tests/unit/                 # GdUnit4 当前实测：436 测试，37 套件（M6 首轮 Code Review 修复后；M5 基线 366/34）
+tests/unit/                 # GdUnit4 当前实测：437 测试，37 套件（M6 首轮 Code Review 修复后；M5 基线 366/34）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -299,7 +299,7 @@ M6 接手：世界之语、九界、奇迹、终局、多周目；领悟跨周�
 - **二周目六事件**：RelationEvents.EXTRA_EVENTS（石裔 3 + 野民 3，各 +0.5，run_gte 2 门控 → 12/12）
 - **真结局**：run3 + 领悟满 + 关系满 + 希望≥2 → 隐藏 d 亮起 → 结束循环（reset_to_title，无独立标题场景的替代语义）
 
-**M6 封板验证**：首轮 Code Review 修复后 **37 套件 / 436 测试全绿**（0 失败 0 orphan；M5 基线 366 → M6 累计新增 70）；隔离 `user://` 的 headless 冒烟可启动并写入存档、无 SCRIPT ERROR；临时 E2E 21 项链路 PASS（axis→归还→restart→boost→good→condense-good→true→reset，脚本已删）。
+**M6 封板验证**：首轮 Code Review 修复后 **37 套件 / 437 测试全绿**（0 失败 0 orphan；M5 基线 366 → M6 累计新增 71）；隔离 `user://` 的 headless 冒烟可启动并写入存档、无 SCRIPT ERROR；临时 E2E 21 项主链路曾 PASS（axis→归还→restart→boost→good→condense→true→reset，脚本已删），审查后修订的凝结结局矩阵由当前单元与全量回归覆盖。
 
 **M6 首轮 Code Review 修复（2026-09-06）**：
 1. 二周目六个关系事件已接入 `GameManager.interact_relation()` 与 UI 互动按钮，不再只有数据和单元测试入口；每族仍按 r2a→r2b→r2c、各 +0.5 顺序触发。
@@ -309,11 +309,11 @@ M6 接手：世界之语、九界、奇迹、终局、多周目；领悟跨周�
 5. 归还 UI 增加互补进度镜像：`树留存度` 递减、`世界复苏度` 递增，二者始终合计 100%；对应设计文档措辞已同步。
 6. 交接分支名已校正为 `main`。
 7. `run >= 4` 的归还正文与停步文案统一回退到三周目版本，避免继续循环时出现空白。
+8. 凝结记忆严格回归普通/坏结局线；即使领悟与羁绊双满也不能获得好结局或增加希望，好结局只由归还路径达成。
 
 **M6 已知缺口（待后续）**：
 1. **正式标题场景不存在**：真结局「回到标题」现为 `reset_to_title()` 整档回 run1 数据语义；未来做标题界面/记忆图书馆重读画廊（设计 §6.3）需另建持久层（真结局元进度当前被重置清除）。
-2. **condense（选项 a）在领悟+关系满时可 grade good**（ESM 判定层语义）：此时 UI 走结算画面非归还序列；若产品要求「a 永不到 good」需改 ESM。
-3. **M6-D 未做**：九界探索层（冥河/天界）+ 世界之语（九界驱动第三主枝）+ 奇迹（信仰消耗：绿洲化/唤雨/驱影/塑形/唤灵）——独立设计文档待写（见 ROADMAP）。
+2. **M6-D 未做**：九界探索层（冥河/天界）+ 世界之语（九界驱动第三主枝）+ 奇迹（信仰消耗：绿洲化/唤雨/驱影/塑形/唤灵）——独立设计文档待写（见 ROADMAP）。
 
 **下一步 M6-D**：九界 + 世界之语 + 奇迹（设计 §13.10 + M6 主设计范围后置块）。流程：brainstorming → writing-plans → SDD 执行（同本次）。
 
