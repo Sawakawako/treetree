@@ -32,3 +32,33 @@ static func get_event(race_id: StringName) -> Dictionary:
 
 static func event_count() -> int:
 	return EVENTS.size()
+
+# M6 二周目新增事件（run_gte=2；每族 3 个各 +0.5，补足两族到 +3 → 12/12）
+const EXTRA_EVENTS: Array[Dictionary] = [
+	# 石裔 ×3 —— 二周目「你记得」主题
+	{"event_id": &"stoneborn_r2a", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=300",
+		"text": "TASK5_SB_A"},
+	{"event_id": &"stoneborn_r2b", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=600",
+		"text": "TASK5_SB_B"},
+	{"event_id": &"stoneborn_r2c", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=900",
+		"text": "TASK5_SB_C"},
+	# 野民 ×3
+	{"event_id": &"wildfolk_r2a", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=2",
+		"text": "TASK5_WF_A"},
+	{"event_id": &"wildfolk_r2b", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=4",
+		"text": "TASK5_WF_B"},
+	{"event_id": &"wildfolk_r2c", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=5",
+		"text": "TASK5_WF_C"},
+]
+
+static func extra_events() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for e in EXTRA_EVENTS:
+		out.append(e.duplicate(true))
+	return out
+
+static func get_extra_event(event_id: StringName) -> Dictionary:
+	for e in EXTRA_EVENTS:
+		if e.get("event_id") == event_id:
+			return e.duplicate(true)
+	return {}

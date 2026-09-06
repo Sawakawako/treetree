@@ -81,3 +81,42 @@ func test_wildfolk_requires_totem_stage() -> void:
 	assert_that(RelationActions.can_interact(s, &"wildfolk")).is_true()
 	s.memory = BigNum.new(3.99)
 	assert_that(RelationActions.can_interact(s, &"wildfolk")).is_false()
+
+func _awaken_run(state: GameState, id: StringName, run: int) -> void:
+	state.races[id] = {"awakened": true, "population": 10.0}
+	state.run_number = run
+
+func test_run2_events_hidden_in_run1() -> void:
+	for ev in RelationEvents.extra_events():
+		var s := GameState.new()
+		_awaken_run(s, StringName(str(ev.get("race_id", &""))), 1)
+		s.sap = BigNum.new(9999.0)
+		assert_that(RelationActions.can_interact_event(s, StringName(str(ev.get("event_id", &""))))).is_false()
+
+func test_run2_events_available_in_run2() -> void:
+	for ev in RelationEvents.extra_events():
+		var s := GameState.new()
+		_awaken_run(s, StringName(str(ev.get("race_id", &""))), 2)
+		s.sap = BigNum.new(9999.0)
+		s.memory = BigNum.new(9999.0)
+		assert_that(RelationActions.can_interact_event(s, StringName(str(ev.get("event_id", &""))))).is_true()
+
+func test_run2_event_gives_half_and_once() -> void:
+	var s := GameState.new()
+	_awaken_run(s, &"stoneborn", 2)
+	s.sap = BigNum.new(9999.0)
+	var first_ev := RelationEvents.extra_events()[0]
+	var eid := StringName(str(first_ev.get("event_id", &"")))
+	var r := RelationActions.interact_event(s, eid)
+	assert_that(r.get("ok", false)).is_true()
+	assert_that(float(r.get("relation", 0.0))).is_equal_approx(0.5, 1e-4)
+	assert_that(s.relation_events).contains(eid)
+	assert_that(RelationActions.can_interact_event(s, eid)).is_false()  # 一次性
+
+func test_extra_events_count_six() -> void:
+	assert_that(RelationEvents.extra_events().size()).is_equal(6)
+
+func test_extra_events_only_stoneborn_wildfolk() -> void:
+	for ev in RelationEvents.extra_events():
+		var race := StringName(str(ev.get("race_id", &"")))
+		assert_that(race == &"stoneborn" or race == &"wildfolk").is_true()

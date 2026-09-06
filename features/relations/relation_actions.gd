@@ -50,3 +50,39 @@ static func interact(state: GameState, race_id: StringName) -> Dictionary:
 	apply_change(state, race_id, INTERACTION_GAIN)
 	state.relation_events.append(race_id)
 	return {"ok": true, "text": str(ev.get("text", "")), "relation": get_relation(state, race_id)}
+
+static func _condition_met_for(state: GameState, ev: Dictionary) -> bool:
+	var cond := str(ev.get("condition", ""))
+	if cond.is_empty():
+		return true
+	if cond.begins_with("memory>="):
+		return state.memory.is_greater_or_equal(BigNum.new(float(cond.get_slice(">=", 1))))
+	if cond.begins_with("faith>="):
+		return state.faith.is_greater_or_equal(BigNum.new(float(cond.get_slice(">=", 1))))
+	if cond.begins_with("sap>="):
+		return state.sap.is_greater_or_equal(BigNum.new(float(cond.get_slice(">=", 1))))
+	if cond.begins_with("totem>="):
+		return TotemActions.visible_stage(state) >= int(float(cond.get_slice(">=", 1)))
+	return false
+
+static func can_interact_event(state: GameState, event_id: StringName) -> bool:
+	var ev := RelationEvents.get_extra_event(event_id)
+	if ev.is_empty():
+		return false
+	if state.run_number < int(ev.get("run_gte", 1)):
+		return false
+	var race_id := StringName(str(ev.get("race_id", &"")))
+	if not _race_awakened(state, race_id):
+		return false
+	if state.relation_events.has(event_id):
+		return false
+	return _condition_met_for(state, ev)
+
+static func interact_event(state: GameState, event_id: StringName) -> Dictionary:
+	if not can_interact_event(state, event_id):
+		return {"ok": false}
+	var ev := RelationEvents.get_extra_event(event_id)
+	var race_id := StringName(str(ev.get("race_id", &"")))
+	apply_change(state, race_id, INTERACTION_GAIN)
+	state.relation_events.append(event_id)
+	return {"ok": true, "text": str(ev.get("text", "")), "relation": get_relation(state, race_id)}
