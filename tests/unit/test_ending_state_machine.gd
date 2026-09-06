@@ -93,3 +93,15 @@ func test_self_blocked_below_run3() -> void:
 		s.relations[rid] = 3.0
 	var r := EndingStateMachine.resolve_ending(s, &"self")
 	assert_that(r.get("ok", false)).is_false()  # 三周目前 d 不亮不可选
+
+func test_true_consumes_all_hope() -> void:
+	var s := _state_axis_ready()
+	s.run_number = 3
+	s.hope = 3  # 跨周目可达状态（多周目各拿一次好结局）
+	s.insight = 10
+	for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		s.relations[rid] = 3.0
+	var r := EndingStateMachine.resolve_ending(s, &"self")
+	assert_that(str(r.get("outcome", ""))).is_equal("true")
+	assert_that(int(r.get("hope_after", -1))).is_equal(0)  # 真结局清零（裁决语义）
+	assert_that(int(s.hope)).is_equal(0)
