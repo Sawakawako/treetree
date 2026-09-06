@@ -98,6 +98,17 @@ static func format_relation(value: float) -> String:
 @onready var choice_option_a_button: Button = %ChoiceOptionAButton
 @onready var choice_option_b_button: Button = %ChoiceOptionBButton
 @onready var choice_option_c_button: Button = %ChoiceOptionCButton
+@onready var choice_option_d_button: Button = %ChoiceOptionDButton
+@onready var world_axis_button: Button = %WorldAxisButton
+@onready var return_panel: PanelContainer = %ReturnPanel
+@onready var return_title_label: Label = %ReturnTitleLabel
+@onready var return_text_label: Label = %ReturnTextLabel
+@onready var return_advance_button: Button = %ReturnAdvanceButton
+@onready var ending_panel: PanelContainer = %EndingPanel
+@onready var ending_title_label: Label = %EndingTitleLabel
+@onready var ending_body_label: Label = %EndingBodyLabel
+@onready var ending_hope_label: Label = %EndingHopeLabel
+@onready var ending_action_button: Button = %EndingActionButton
 @onready var seedling_button: Button = %SeedlingButton
 @onready var seedling_cost_label: Label = %SeedlingCostLabel
 @onready var deep_dream_button: Button = %DeepDreamButton
@@ -130,6 +141,69 @@ static func format_relation(value: float) -> String:
 @onready var grace_button: Button = %GraceButton
 @onready var altar_button: Button = %AltarButton
 @onready var story_status_label: Label = %StoryStatusLabel
+
+# ---------- M6 终局 UI：世界之轴 / 归还序列 / 结算 / 周目层叠 ----------
+
+const ENDING_TITLES := {
+    &"bad": "坏结局",
+    &"normal": "普通结局",
+    &"good": "好结局",
+    &"true": "真结局",
+}
+
+# 好结局最终画面（spec §8.4 权威文本）
+const GOOD_ENDING_BODY := "你把记忆一颗一颗还给亡者之河。\n不是交还——是偿还。是归还一笔欠了太久的债。\n「母树，你要去哪儿？」「去成为你们脚下的大地。」\n树缓缓倒下。不是死亡，是延伸。\n根系化作河流，树干化作山丘，年轮化作环形废墟。\n第一株不依赖树的幼苗，从树的影子里长出来。\n世界学会了自行生长。\n希望不再需要被燃烧了。它回到土壤里，像一颗种子。\n河底，终于安静了——那些被捞起又放下的灵魂，\n这一次可以不再被捞起，不再失忆。"
+
+# 真结局最终画面（spec §8.5 权威文本）
+const TRUE_ENDING_BODY := "「把希望用在自己身上。」\n你第一次把希望对准自己。记忆没有还回河里——你留下了它们。\n你记得一切：你是幸存者的灵魂，旧世界因何而亡，你做过的一切。\n树没有倒下。根须深入冥河，树冠刺破天界——\n你站在那里：记得一切的树，还活着的树。\n四族抬头望你：\n「母树，你记得了。」\n「我记得。而我还想活着。」"
+
+# 坏/普通结局结算核心（spec §8.2 本质锚定，状态而非动作——选项动作的叙事由选项 result_text 承，
+# 播于 race_event_label；避免与「拒绝=什么都不凝」路径矛盾。文风六则）
+const BAD_ENDING_CORE := "灰落下来，没有人接住它。\n风穿过空荡荡的枝干——像穿过一扇忘记关的门。\n你没有读懂自己留下了什么。\n那一点希望还在原处，等着被点燃，或被种下。"
+const NORMAL_ENDING_CORE := "这一次你懂了：你曾吞噬，也曾被爱。\n只是爱还不够——不够让人留下，也不够让你放下。\n希望在你手里亮了一会儿，又暗下去。\n你带着这一点亮，走回梦里。"
+
+const RUN2_OPENING_TEXT := "你记得这缕光。你曾把它交给下一个自己。"
+const RUN3_OPENING_TEXT := "你醒来时，手里有一点希望。不是「一点」——是一点半。\n像有人在你睡着的时候，往你手心里添了一勺。\n土壤是软的。你低头，看见自己脚下有一圈新芽的痕迹——\n圆的，像一个拥抱留下的。\n你不知道那是谁种的。但你认得那个形状：那是你的形状。"
+
+# 周目开局层叠文本（spec §8.6 权威；一周目 = 原始开局，无附加层）
+static func run_opening_text(run_number: int) -> String:
+    match run_number:
+        2:
+            return RUN2_OPENING_TEXT
+        3:
+            return RUN3_OPENING_TEXT
+        _:
+            return ""
+
+# 结算画面数据（结局文案 + 希望变化 + 动作）。loops=false 仅真结局（循环终止 → 回到标题）
+static func settlement_view(outcome: StringName, hope_before: int, hope_after: int) -> Dictionary:
+    var title := str(ENDING_TITLES.get(outcome, "结局"))
+    var body := ""
+    var hope_line := ""
+    var loops := true
+    match outcome:
+        &"true":
+            loops = false
+            body = TRUE_ENDING_BODY
+            hope_line = "你把希望用在了自己身上。循环在这里停住。"
+        &"good":
+            body = GOOD_ENDING_BODY + "\n\n人族说书人的声音传来，很轻，带着笑：\n「母树，你种下的希望，发芽了。」"
+            hope_line = "希望长了一点：%d → %d" % [hope_before, hope_after]
+        &"normal":
+            body = NORMAL_ENDING_CORE
+            hope_line = "希望没有变：%d" % hope_after
+        &"bad":
+            body = BAD_ENDING_CORE
+            hope_line = "希望没有变：%d" % hope_after
+        _:
+            body = ""
+    return {
+        "title": title,
+        "body": body,
+        "hope_line": hope_line,
+        "action_text": "再次醒来" if loops else "回到标题",
+        "loops": loops,
+    }
 
 static func storyteller_view(state: GameState) -> Dictionary:
     var main_ids := StoryLibrary.main_story_ids()
@@ -195,6 +269,10 @@ func _ready() -> void:
     choice_option_a_button.pressed.connect(func(): _on_choice_pressed(&"a"))
     choice_option_b_button.pressed.connect(func(): _on_choice_pressed(&"b"))
     choice_option_c_button.pressed.connect(func(): _on_choice_pressed(&"c"))
+    choice_option_d_button.pressed.connect(func(): _on_choice_pressed(&"d"))
+    world_axis_button.pressed.connect(_on_world_axis_pressed)
+    return_advance_button.pressed.connect(_on_return_advance_pressed)
+    ending_action_button.pressed.connect(_on_ending_action_pressed)
     seedling_button.pressed.connect(_on_seedling_pressed)
     deep_dream_button.pressed.connect(_on_deep_dream_pressed)
     wind_veil_button.pressed.connect(_on_wind_veil_pressed)
@@ -211,6 +289,8 @@ func _ready() -> void:
     _wire_node_buttons()
     GameManager.choice_available.connect(_on_choice_available)
     GameManager.choice_resolved.connect(_on_choice_resolved)
+    GameManager.ending_resolved.connect(_on_ending_resolved)
+    GameManager.run_restarted.connect(_on_run_restarted)
     revive_human_button.pressed.connect(func(): _on_revive_pressed(&"human"))
     revive_forest_button.pressed.connect(func(): _on_revive_pressed(&"forestfolk"))
     revive_stone_button.pressed.connect(func(): _on_revive_pressed(&"stoneborn"))
@@ -321,6 +401,7 @@ func _refresh() -> void:
     nautilus_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_nautilus_cost())))
     root_eff_button.disabled = not s.sap.is_greater_or_equal(BigNum.new(float(GameManager.get_root_eff_cost())))
     root_button.disabled = not RootActions.can_explore(s)
+    _refresh_world_axis()
     _refresh_race_rows()
     _refresh_totem()
     _refresh_interact_buttons()
@@ -519,7 +600,7 @@ func _on_choice_available(choice_id: StringName, title: String, intro: String, o
     choice_title_label.text = title
     choice_intro_label.text = intro
     var s := GameManager.get_state()
-    var buttons := [choice_option_a_button, choice_option_b_button, choice_option_c_button]
+    var buttons := [choice_option_a_button, choice_option_b_button, choice_option_c_button, choice_option_d_button]
     for i in mini(options.size(), buttons.size()):
         var opt: Variant = options[i]
         if typeof(opt) != TYPE_DICTIONARY:
@@ -535,15 +616,119 @@ func _on_choice_available(choice_id: StringName, title: String, intro: String, o
 
 func _on_choice_pressed(option_id: StringName) -> void:
     # 当前弹层的 choice_id 由 GameManager._pending_choice 持有，经 resolve_choice 校验
-    var s := GameManager.get_state()
     var cid := GameManager._pending_choice
+    if cid == &"world_axis":
+        # 明选⑦：记录所选路径——c「把记忆还给河」走归还序列；a/b/d 直接结算
+        _axis_option = option_id
+        _axis_hope_before = GameManager.get_state().hope
     var result: Dictionary = GameManager.resolve_choice(cid, option_id)
-    # 成功显示由 _on_choice_resolved 处理；失败静默（门槛拦截已在按钮 disabled 挡住）
+    if bool(result.get("ok", false)) and cid == &"world_axis":
+        # world_axis 结算不发 choice_resolved——把选项叙事桥（凝/拒/还/自）播进事件位，
+        # 与普通明选 choice_resolved → race_event_label 的惯例对齐
+        race_event_label.text = str(result.get("result_text", ""))
+    # 成功显示由 _on_choice_resolved / _on_ending_resolved 处理；失败静默（门槛拦截已在按钮 disabled 挡住）
 
 func _on_choice_resolved(choice_id: StringName, option_id: StringName, result_text: String, option_text: String) -> void:
     race_event_label.text = result_text
     log_label.text = "（明选·%s）" % option_text
     choice_panel.visible = false
+    _refresh()
+
+# ---------- M6 终局 UI：世界之轴入口 / 归还序列 / 结算 / 周目层叠 ----------
+
+var _axis_option: StringName = &""      # 明选⑦ 本次所选（a 凝记忆/b 拒绝/c 归还/d 隐藏真结局）
+var _axis_hope_before := 1              # resolve 前 hope（结算「x-1 → x」差值的来源）
+var _return_run := 1                    # 归还序列当前周目（ReturnSequence 差分取用）
+var _return_outcome: StringName = &""   # 归还序列对应结局（good=满 7 步；normal/bad=4 步停）
+var _return_step := 0                   # 当前步（0=未开始）
+var _return_halted := false             # normal/bad 已展示「忽然舍不得」停步文本
+var _ending_loops := true               # 结算动作：true=再次醒来（restart_run）；false=回到标题
+
+# 世界之轴入口按钮 pressed → 主动进入终局（GameManager 内 axis_ready 完整门控）
+func _on_world_axis_pressed() -> void:
+    GameManager.try_start_world_axis()
+
+func _refresh_world_axis() -> void:
+    # 已结算（choices_done 含 world_axis）后按钮隐藏——P4 守门镜像（防再次入场软锁）
+    var s := GameManager.get_state()
+    world_axis_button.visible = not s.choices_done.has(&"world_axis") \
+        and EndingStateMachine.axis_ready(s)
+
+# ending_resolved（明选⑦ 结算）：仅 c「把记忆还给河」进归还序列（good 满 7 / normal+bad 4 步停）；
+# a/b（凝/拒）与 d（真）直接结算画面（spec §8.3：归还序列只在「还给河」路径触发）
+func _on_ending_resolved(outcome: StringName, hope_after: int) -> void:
+    choice_panel.visible = false
+    if _axis_option == &"c":
+        _start_return_sequence(outcome, GameManager.get_state().run_number)
+        return
+    # a/b/d（凝/拒/自）不走归还序列——直接结算画面（spec §8.3：拆解只在「还给河」触发）
+    _show_settlement(settlement_view(outcome, _axis_hope_before, hope_after))
+
+func _start_return_sequence(outcome: StringName, run_number: int) -> void:
+    _return_outcome = outcome
+    _return_run = run_number
+    _return_step = 1
+    _return_halted = false
+    choice_panel.visible = false
+    ending_panel.visible = false
+    return_panel.visible = true
+    return_title_label.text = "归还序列 · 周目 %d" % run_number
+    return_text_label.text = ReturnSequence.text_for(run_number, 1)
+    return_advance_button.visible = true
+    return_advance_button.text = "继续归还" if ReturnSequence.max_step_for(outcome) > 1 else "完成归还"
+
+func _on_return_advance_pressed() -> void:
+    var max_step := ReturnSequence.max_step_for(_return_outcome)
+    if _return_step < max_step:
+        # 还有可拆的步（good 走满 7；normal/bad 走到 4）
+        _return_step += 1
+        return_text_label.text = ReturnSequence.text_for(_return_run, _return_step)
+        if _return_step == max_step:
+            return_advance_button.text = "完成归还" if _return_outcome == &"good" else "停在这里"
+        return
+    if _return_outcome != &"good" and not _return_halted:
+        # normal/bad：拆到一半忽然舍不得——停步文本（spec §8.3），再点进入结算
+        _return_halted = true
+        return_text_label.text = ReturnSequence.halt_text(_return_run)
+        return_advance_button.text = "完成归还"
+        return
+    _finish_return_to_settlement()
+
+func _finish_return_to_settlement() -> void:
+    # hope 已在 resolve 时结算落盘：good +1 / normal·bad 不变
+    var hope_after := GameManager.get_state().hope
+    return_panel.visible = false
+    _show_settlement(settlement_view(_return_outcome, _axis_hope_before, hope_after))
+
+func _show_settlement(view: Dictionary) -> void:
+    ending_title_label.text = str(view.get("title", ""))
+    ending_body_label.text = str(view.get("body", ""))
+    ending_hope_label.text = str(view.get("hope_line", ""))
+    ending_action_button.text = str(view.get("action_text", "再次醒来"))
+    _ending_loops = bool(view.get("loops", true))
+    ending_panel.visible = true
+    race_event_label.text = str(view.get("title", "")) + " · " + str(view.get("hope_line", ""))
+    _refresh()
+
+# 结算动作：再次醒来 → restart_run；回到标题 → GameManager.reset_to_title()
+func _on_ending_action_pressed() -> void:
+    ending_panel.visible = false
+    if _ending_loops:
+        GameManager.restart_run()
+    else:
+        GameManager.reset_to_title()
+
+# run_restarted：周目重启 → 关闭终局层，播报周目层叠文本（spec §8.6）
+func _on_run_restarted(run_number: int) -> void:
+    ending_panel.visible = false
+    return_panel.visible = false
+    choice_panel.visible = false
+    var opening := run_opening_text(run_number)
+    if opening != "":
+        race_event_label.text = opening
+        log_label.text = "第 %d 个春天。你记得上一程的光。" % run_number
+    else:
+        race_event_label.text = "第 %d 个春天。你在土里醒来。" % run_number
     _refresh()
 
 func _refresh_storyteller() -> void:

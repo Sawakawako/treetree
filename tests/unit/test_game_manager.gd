@@ -629,6 +629,30 @@ func test_restart_run_keeps_endgame_meta_flags() -> void:
     assert_that(st.relics_found).is_empty()
     assert_that(st.soul_river).is_equal(100)  # 灵魂守恒回归初始
 
+func test_reset_to_title_clears_to_fresh_run1() -> void:
+    # M6 真结局「回到标题」：整档清空回 run1（无余烬保留），发 run_restarted(1)
+    gm._state = GameState.new()
+    gm._state.hope = 2
+    gm._state.insight = 11
+    gm._state.run_number = 3
+    gm._state.choice_flags.assign([&"cave_found"])
+    gm._pending_choice = &"world_axis"
+    var got := {"restarted": false, "run": -1}
+    gm.run_restarted.connect(func(n: int) -> void:
+        got["restarted"] = true
+        got["run"] = n)
+    var r: Dictionary = gm.reset_to_title()
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(int(r.get("run_number", 0))).is_equal(1)
+    assert_that(got["restarted"]).is_true()
+    assert_that(int(got["run"])).is_equal(1)
+    assert_that(gm._pending_choice).is_equal(&"")
+    var st: GameState = gm.get_state()
+    assert_that(st.run_number).is_equal(1)
+    assert_that(st.hope).is_equal(1)
+    assert_that(st.insight).is_equal(0)
+    assert_that(st.choice_flags).is_empty()
+
 func test_try_start_world_axis_refused_after_axis_settled() -> void:
     # P4 守门：世界之轴已结算（choices_done 含 world_axis）后不得再次入场——
     # 否则返回 true 会把 _pending_choice 卡死在 world_axis（resolve 必败软锁）

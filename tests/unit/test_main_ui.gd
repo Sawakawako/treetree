@@ -52,3 +52,81 @@ func test_m5h_ui_texts_are_archived_exactly() -> void:
         "离开时，根仍听着大地。\\n%d 分钟里：%s",
     ]:
         assert_that(archive).contains(exact_text)
+
+# ---------- M6 终局 UI：世界之轴入口 + 归还序列 + 结算画面 + 周目层叠 ----------
+
+func test_m6_ending_scene_nodes_exist() -> void:
+    var scene := load("res://features/ui/main.tscn") as PackedScene
+    var root := scene.instantiate()
+    # 世界之轴入口按钮：默认隐藏（axis_ready 门控后由 _refresh 显示）
+    assert_that(root.find_child("WorldAxisButton", true, false)).is_not_null()
+    assert_that(root.find_child("WorldAxisButton", true, false).visible).is_false()
+    # 明选⑦ 第四选项（真结局隐藏项 ……）：通用弹层需支持 4 选项
+    assert_that(root.find_child("ChoiceOptionDButton", true, false)).is_not_null()
+    # 归还序列面板（逐步点击推进）+ 结算画面（结局文案/希望/再次醒来|回到标题）
+    assert_that(root.find_child("ReturnPanel", true, false)).is_not_null()
+    assert_that(root.find_child("EndingPanel", true, false)).is_not_null()
+    root.free()
+
+func test_m6_world_axis_choice_has_four_options() -> void:
+    var c := ChoiceLibrary.get_choice(&"world_axis")
+    assert_that(c.get("options", [])).has_size(4)
+
+func test_m6_world_axis_choice_has_hidden_self_option() -> void:
+    # d「……」= 真结局隐藏项：unlock 门槛四锁（三周目/关系满/领悟满/希望≥2）
+    var c := ChoiceLibrary.get_choice(&"world_axis")
+    var opts: Array = c.get("options", [])
+    var self_opt: Dictionary = {}
+    for o: Variant in opts:
+        if typeof(o) == TYPE_DICTIONARY and StringName(str(o.get("id", ""))) == &"d":
+            self_opt = o
+            break
+    assert_that(self_opt).is_not_empty()
+    var unlock: Dictionary = self_opt.get("unlock", {})
+    assert_that(int(unlock.get("run_gte", 0))).is_equal(3)
+    assert_that(int(unlock.get("hope_gte", 0))).is_equal(2)
+
+func test_m6_run_opening_text_layers_by_run() -> void:
+    # spec §8.6 / 设计 §5.3：二周目/三周目开局文本层叠；一周目无附加层
+    assert_that(MainUI.run_opening_text(1)).is_equal("")
+    assert_that(MainUI.run_opening_text(2)).contains("你记得这缕光。你曾把它交给下一个自己。")
+    assert_that(MainUI.run_opening_text(3)).contains("一点半")
+    assert_that(MainUI.run_opening_text(4)).is_equal("")
+
+func test_m6_settlement_view_loop_outcomes() -> void:
+    # 好结局：hope +1（1→2），仍可「再次醒来」
+    var good: Dictionary = MainUI.settlement_view(&"good", 1, 2)
+    assert_that(str(good.get("title", ""))).is_equal("好结局")
+    assert_that(str(good.get("hope_line", ""))).contains("1 → 2")
+    assert_that(str(good.get("action_text", ""))).is_equal("再次醒来")
+    assert_that(bool(good.get("loops", true))).is_true()
+    # 坏/普通：hope 不变，仍循环
+    var bad: Dictionary = MainUI.settlement_view(&"bad", 1, 1)
+    assert_that(str(bad.get("title", ""))).is_equal("坏结局")
+    assert_that(str(bad.get("hope_line", ""))).contains("1")
+    assert_that(str(bad.get("action_text", ""))).is_equal("再次醒来")
+    var normal: Dictionary = MainUI.settlement_view(&"normal", 1, 1)
+    assert_that(str(normal.get("title", ""))).is_equal("普通结局")
+    assert_that(str(normal.get("action_text", ""))).is_equal("再次醒来")
+
+func test_m6_settlement_view_true_ends_loop() -> void:
+    # 真结局：循环终止 → 「回到标题」，无「再次醒来」
+    var view: Dictionary = MainUI.settlement_view(&"true", 2, 0)
+    assert_that(str(view.get("title", ""))).is_equal("真结局")
+    assert_that(str(view.get("action_text", ""))).is_equal("回到标题")
+    assert_that(bool(view.get("loops", true))).is_false()
+    assert_that(str(view.get("body", "")).length()).is_greater(10)
+
+func test_m6_ending_ui_texts_are_archived_exactly() -> void:
+    var file := FileAccess.open("res://docs/world-tree/narrative/09-ui-broadcast.md", FileAccess.READ)
+    assert_that(file).is_not_null()
+    var archive := file.get_as_text()
+    file.close()
+    for exact_text in [
+        "走向世界之轴",
+        "你记得这缕光。你曾把它交给下一个自己。",
+        "希望长了一点：",
+        "再次醒来",
+        "回到标题",
+    ]:
+        assert_that(archive).contains(exact_text)

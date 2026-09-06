@@ -327,6 +327,15 @@ func restart_run() -> Dictionary:
     run_restarted.emit(int(_state.run_number))
     return {"ok": true, "run_number": int(_state.run_number)}
 
+# M6 真结局「回到标题」：清档回全新一周目开局（run 1），落盘并广播 run_restarted(1)
+# 说明：项目无独立标题场景（main.tscn 即根场景），真结局循环终止的最小落地 = 重置为一周目新档。
+func reset_to_title() -> Dictionary:
+    _state = GameState.new()
+    _pending_choice = &""
+    SaveManager.save(_state, SAVE_PATH)
+    run_restarted.emit(int(_state.run_number))
+    return {"ok": true, "run_number": int(_state.run_number)}
+
 func hear_story(story_id: StringName) -> Dictionary:
     var result := StoryActions.hear(_state, story_id)
     if result.get("ok", false):

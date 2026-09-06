@@ -389,6 +389,74 @@ unique_name_in_owner = true
 layout_mode = 2
 text = ""
 
+[node name="ChoiceOptionDButton" type="Button" parent="VBox/ChoicePanel/ChoiceVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = ""
+
+[node name="WorldAxisButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "走向世界之轴"
+
+[node name="ReturnPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ReturnVBox" type="VBoxContainer" parent="VBox/ReturnPanel"]
+layout_mode = 2
+
+[node name="ReturnTitleLabel" type="Label" parent="VBox/ReturnPanel/ReturnVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="ReturnTextLabel" type="Label" parent="VBox/ReturnPanel/ReturnVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="ReturnAdvanceButton" type="Button" parent="VBox/ReturnPanel/ReturnVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "继续归还"
+
+[node name="EndingPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="EndingVBox" type="VBoxContainer" parent="VBox/EndingPanel"]
+layout_mode = 2
+
+[node name="EndingTitleLabel" type="Label" parent="VBox/EndingPanel/EndingVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="EndingBodyLabel" type="Label" parent="VBox/EndingPanel/EndingVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="EndingHopeLabel" type="Label" parent="VBox/EndingPanel/EndingVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="EndingActionButton" type="Button" parent="VBox/EndingPanel/EndingVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "再次醒来"
+
 [node name="SeedlingButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
