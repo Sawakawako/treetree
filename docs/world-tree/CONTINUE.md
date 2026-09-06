@@ -65,6 +65,7 @@
 | **里程碑 5h** | ✅ 完成（M5 封板：半点制迁移/遗迹 5-9/体验机器/说书人/记忆之语/离线进度/UI 归档，366 测试全绿 + 66 E2E，2026-09-05 封板） |
 | **里程碑 6（M6）** | ✅ 完成（终局+多周目+真结局：EndingStateMachine 四结局判定/可恢复归还序列 7 步×3 周目差分/周目切换 new_run_preserved/二周目六事件（石裔3+野民3）/三周目 RunBoost 快进/明选⑦世界之轴卡/UI 终局链，437 测试全绿 + 37 套件 + M6 E2E 21 项 PASS，2026-09-06 封板并完成首轮 Code Review 修复） |
 | **里程碑 6-D（M6-D）** | ✅ 完成（冠/干/根三域九界 + 3/6/9 世界之语 + 五奇迹 + 世界之轴新门槛 + 低保真 UI + 平衡回归；40 套件 / 486 测试全绿，首轮九响确定性基准 27:13，2026-09-06 封板） |
+| **里程碑 7（M7）** | ✅ 完成（正式标题场景 + `save.json`/`meta.json` 双层持久化 + 七类记忆图书馆 + 真结局完整馆藏 + 旧档迁移；46 套件 / 513 测试全绿，420×640 实际流程 QA 通过，2026-09-06 封板） |
 | **文本归档** | ✅ 已做（narrative/ 01-11 全归档：遗迹/图腾/夺梦/唤醒/关系(含二周目6事件)/亲密/化身/明选/UI 播报/说书人/归还序列） |
 
 ## 三、关键文档索引
@@ -84,13 +85,15 @@
 | M6 实施计划 | `docs/superpowers/plans/2026-09-05-m6-ending-multirun.md`（11 任务 TDD：GameState 周目/EndingStateMachine/ReturnSequence/六事件/world_axis 卡/restart_run/RunBoost/UI/封板） |
 | M6-D 设计文档 | `docs/superpowers/specs/2026-09-06-world-tree-m6d-nine-realms-world-language-miracles-design.md`（九界连接/世界之语/五奇迹/终局衔接/UI/验证） |
 | M6-D 实施计划 | `docs/superpowers/plans/2026-09-06-m6d-nine-realms-world-language-miracles.md`（T1—T6，已完成） |
+| M7 设计文档 | `docs/superpowers/specs/2026-09-06-world-tree-m7-title-memory-library-design.md`（标题入口/双层持久化/七类馆藏/真结局语义/视觉边界） |
+| M7 实施计划 | `docs/superpowers/plans/2026-09-06-m7-title-memory-library.md`（T0—T6，已完成） |
 | 平衡验证 | `docs/world-tree/BALANCE_PLAN.md`（确定性经营档、25—45 分钟守线、五条纸面路线、真人试玩模板） |
 | 项目铁律 | `AGENTS.md`（铁律 1 读写作 skill / 铁律 2 读 godot-master / 铁律 5 文风 / 铁律 6 本文件） |
 | SDD 审查记录（M1） | `.superpowers/sdd/2026-08-31-mvp-text-prototype/`（每任务 brief/report/review，含全部 ruling） |
 
 ## 四、技术栈与命令
 
-- **引擎**：Godot **4.7.1** mono；本机已验证控制台程序：`D:\GodotEngine\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe`——⚠️ 不是 3.x，project.godot `config_version=5` 即 4.x 格式
+- **引擎**：Godot **4.7.1** mono；本机已验证控制台程序：`C:\Users\冯骜\Desktop\Godot_v4.7.1-stable_mono_win64_console.exe`——⚠️ 不是 3.x，project.godot `config_version=5` 即 4.x 格式
 - **测试**：GdUnit4 6.2.1（`addons/gdUnit4/`）
   ```powershell
   # 新增 class_name 脚本后必须先跑（否则类未注册）：
@@ -111,9 +114,9 @@
 ```
 autoloads/game_manager.gd   # 主循环：_process 累加器 tick（禁 Timer）+ resources_changed/race_awakened 信号 + 60tick 存档 + explore_relic 入口 + RaceManager.tick_races
 features/economy/           # BigNum（大数）/ CostCalculator（斐波那契+指数+线性成本：叶序/分枝/叶绿体/木质部/花盘/螺舱/根须）/ Formatter（格式化）/ actions（GameActions 购买动作）
-features/game/              # GameState（状态：memory/faith/root_depth/races/relics/totem/relations/plundered/升级等级）/ GameLoop（tick 逻辑：光合/生长/储量 clamp）/ SaveManager
+features/game/              # GameState（当前周目）/ GameLoop（tick）/ SaveManager + JsonSaveStore + MetaSaveManager（save.json 当前周目 / meta.json 永久馆藏）
 features/dreams/            # RelicLibrary（9 遗迹数据+梦境文本，M5h 扩）/ RootActions（根须探索，200 树液/次，一次性 +1 记忆）
-features/memories/          # TotemLibrary+TotemActions（图腾）/ PlunderData+PlunderActions（夺梦）/ DriftActions+AvatarTiers+IntimateEvents（意志漂移+化身）
+features/memories/          # 图腾/夺梦/漂移/化身 + MemoryArchiveState/MemoryArchive/MemoryLibrary（七类永久馆藏投影与回看 UI）
 features/soul/              # SoulActions（灵魂：河底守恒/复活/夺魂）——M5f 已完成（2026-09-01）
 features/relations/         # RelationEvents（4 族仪式互动 + EXTRA_EVENTS 二周目 6 事件，run_gte 门控）/ RelationActions（±3 关系修正/一次性互动/亲密级接口）——明选后果的地基
 features/races/             # RaceManager（数据驱动四族：唤醒/供养/逻辑斯蒂人口/信仰产出/石裔献工）+ RaceData（.tres）+ data/*.tres（四族系数与唤醒文本）
@@ -121,8 +124,9 @@ features/choices/           # ChoiceLibrary/ChoiceActions + data/choices.json（
 features/narrative/         # StoryLibrary/StoryActions（说书人主线④-⑥ + 彩蛋）
 features/lingua/            # LinguaData/LinguaActions（树语：生命之语/记忆之语 Lv1 + 13 节点，能力解锁）
 features/ending/            # EndingStateMachine（世界之轴成型/四结局判定/希望结算）/ ReturnSequence（归还 7 步×3 周目差分）/ RunBoost（三周目浓缩快进）——M6（2026-09-06）
-features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含记忆/信仰/根须/梦境弹层/四族面板/图腾区/种族事件/互动按钮/夺梦按钮/世界之轴终局链）
-tests/unit/                 # GdUnit4 当前实测：437 测试，37 套件（M6 首轮 Code Review 修复后；M5 基线 366/34）
+features/title/             # title.tscn + title.gd（继续/新轮确认/记忆图书馆入口；标题态暂停经营循环）
+features/ui/                # main.tscn + main.gd（只监听信号，不直改数据；含经营、事件、九界与终局链）
+tests/unit/                 # GdUnit4 当前实测：513 测试，46 套件（M7 封板；M6-D 基线 486/40）
 ```
 规则：UI 只通过信号更新；资源一律 BigNum（禁裸 float 存资源；平衡系数如 rate/devotion 除外）；升级成本斐波那契（spec §9）；逻辑类 RefCounted 纯函数可 headless 测。
 
@@ -315,16 +319,29 @@ M6 接手：世界之语、九界、奇迹、终局、多周目；领悟跨周�
 7. `run >= 4` 的归还正文与停步文案统一回退到三周目版本，避免继续循环时出现空白。
 8. 凝结记忆严格回归普通/坏结局线；即使领悟与羁绊双满也不能获得好结局或增加希望，好结局只由归还路径达成。
 
-**M6 已知缺口（待后续）**：
-1. **正式标题场景不存在**：真结局「回到标题」现为 `reset_to_title()` 整档回 run1 数据语义；未来做标题界面/记忆图书馆重读画廊（设计 §6.3）需另建持久层（真结局元进度当前被重置清除）。
+**M6 已知缺口（M7 已解决）**：
+1. 正式标题场景、真结局元进度和记忆图书馆均已由 M7 落地；`reset_to_title()` 不再清空元进度。
 
 **M6-D 完成**：废止“六层承载九响”的临时口径，按项目标准译名落成冠/干/根三域九界。九界探索分辨路、并行、合流三段；世界之语由 3/6/9 残响推导；五奇迹读取世界回响并消耗信仰，不改关系，也不进入结局门槛。世界之轴现在要求九响齐备与本轮点亮「天地一息」，已进入终局的旧存档可继续结算。
 
 **M6-D 验证**：`--import` 后全量 **40 套件 / 486 测试全绿**（0 错误、0 失败、0 跳过、0 孤儿节点）；420×640 实际运行走通华纳→赫尔→阿斯加德→天地一息、四族奇迹目标与旧档归还自动滚入视口。确定性首轮经营档 3/6/9 响为 5:41 / 12:23 / 27:13，符合 25—45 分钟目标；无奇迹路线可达，二、三周目残响保留且不重复扣款。详见 `docs/world-tree/BALANCE_PLAN.md`。
 
-**下一步**：ROADMAP 步 9「终局外壳与回看打磨」。先设计正式标题场景、真结局后仍保留的元进度，以及记忆图书馆画廊的数据边界；不要直接在当前整档清空的 `reset_to_title()` 上堆功能。
+**下一步**：见 §七·六。M7 已完成 ROADMAP 步 9，当前没有冻结的新里程碑，不得自行扩写新系统。
 
 **实施流程**（按 DSH 编程模式，铁律 4）：先读写作 skill（铁律 1）与 godot-master（铁律 2）→ writing-plans 写实施计划 → 主人确认 → TDD/SDD 逐任务执行（先失败测试 → 实现 → 验证 → commit）。
+
+## 七·六、M7 已封板（2026-09-06）
+
+**终局外壳与回看完成**（按 `docs/superpowers/plans/2026-09-06-m7-title-memory-library.md`）：
+- **正式入口**：`project.godot` 默认进入标题；支持继续、新轮（二次确认）、记忆图书馆，标题与图书馆期间经营 tick 暂停。
+- **双层持久化**：`user://save.json` 只保存当前周目；`user://meta.json` 保存跨周目馆藏。两者均经 `JsonSaveStore` 原子写入并支持 `.bak` 回退；旧存档首次加载会捕获已有见闻。
+- **七类馆藏**：遗迹、图腾、故事、明选、九界、奇迹、结局统一投影；未解锁条目不泄露正文，真结局以 `library_complete` 完整解锁当前及未来版本目录。
+- **真结局语义**：归档本轮、标记完整馆藏、保存 `meta.json`、精确删除当前 `save.json`，再返回正式标题；永久馆藏不再随当前周目清除。
+- **视觉修复**：运行时 Agent Vision 发现图书馆正文为默认白色、对米白背景对比度仅 1.14；补充自动化对比度回归后，统一为主题深棕正文色（要求 ≥4.5）。
+
+**M7 封板验证**：`--import` 后全量 **46 套件 / 513 测试全绿**；隔离 `user://` 的真实场景驱动走通“标题→新轮→返回→继续”、新轮确认的取消/执行，以及“标题→图书馆→双分类切换→条目/正文滚动→返回”，确认层、焦点、换行与遮挡在 420×640 截图中通过。QA 驱动与截图仅保存在忽略的 `.gdskills/`。
+
+**下一步**：ROADMAP 1—9 已全部完成。继续开发前先由主人冻结新的产品方向；可选候选（仅供讨论，不视为已批准范围）包括主玩法界面视觉重构、真人平衡试玩、发布/导出准备。
 
 ## 八、文风速查（铁律 5）
 

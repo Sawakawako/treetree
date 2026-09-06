@@ -84,10 +84,15 @@ DSH 编程模式（Programming Mode）的系统规则（技能先行、设计先
 - M5 已封板（2026-09-05）：34 套件 / 366 测试；M6 主闭环已封板并完成首轮 Code Review 修复（2026-09-06）：**37 套件 / 437 测试**全部通过。
 - M6 完成内容：终局状态机（世界之轴成型/四结局判定/希望结算）、可恢复的终局/归还进度、归还序列 7 步×3 周目差分与双向进度、周目切换（new_run_preserved 余烬保留）、二周目六关系事件（石裔3+野民3，已接入运行时互动入口）、三周目 RunBoost 浓缩快进、知识领悟跨周目防重复奖励、明选⑦世界之轴卡、UI 终局链。
 - M6-D「九界 + 世界之语 + 奇迹」已封板（2026-09-06）：冠/干/根三域九界、3/6/9 世界之语、五奇迹、世界之轴新门槛、低保真 UI 与平衡回归完成。当前基线 **40 套件 / 486 测试**；确定性首轮九响为 27:13，平衡口径见 `docs/world-tree/BALANCE_PLAN.md`。
-- 下一步为 **终局外壳与回看打磨**（ROADMAP 步 9）：正式标题场景、真结局元进度、记忆图书馆画廊。现有 `reset_to_title()` 会清空整档，只是无标题场景时期的临时语义，设计持久层前不得直接扩写。
+- M7「终局外壳与记忆图书馆」已封板（2026-09-06）：正式标题场景、`save.json` 当前周目与 `meta.json` 永久馆藏双层持久化、七类记忆图书馆、真结局完整解锁、旧档迁移与 420×640 视觉验收完成。当前基线 **46 套件 / 513 测试**；`reset_to_title()` 已改为归档元进度、删除当前周目并返回正式标题。
+- ROADMAP 现有 1—9 步已全部交付；下一里程碑尚未冻结，继续开发前先与主人确认新方向并完成设计。
 - M6 主闭环的设计决策、实现记录与已知缺口（含 reset_to_title 回标题语义），以
   `docs/superpowers/specs/2026-09-05-world-tree-m6-ending-multirun-design.md`、
   `docs/superpowers/plans/2026-09-05-m6-ending-multirun.md` 与
   `docs/world-tree/CONTINUE.md` §七·五 为准。
+- M7 的持久层、入口与馆藏边界以
+  `docs/superpowers/specs/2026-09-06-world-tree-m7-title-memory-library-design.md`、
+  `docs/superpowers/plans/2026-09-06-m7-title-memory-library.md` 与
+  `docs/world-tree/CONTINUE.md` §七·六 为准。
 - 路线状态以 `docs/world-tree/ROADMAP.md` 为准；如实现改变里程碑状态，必须同步更新
   计划、继续指南、路线图和本节。
