@@ -6,6 +6,7 @@ var gm
 
 # 世界之轴结算会写真实 SAVE_PATH（user://save.json）——测试前后备份/还原，避免污染真档
 var _save_backup: Variant = null
+var _meta_backup: Variant = null
 
 func _state_axis_ready() -> GameState:
     var s := GameState.new()
@@ -30,18 +31,27 @@ func before_test() -> void:
     gm = GameManagerScript.new()
     var path := "user://save.json"
     _save_backup = FileAccess.get_file_as_bytes(path) if FileAccess.file_exists(path) else null
+    var meta_path := "user://meta.json"
+    _meta_backup = FileAccess.get_file_as_bytes(meta_path) if FileAccess.file_exists(meta_path) else null
 
 func after_test() -> void:
     gm.free()
     var path := "user://save.json"
+    SaveManager.delete(path)
     if _save_backup != null:
         var f := FileAccess.open(path, FileAccess.WRITE)
         if f != null:
             f.store_buffer(_save_backup)
             f.close()
-    elif FileAccess.file_exists(path):
-        DirAccess.remove_absolute(path)
     _save_backup = null
+    var meta_path := "user://meta.json"
+    MetaSaveManager.delete(meta_path)
+    if _meta_backup != null:
+        var meta_file := FileAccess.open(meta_path, FileAccess.WRITE)
+        if meta_file != null:
+            meta_file.store_buffer(_meta_backup)
+            meta_file.close()
+    _meta_backup = null
 
 func test_explore_relic_signal() -> void:
     gm._state = GameState.new()
@@ -738,29 +748,65 @@ func test_restart_run_keeps_endgame_meta_flags() -> void:
     assert_that(st.relics_found).is_empty()
     assert_that(st.soul_river).is_equal(100)  # 灵魂守恒回归初始
 
-func test_reset_to_title_clears_to_fresh_run1() -> void:
-    # M6 真结局「回到标题」：整档清空回 run1（无余烬保留），发 run_restarted(1)
+func test_reset_to_title_clears_run_but_keeps_complete_archive() -> void:
+    # M7 真结局「回到标题」：当前周目清除，永久馆藏完整解锁。
     gm._state = GameState.new()
+    gm._meta_state = MemoryArchiveState.new()
     gm._state.hope = 2
     gm._state.insight = 11
     gm._state.run_number = 3
     gm._state.choice_flags.assign([&"cave_found"])
+    gm._state.relics_found.assign([1])
+    gm._state.ending_seen.assign([&"true"])
     gm._pending_choice = &"world_axis"
-    var got := {"restarted": false, "run": -1}
-    gm.run_restarted.connect(func(n: int) -> void:
-        got["restarted"] = true
-        got["run"] = n)
-    var r: Dictionary = gm.reset_to_title()
+    SaveManager.save(gm._state, gm.SAVE_PATH, 1)
+    var r: Dictionary = gm.reset_to_title(false)
     assert_that(r.get("ok", false)).is_true()
     assert_that(int(r.get("run_number", 0))).is_equal(1)
-    assert_that(got["restarted"]).is_true()
-    assert_that(int(got["run"])).is_equal(1)
     assert_that(gm._pending_choice).is_equal(&"")
+    assert_that(SaveManager.exists(gm.SAVE_PATH)).is_false()
     var st: GameState = gm.get_state()
     assert_that(st.run_number).is_equal(1)
     assert_that(st.hope).is_equal(1)
     assert_that(st.insight).is_equal(0)
     assert_that(st.choice_flags).is_empty()
+    assert_that(gm.get_memory_archive().relics).contains(1)
+    assert_that(gm.get_memory_archive().endings).contains(&"true")
+    assert_that(gm.get_memory_archive().library_complete).is_true()
+
+func test_return_to_title_saves_current_run_and_archive() -> void:
+    gm._state = GameState.new()
+    gm._meta_state = MemoryArchiveState.new()
+    gm._state.leaf_level = 4
+    gm._state.relics_found.append(2)
+    gm._run_active = true
+    var result: Dictionary = gm.return_to_title(false)
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(gm.is_run_active()).is_false()
+    assert_that(SaveManager.load_or_create(gm.SAVE_PATH).leaf_level).is_equal(4)
+    assert_that(MetaSaveManager.load_or_create(gm.META_PATH).relics).contains(2)
+
+func test_start_new_run_preserves_archive_and_creates_fresh_save() -> void:
+    gm._state = GameState.new()
+    gm._meta_state = MemoryArchiveState.new()
+    gm._state.relics_found.append(3)
+    SaveManager.save(gm._state, gm.SAVE_PATH, 1)
+    var result: Dictionary = gm.start_new_run(false)
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(gm.is_run_active()).is_true()
+    assert_that(gm.get_state().run_number).is_equal(1)
+    assert_that(gm.get_state().relics_found).is_empty()
+    assert_that(gm.get_memory_archive().relics).contains(3)
+    assert_that(SaveManager.exists(gm.SAVE_PATH)).is_true()
+
+func test_title_state_does_not_advance_or_autosave() -> void:
+    SaveManager.delete(gm.SAVE_PATH)
+    gm._state = GameState.new()
+    gm._meta_state = MemoryArchiveState.new()
+    gm._run_active = false
+    gm._process(12.0)
+    assert_that(gm.get_state().tick).is_equal(0)
+    assert_that(SaveManager.exists(gm.SAVE_PATH)).is_false()
 
 func test_try_start_world_axis_refused_after_axis_settled() -> void:
     # P4 守门：世界之轴已结算（choices_done 含 world_axis）后不得再次入场——

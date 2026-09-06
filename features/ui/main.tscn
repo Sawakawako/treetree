@@ -25,6 +25,11 @@ offset_bottom = -24.0
 layout_mode = 2
 text = "世界树"
 
+[node name="ReturnTitleButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "回到根外"
+
 [node name="Hope" type="Label" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2

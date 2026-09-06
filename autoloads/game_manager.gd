@@ -21,18 +21,28 @@ signal ending_resolved(outcome: StringName, hope_after: int)
 signal run_restarted(run_number: int)
 
 const SAVE_PATH := "user://save.json"
+const META_PATH := "user://meta.json"
+const TITLE_SCENE := "res://features/title/title.tscn"
+const MAIN_SCENE := "res://features/ui/main.tscn"
+const MEMORY_LIBRARY_SCENE := "res://features/memories/memory_library.tscn"
 const TICK_INTERVAL := 1.0
 
 var _state: GameState
+var _meta_state := MemoryArchiveState.new()
 var _tick_accumulator := 0.0
 var _pending_choice: StringName = &""
 var _pending_offline_summary: Dictionary = {}
+var _run_active := true
 
 func _ready() -> void:
+    var had_save := SaveManager.exists(SAVE_PATH)
     _state = SaveManager.load_or_create(SAVE_PATH)
-    var now_unix := int(Time.get_unix_time_from_system())
-    _pending_offline_summary = settle_offline(now_unix)
-    SaveManager.save(_state, SAVE_PATH, now_unix)
+    _meta_state = MetaSaveManager.load_or_create(META_PATH)
+    _run_active = false
+    if had_save:
+        var now_unix := int(Time.get_unix_time_from_system())
+        _pending_offline_summary = settle_offline(now_unix)
+        _save_current_run(now_unix)
 
 func settle_offline(now_unix: int) -> Dictionary:
     var saved_at := _state.last_saved_unix
@@ -48,6 +58,8 @@ func take_offline_summary() -> Dictionary:
     return summary
 
 func _process(delta: float) -> void:
+    if not _run_active:
+        return
     _tick_accumulator += delta
     if _tick_accumulator >= TICK_INTERVAL:
         _tick_accumulator -= TICK_INTERVAL
@@ -57,12 +69,85 @@ func _process(delta: float) -> void:
         for ev in events:
             race_awakened.emit(ev["race_id"], ev["race_name"], ev["awaken_text"])
         if GameLoop.should_auto_save(_state):
-            SaveManager.save(_state, SAVE_PATH)
+            _save_current_run()
         _check_choice_trigger()
         resources_changed.emit()
 
 func get_state() -> GameState:
     return _state
+
+func get_memory_archive() -> MemoryArchiveState:
+    return _meta_state
+
+func has_current_run() -> bool:
+    return SaveManager.exists(SAVE_PATH)
+
+func is_run_active() -> bool:
+    return _run_active
+
+func enter_run_scene() -> void:
+    _run_active = true
+
+func enter_title_scene() -> void:
+    _run_active = false
+
+func continue_run(change_scene: bool = true) -> Dictionary:
+    if not has_current_run():
+        return {"ok": false, "reason": "no_current_run"}
+    _state = SaveManager.load_or_create(SAVE_PATH)
+    _run_active = true
+    _request_scene(MAIN_SCENE, change_scene)
+    return {"ok": true, "run_number": _state.run_number}
+
+func start_new_run(change_scene: bool = true) -> Dictionary:
+    if has_current_run():
+        _capture_meta()
+        MetaSaveManager.save(_meta_state, META_PATH)
+    _state = GameState.new()
+    _pending_choice = &""
+    _pending_offline_summary.clear()
+    _tick_accumulator = 0.0
+    _run_active = true
+    _save_current_run()
+    _request_scene(MAIN_SCENE, change_scene)
+    return {"ok": true, "run_number": 1}
+
+func return_to_title(change_scene: bool = true) -> Dictionary:
+    _save_current_run()
+    _run_active = false
+    _request_scene(TITLE_SCENE, change_scene)
+    return {"ok": true, "run_number": _state.run_number}
+
+func open_memory_library(change_scene: bool = true) -> Dictionary:
+    _run_active = false
+    _request_scene(MEMORY_LIBRARY_SCENE, change_scene)
+    return {"ok": true}
+
+func open_title(change_scene: bool = true) -> Dictionary:
+    _run_active = false
+    _request_scene(TITLE_SCENE, change_scene)
+    return {"ok": true}
+
+func _save_current_run(now_unix: int = -1) -> bool:
+    _capture_meta()
+    var run_saved := SaveManager.save(_state, SAVE_PATH, now_unix)
+    var meta_saved := MetaSaveManager.save(_meta_state, META_PATH)
+    return run_saved and meta_saved
+
+func _capture_meta() -> void:
+    if _meta_state == null:
+        _meta_state = MemoryArchiveState.new()
+    if _state != null:
+        _meta_state.capture_run(_state)
+
+func _request_scene(path: String, change_scene: bool) -> void:
+    if change_scene and is_inside_tree():
+        call_deferred("_deferred_change_scene", path)
+
+func _deferred_change_scene(path: String) -> void:
+    var error := get_tree().change_scene_to_file(path)
+    if error != OK:
+        push_error("无法切换场景: %s" % path)
 
 func gather() -> void:
     GameActions.gather_daylight(_state)
@@ -357,6 +442,7 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     if not result.get("ok", false):
         return result
     _pending_choice = &""
+    _meta_state.record_choice(choice_id, option_id)
     # M6：world_axis 结算 → 终局状态机（不回调 choice_resolved，以 ending_resolved 终结）
     if choice_id == &"world_axis":
         return _settle_world_axis(option_id, result)
@@ -390,7 +476,7 @@ func _settle_world_axis(option_id: StringName, result: Dictionary) -> Dictionary
         "return_step": 1 if intent == &"return" else 0,
         "return_halted": false,
     }
-    SaveManager.save(_state, SAVE_PATH)
+    _save_current_run()
     ending_resolved.emit(outcome, int(er.get("hope_after", 0)))
     return er
 
@@ -415,7 +501,7 @@ func advance_return_sequence() -> Dictionary:
     else:
         pending["phase"] = &"settlement"
     _state.pending_ending = pending
-    SaveManager.save(_state, SAVE_PATH)
+    _save_current_run()
     var result := pending.duplicate(true)
     result["ok"] = true
     return result
@@ -427,17 +513,22 @@ func restart_run() -> Dictionary:
     # M6 三周目浓缩快进（spec §8.6）：进入 run>=3 的开局即赠予，直扑终局
     if _state.run_number >= 3:
         RunBoost.apply_boost(_state)
-    SaveManager.save(_state, SAVE_PATH)
+    _save_current_run()
     run_restarted.emit(int(_state.run_number))
     return {"ok": true, "run_number": int(_state.run_number)}
 
-# M6 真结局「回到标题」：清档回全新一周目开局（run 1），落盘并广播 run_restarted(1)
-# 说明：项目无独立标题场景（main.tscn 即根场景），真结局循环终止的最小落地 = 重置为一周目新档。
-func reset_to_title() -> Dictionary:
+# M7 真结局「回到标题」：永久归档见闻并完整解锁图书馆，只删除当前周目。
+func reset_to_title(change_scene: bool = true) -> Dictionary:
+    _capture_meta()
+    _meta_state.mark_complete()
+    MetaSaveManager.save(_meta_state, META_PATH)
+    SaveManager.delete(SAVE_PATH)
     _state = GameState.new()
     _pending_choice = &""
-    SaveManager.save(_state, SAVE_PATH)
-    run_restarted.emit(int(_state.run_number))
+    _pending_offline_summary.clear()
+    _tick_accumulator = 0.0
+    _run_active = false
+    _request_scene(TITLE_SCENE, change_scene)
     return {"ok": true, "run_number": int(_state.run_number)}
 
 func hear_story(story_id: StringName) -> Dictionary:

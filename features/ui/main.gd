@@ -116,6 +116,7 @@ static func world_axis_gap_text(state: GameState) -> String:
         return "世界之轴：天地一息未点亮"
     return "世界之轴：九界正在同一口风里呼吸"
 
+@onready var return_title_button: Button = %ReturnTitleButton
 @onready var daylight_label: Label = %DaylightLabel
 @onready var sap_label: Label = %SapLabel
 @onready var growth_label: Label = %GrowthLabel
@@ -263,24 +264,6 @@ var _pending_miracle_target_id: StringName = &""
 
 # ---------- M6 终局 UI：世界之轴 / 归还序列 / 结算 / 周目层叠 ----------
 
-const ENDING_TITLES := {
-    &"bad": "坏结局",
-    &"normal": "普通结局",
-    &"good": "好结局",
-    &"true": "真结局",
-}
-
-# 好结局最终画面（spec §8.4 权威文本）
-const GOOD_ENDING_BODY := "你把记忆一颗一颗还给亡者之河。\n不是交还——是偿还。是归还一笔欠了太久的债。\n「母树，你要去哪儿？」「去成为你们脚下的大地。」\n树缓缓倒下。不是死亡，是延伸。\n根系化作河流，树干化作山丘，年轮化作环形废墟。\n第一株不依赖树的幼苗，从树的影子里长出来。\n世界学会了自行生长。\n希望不再需要被燃烧了。它回到土壤里，像一颗种子。\n河底，终于安静了——那些被捞起又放下的灵魂，\n这一次可以不再被捞起，不再失忆。"
-
-# 真结局最终画面（spec §8.5 权威文本）
-const TRUE_ENDING_BODY := "「把希望用在自己身上。」\n你第一次把希望对准自己。记忆没有还回河里——你留下了它们。\n你记得一切：你是幸存者的灵魂，旧世界因何而亡，你做过的一切。\n树没有倒下。根须深入冥河，树冠刺破天界——\n你站在那里：记得一切的树，还活着的树。\n四族抬头望你：\n「母树，你记得了。」\n「我记得。而我还想活着。」"
-
-# 坏/普通结局结算核心（spec §8.2 本质锚定，状态而非动作——选项动作的叙事由选项 result_text 承，
-# 播于 race_event_label；避免与「拒绝=什么都不凝」路径矛盾。文风六则）
-const BAD_ENDING_CORE := "灰落下来，没有人接住它。\n风穿过空荡荡的枝干——像穿过一扇忘记关的门。\n你没有读懂自己留下了什么。\n那一点希望还在原处，等着被点燃，或被种下。"
-const NORMAL_ENDING_CORE := "这一次你懂了：你曾吞噬，也曾被爱。\n只是爱还不够——不够让人留下，也不够让你放下。\n希望在你手里亮了一会儿，又暗下去。\n你带着这一点亮，走回梦里。"
-
 const RUN2_OPENING_TEXT := "你记得这缕光。你曾把它交给下一个自己。"
 const RUN3_OPENING_TEXT := "你醒来时，手里有一点希望。不是「一点」——是一点半。\n像有人在你睡着的时候，往你手心里添了一勺。\n土壤是软的。你低头，看见自己脚下有一圈新芽的痕迹——\n圆的，像一个拥抱留下的。\n你不知道那是谁种的。但你认得那个形状：那是你的形状。"
 
@@ -296,33 +279,7 @@ static func run_opening_text(run_number: int) -> String:
 
 # 结算画面数据（结局文案 + 希望变化 + 动作）。loops=false 仅真结局（循环终止 → 回到标题）
 static func settlement_view(outcome: StringName, hope_before: int, hope_after: int) -> Dictionary:
-    var title := str(ENDING_TITLES.get(outcome, "结局"))
-    var body := ""
-    var hope_line := ""
-    var loops := true
-    match outcome:
-        &"true":
-            loops = false
-            body = TRUE_ENDING_BODY
-            hope_line = "你把希望用在了自己身上。循环在这里停住。"
-        &"good":
-            body = GOOD_ENDING_BODY + "\n\n人族说书人的声音传来，很轻，带着笑：\n「母树，你种下的希望，发芽了。」"
-            hope_line = "希望长了一点：%d → %d" % [hope_before, hope_after]
-        &"normal":
-            body = NORMAL_ENDING_CORE
-            hope_line = "希望没有变：%d" % hope_after
-        &"bad":
-            body = BAD_ENDING_CORE
-            hope_line = "希望没有变：%d" % hope_after
-        _:
-            body = ""
-    return {
-        "title": title,
-        "body": body,
-        "hope_line": hope_line,
-        "action_text": "再次醒来" if loops else "回到标题",
-        "loops": loops,
-    }
+    return EndingArchive.settlement_view(outcome, hope_before, hope_after)
 
 static func storyteller_view(state: GameState) -> Dictionary:
     var main_ids := StoryLibrary.main_story_ids()
@@ -361,6 +318,8 @@ static func storyteller_view(state: GameState) -> Dictionary:
     }
 
 func _ready() -> void:
+    GameManager.enter_run_scene()
+    return_title_button.pressed.connect(_on_return_title_pressed)
     %GatherButton.pressed.connect(_on_gather_pressed)
     leaf_button.pressed.connect(_on_leaf_pressed)
     branch_button.pressed.connect(_on_branch_pressed)
@@ -834,6 +793,9 @@ func _on_ending_action_pressed() -> void:
         GameManager.restart_run()
     else:
         GameManager.reset_to_title()
+
+func _on_return_title_pressed() -> void:
+    GameManager.return_to_title()
 
 # run_restarted：周目重启 → 关闭终局层，播报周目层叠文本（spec §8.6）
 func _on_run_restarted(run_number: int) -> void:

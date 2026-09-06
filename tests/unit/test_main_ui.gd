@@ -10,6 +10,7 @@ func test_scene_root_scrolls_at_small_viewport() -> void:
     assert_that(root.find_child("EarthSenseButton", true, false)).is_not_null()
     assert_that(root.find_child("SkyLightButton", true, false)).is_not_null()
     assert_that(root.find_child("NineRealmsPanel", true, false)).is_not_null()
+    assert_that(root.find_child("ReturnTitleButton", true, false)).is_not_null()
     root.free()
 
 func test_m6d_world_ui_nodes_exist() -> void:

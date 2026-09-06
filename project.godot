@@ -4,7 +4,7 @@ config_version=5
 [application]
 
 config/name="treetree"
-run/main_scene="res://features/ui/main.tscn"
+run/main_scene="res://features/title/title.tscn"
 
 [autoload]
 
