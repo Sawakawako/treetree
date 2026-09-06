@@ -265,6 +265,10 @@ func _check_choice_trigger() -> void:
     choice_available.emit(cid, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
 
 func try_start_world_axis() -> bool:
+    # P4 守门：世界之轴一旦结算（choices_done 含 world_axis）即不可再次入场。
+    # 否则会返回 true 并把 _pending_choice 卡死在 world_axis——resolve 因 can_choose 失败必败 → 软锁。
+    if _state.choices_done.has(&"world_axis"):
+        return false
     if _pending_choice != &"":
         return false
     if not EndingStateMachine.axis_ready(_state):
@@ -311,6 +315,14 @@ func _settle_world_axis(option_id: StringName, result: Dictionary) -> Dictionary
     ending_resolved.emit(StringName(str(er.get("outcome", &""))), int(er.get("hope_after", 0)))
     SaveManager.save(_state, SAVE_PATH)
     return er
+
+# M6 周目切换：余烬保留重置（GameState.new_run_preserved），清待决明选，落盘，广播 run_restarted
+func restart_run() -> Dictionary:
+    _state = GameState.new_run_preserved(_state)
+    _pending_choice = &""
+    SaveManager.save(_state, SAVE_PATH)
+    run_restarted.emit(int(_state.run_number))
+    return {"ok": true, "run_number": int(_state.run_number)}
 
 func hear_story(story_id: StringName) -> Dictionary:
     var result := StoryActions.hear(_state, story_id)

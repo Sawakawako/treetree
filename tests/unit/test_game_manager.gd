@@ -547,3 +547,87 @@ func test_resolve_non_axis_choice_still_works() -> void:
     assert_that(got["resolved"]).is_true()
     assert_that(got["ended"]).is_false()
     assert_that(gm._pending_choice).is_equal(&"")
+
+# ---------- M6 周目切换：restart_run ----------
+
+func test_restart_run_preserves_and_increments() -> void:
+    # 余烬保留：hope/insight 跨周目保留，relations 等周目内状态清空；run_number+1
+    gm._state = GameState.new()
+    gm._state.hope = 2
+    gm._state.insight = 11
+    gm._state.relations[&"human"] = 3.0
+    var r: Dictionary = gm.restart_run()
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(int(r.get("run_number", 0))).is_equal(2)
+    assert_that(gm.get_state().hope).is_equal(2)
+    assert_that(gm.get_state().insight).is_equal(11)
+    assert_that(gm.get_state().relations).is_empty()
+
+func test_restart_run_clears_pending_emits_signal_and_saves() -> void:
+    # 契约：清 _pending_choice、发 run_restarted(新周目号)、新档落盘 user://save.json
+    gm._state = GameState.new()
+    gm._state.hope = 1
+    gm._state.run_number = 1
+    gm._pending_choice = &"world_axis"
+    var got := {"restarted": false, "run": -1}
+    gm.run_restarted.connect(func(n: int) -> void:
+        got["restarted"] = true
+        got["run"] = n)
+    var r: Dictionary = gm.restart_run()
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(int(r.get("run_number", 0))).is_equal(2)
+    assert_that(got["restarted"]).is_true()
+    assert_that(int(got["run"])).is_equal(2)
+    assert_that(gm._pending_choice).is_equal(&"")
+    assert_that(gm.get_state().run_number).is_equal(2)
+    # 存档已写盘（含新 run_number）
+    var f := FileAccess.open("user://save.json", FileAccess.READ)
+    var parsed: Variant = null
+    if f != null:
+        parsed = JSON.parse_string(f.get_as_text())
+        f.close()
+    assert_that(parsed != null and typeof(parsed) == TYPE_DICTIONARY).is_true()
+    assert_that(int((parsed as Dictionary).get("run_number", 0))).is_equal(2)
+
+func test_restart_run_keeps_endgame_meta_flags() -> void:
+    # M6 语义：真相/知识解锁（choice_flags/totem/story 等）跨周目保留；结局归档保留
+    gm._state = GameState.new()
+    gm._state.hope = 2
+    gm._state.insight = 11
+    gm._state.truth = 3
+    gm._state.choice_flags.assign([&"cave_found"])
+    gm._state.totem_interpreted.append(2)
+    gm._state.storyteller_stories.append(&"story_6")
+    gm._state.ending_seen.append(&"good")
+    gm._state.choices_done.append(&"world_axis")  # 周目内进度（应清空）
+    gm._state.relics_found.append(9)
+    gm._state.soul_river = 90
+    var r: Dictionary = gm.restart_run()
+    assert_that(r.get("ok", false)).is_true()
+    var st: GameState = gm.get_state()
+    assert_that(st.truth).is_equal(3)
+    assert_that(st.choice_flags).contains(&"cave_found")
+    assert_that(st.totem_interpreted).contains(2)
+    assert_that(st.storyteller_stories).contains(&"story_6")
+    assert_that(st.ending_seen).contains(&"good")
+    assert_that(st.choices_done).is_empty()
+    assert_that(st.relics_found).is_empty()
+    assert_that(st.soul_river).is_equal(100)  # 灵魂守恒回归初始
+
+func test_try_start_world_axis_refused_after_axis_settled() -> void:
+    # P4 守门：世界之轴已结算（choices_done 含 world_axis）后不得再次入场——
+    # 否则返回 true 会把 _pending_choice 卡死在 world_axis（resolve 必败软锁）
+    gm._state = _state_axis_ready()
+    gm._state.insight = 10
+    for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+        gm._state.relations[rid] = 3.0
+    gm._pending_choice = &"world_axis"
+    var settled: Dictionary = gm.resolve_choice(&"world_axis", &"a")
+    assert_that(settled.get("ok", false)).is_true()
+    assert_that(gm.get_state().choices_done).contains(&"world_axis")
+    var got := {"n": 0}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        got["n"] += 1)
+    assert_that(gm.try_start_world_axis()).is_false()
+    assert_that(gm._pending_choice).is_equal(&"")
+    assert_that(got["n"]).is_equal(0)
