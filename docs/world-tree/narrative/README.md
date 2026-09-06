@@ -18,6 +18,7 @@
 | [08-choices.md](08-choices.md) | 明选全文 | 6 组 8 卡 | `features/choices/data/choices.json` |
 | [09-ui-broadcast.md](09-ui-broadcast.md) | UI 叙事播报 | 固定文案（含说书人/离线摘要） | `features/ui/main.gd` |
 | [10-storyteller.md](10-storyteller.md) | 说书人故事 | 主线故事④—⑥ + 彩蛋 | `features/narrative/story_library.gd` |
+| [11-ending-return.md](11-ending-return.md) | 归还序列 | 21 段（7 步 × 3 周目）+ 3 段停步 | `features/ending/return_sequence.gd` |
 
 ## 引用约定
 
