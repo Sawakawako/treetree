@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"midgard"
+display_name = "米德加德"
+subtitle = "环墟中庭"
+tree_domain = "trunk"
+required_relic = 9
+min_growth = 500.0
+sap_cost = 5000.0
+discovery_text = "根须绕过环形废墟。\n你听见许多脚步，都在往家走。\n这个世界叫中庭。它还留着门。"

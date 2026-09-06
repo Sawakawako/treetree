@@ -28,4 +28,15 @@ func test_nodes_registered() -> void:
 	assert_that(ids).contains(&"altar")         # 圣坛
 	assert_that(ids).contains(&"earth_sense")   # 地脉感应
 	assert_that(ids).contains(&"sky_light")     # 天光
-	assert_that(nodes.size()).is_equal(13)
+	assert_that(nodes.size()).is_equal(19)
+
+func test_m6d_adds_six_world_language_nodes() -> void:
+	var ids: Array[StringName] = []
+	for node: Dictionary in LinguaData.all_nodes():
+		if StringName(node.get("language", &"life")) == &"world":
+			ids.append(StringName(node.get("id", &"")))
+	assert_that(ids).is_equal([
+		&"world_trace", &"rain_name", &"river_hearing",
+		&"sky_ladder", &"world_shaping", &"world_breath",
+	])
+	assert_that(LinguaData.all_nodes().size()).is_equal(19)

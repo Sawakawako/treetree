@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"helheim"
+display_name = "赫尔海姆"
+subtitle = "静河死岸"
+tree_domain = "root"
+prerequisites = Array[StringName]([&"niflheim", &"muspelheim"])
+required_races = Array[StringName]([&"human", &"forestfolk", &"stoneborn", &"wildfolk"])
+faith_cost = 300.0
+discovery_text = "雾和火在根下让开一条窄路。\n亡者之河从那里流来。没有浪，也没有岸。\n一百缕灵魂在水底，像一百颗闭着的眼睛。"

@@ -47,6 +47,7 @@ var memory_engine_level: int = 0    # 记忆引擎（M5e）
 var lingua_life_level: int = 0      # 生命之语等级（M5e）
 var lingua_memory_level: int = 0    # 记忆之语等级（M5e，批 2 升）
 var lingua_nodes: Array[StringName] = []  # 已购树语节点（M5e）
+var realm_echoes: Array[StringName] = []  # 已抵达九界；知识余烬，跨周目保留（M6-D）
 var last_saved_unix: int = 0       # 离线结算时间戳；0 表示旧档或尚未保存
 
 func _init() -> void:
@@ -88,6 +89,7 @@ func to_dict() -> Dictionary:
         "lingua_life_level": lingua_life_level,
         "lingua_memory_level": lingua_memory_level,
         "lingua_nodes": lingua_nodes,
+        "realm_echoes": realm_echoes,
         "last_saved_unix": last_saved_unix,
         "soul_river": soul_river,
         "run_number": run_number,
@@ -277,6 +279,17 @@ static func from_dict(d: Dictionary) -> GameState:
         if typeof(x) == TYPE_STRING or typeof(x) == TYPE_STRING_NAME:
             ln_cleaned.append(StringName(x))
     s.lingua_nodes.assign(ln_cleaned)
+    var realm_raw: Variant = d.get("realm_echoes", [])
+    if typeof(realm_raw) != TYPE_ARRAY:
+        realm_raw = []
+    var realm_cleaned: Array[StringName] = []
+    for x: Variant in realm_raw:
+        if typeof(x) != TYPE_STRING and typeof(x) != TYPE_STRING_NAME:
+            continue
+        var realm_id := StringName(str(x))
+        if RealmCatalog.is_known(realm_id) and not realm_cleaned.has(realm_id):
+            realm_cleaned.append(realm_id)
+    s.realm_echoes.assign(realm_cleaned)
     var saved_at: Variant = d.get("last_saved_unix", 0)
     s.last_saved_unix = maxi(int(saved_at), 0) if typeof(saved_at) == TYPE_INT or typeof(saved_at) == TYPE_FLOAT else 0
     return s
@@ -318,4 +331,5 @@ static func new_run_preserved(prev: GameState) -> GameState:
     s.choice_flags.assign(prev.choice_flags)          # 知识型 flag 保留
     s.totem_interpreted.assign(prev.totem_interpreted)
     s.storyteller_stories.assign(prev.storyteller_stories)
+    s.realm_echoes.assign(prev.realm_echoes)
     return s

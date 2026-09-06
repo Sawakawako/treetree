@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"asgard"
+display_name = "阿斯加德"
+subtitle = "无声神庭"
+tree_domain = "crown"
+prerequisites = Array[StringName]([&"vanaheim", &"helheim"])
+min_growth = 1000.0
+memory_cost = 300.0
+faith_cost = 800.0
+discovery_text = "树冠穿过最后一层云。\n高座仍在。座上没有神，只有旧世界留下的一点回声。\n它问你：谁来托住余下的天地？"

@@ -105,3 +105,33 @@ func test_offline_nodes_use_their_own_language_gate() -> void:
 	assert_that(LinguaActions.can_unlock_node(s, &"earth_sense")).is_true()
 	s.lingua_memory_level = 1
 	assert_that(LinguaActions.can_unlock_node(s, &"sky_light")).is_true()
+
+func test_world_node_uses_realm_derived_level() -> void:
+	var s := _fresh()
+	s.sap = BigNum.new(8000.0)
+	s.realm_echoes.assign([&"midgard", &"nidavellir"])
+	assert_that(LinguaActions.can_unlock_node(s, &"world_trace")).is_false()
+	s.realm_echoes.append(&"alfheim")
+	assert_that(RealmActions.world_level(s)).is_equal(1)
+	assert_that(LinguaActions.can_unlock_node(s, &"world_trace")).is_true()
+
+func test_world_node_prerequisite_chain_is_enforced() -> void:
+	var s := _fresh()
+	s.sap = BigNum.new(50000.0)
+	s.realm_echoes.assign([
+		&"midgard", &"nidavellir", &"alfheim",
+		&"muspelheim", &"jotunheim", &"niflheim",
+	])
+	assert_that(LinguaActions.can_unlock_node(s, &"sky_ladder")).is_false()
+	s.lingua_nodes.assign([&"world_trace", &"river_hearing"])
+	assert_that(LinguaActions.can_unlock_node(s, &"sky_ladder")).is_true()
+
+func test_world_node_unlock_spends_sap_once() -> void:
+	var s := _fresh()
+	s.sap = BigNum.new(8000.0)
+	s.realm_echoes.assign([&"midgard", &"nidavellir", &"alfheim"])
+	var result := LinguaActions.unlock_node(s, &"world_trace")
+	assert_that(result.get("ok", false)).is_true()
+	assert_that(s.lingua_nodes).contains(&"world_trace")
+	assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
+	assert_that(LinguaActions.unlock_node(s, &"world_trace").get("ok", false)).is_false()

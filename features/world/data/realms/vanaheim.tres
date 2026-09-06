@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"vanaheim"
+display_name = "华纳海姆"
+subtitle = "丰雨庭"
+tree_domain = "crown"
+prerequisites = Array[StringName]([&"alfheim", &"jotunheim"])
+required_lingua_node = &"sky_ladder"
+faith_cost = 500.0
+discovery_text = "枝冠越过巨风，碰到一场停住的雨。\n每一滴都悬在半空，等一片土地。\n你说出它的名字。第一滴落了下来。"

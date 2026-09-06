@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"nidavellir"
+display_name = "尼达维勒"
+subtitle = "石炉深厅"
+tree_domain = "trunk"
+prerequisites = Array[StringName]([&"midgard"])
+required_races = Array[StringName]([&"stoneborn"])
+sap_cost = 8000.0
+discovery_text = "石裔把耳朵贴在根上。\n很深的地方，有锤声答了三下。\n炉已经冷了。石头还记得火。"

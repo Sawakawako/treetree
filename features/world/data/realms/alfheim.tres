@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"alfheim"
+display_name = "亚尔夫海姆"
+subtitle = "光叶乡"
+tree_domain = "crown"
+prerequisites = Array[StringName]([&"midgard"])
+required_races = Array[StringName]([&"forestfolk"])
+memory_cost = 100.0
+discovery_text = "林地民唱到最后一个音。\n叶背浮起一层薄光，照出另一片森林。\n那里没有太阳。每片叶子都自己发亮。"

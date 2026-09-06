@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"muspelheim"
+display_name = "穆斯贝尔海姆"
+subtitle = "熔火之心"
+tree_domain = "root"
+prerequisites = Array[StringName]([&"nidavellir"])
+min_root_depth = 9
+sap_cost = 12000.0
+faith_cost = 200.0
+discovery_text = "根尖碰到一颗燃烧的心。\n它没有跳。火却一圈一圈漫开。\n你认得这份热。旧世界曾拿它点亮长夜。"

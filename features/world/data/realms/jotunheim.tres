@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RealmDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/realm_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"jotunheim"
+display_name = "约顿海姆"
+subtitle = "巨风荒野"
+tree_domain = "trunk"
+prerequisites = Array[StringName]([&"midgard"])
+required_races = Array[StringName]([&"wildfolk"])
+min_growth = 800.0
+sap_cost = 10000.0
+discovery_text = "野民在风里竖起图腾。\n云后走过一个影子，比山更慢。\n它没有看你。荒野仍为这一步轻轻发抖。"

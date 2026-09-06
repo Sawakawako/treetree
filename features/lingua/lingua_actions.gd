@@ -48,9 +48,17 @@ static func can_unlock_node(state: GameState, node_id: StringName) -> bool:
 	if node.is_empty():
 		return false
 	var language := StringName(node.get("language", &"life"))
-	var language_level := state.lingua_memory_level if language == &"memory" else state.lingua_life_level
+	var language_level := state.lingua_life_level
+	if language == &"memory":
+		language_level = state.lingua_memory_level
+	elif language == &"world":
+		language_level = RealmActions.world_level(state)
 	if language_level < int(node.get("requirement", 99)):
 		return false
+	var prerequisites: Array = node.get("prerequisites", [])
+	for prerequisite: Variant in prerequisites:
+		if not state.lingua_nodes.has(StringName(str(prerequisite))):
+			return false
 	return state.sap.is_greater_or_equal(BigNum.new(float(node.get("sap_cost", 0))))
 
 static func unlock_node(state: GameState, node_id: StringName) -> Dictionary:

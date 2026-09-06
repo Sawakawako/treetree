@@ -24,6 +24,13 @@ const NODES: Array[Dictionary] = [
 	{"id": &"village_heart", "name": "聚落之心", "branch": "leaf", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "四族设施产出 +50%"},
 	{"id": &"grace", "name": "恩泽", "branch": "leaf", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "解锁记忆引擎"},
 	{"id": &"altar", "name": "圣坛", "branch": "leaf", "tier": 2, "requirement": 2, "sap_cost": 8000, "effect": "信仰引擎效果 ×2"},
+	# M6-D 世界之语：语阶由九界共鸣 3/6/9 推导；前置由 LinguaActions 通用校验。
+	{"id": &"world_trace", "name": "界痕", "branch": "world", "tier": 1, "language": &"world", "requirement": 1, "sap_cost": 8000, "prerequisites": [], "effect": "展开九界连接图"},
+	{"id": &"rain_name", "name": "雨名", "branch": "world", "tier": 1, "language": &"world", "requirement": 1, "sap_cost": 8000, "prerequisites": [&"world_trace"], "effect": "解锁绿洲化与唤雨"},
+	{"id": &"river_hearing", "name": "河听", "branch": "world", "tier": 2, "language": &"world", "requirement": 2, "sap_cost": 12000, "prerequisites": [&"world_trace"], "effect": "解锁驱影与唤灵"},
+	{"id": &"sky_ladder", "name": "天梯", "branch": "world", "tier": 2, "language": &"world", "requirement": 2, "sap_cost": 12000, "prerequisites": [&"river_hearing"], "effect": "允许枝冠抵达华纳海姆"},
+	{"id": &"world_shaping", "name": "塑世", "branch": "world", "tier": 3, "language": &"world", "requirement": 3, "sap_cost": 20000, "prerequisites": [&"rain_name", &"sky_ladder"], "effect": "解锁塑形"},
+	{"id": &"world_breath", "name": "天地一息", "branch": "world", "tier": 3, "language": &"world", "requirement": 3, "sap_cost": 20000, "prerequisites": [&"world_shaping"], "effect": "世界之轴最终前置"},
 ]
 
 static func all_nodes() -> Array[Dictionary]:
