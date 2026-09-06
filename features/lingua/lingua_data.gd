@@ -30,7 +30,7 @@ const NODES: Array[Dictionary] = [
 	{"id": &"river_hearing", "name": "河听", "branch": "world", "tier": 2, "language": &"world", "requirement": 2, "sap_cost": 12000, "prerequisites": [&"world_trace"], "effect": "解锁驱影与唤灵"},
 	{"id": &"sky_ladder", "name": "天梯", "branch": "world", "tier": 2, "language": &"world", "requirement": 2, "sap_cost": 12000, "prerequisites": [&"river_hearing"], "effect": "允许枝冠抵达华纳海姆"},
 	{"id": &"world_shaping", "name": "塑世", "branch": "world", "tier": 3, "language": &"world", "requirement": 3, "sap_cost": 20000, "prerequisites": [&"rain_name", &"sky_ladder"], "effect": "解锁塑形"},
-	{"id": &"world_breath", "name": "天地一息", "branch": "world", "tier": 3, "language": &"world", "requirement": 3, "sap_cost": 20000, "prerequisites": [&"world_shaping"], "effect": "世界之轴最终前置"},
+	{"id": &"world_breath", "name": "天地一息", "branch": "world", "tier": 3, "language": &"world", "requirement": 3, "sap_cost": 20000, "prerequisites": [&"sky_ladder"], "effect": "世界之轴最终前置"},
 ]
 
 static func all_nodes() -> Array[Dictionary]:

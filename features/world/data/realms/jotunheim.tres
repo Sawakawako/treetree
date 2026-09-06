@@ -10,6 +10,7 @@ subtitle = "巨风荒野"
 tree_domain = "trunk"
 prerequisites = Array[StringName]([&"midgard"])
 required_races = Array[StringName]([&"wildfolk"])
+required_lingua_node = &"world_trace"
 min_growth = 800.0
 sap_cost = 10000.0
 discovery_text = "野民在风里竖起图腾。\n云后走过一个影子，比山更慢。\n它没有看你。荒野仍为这一步轻轻发抖。"

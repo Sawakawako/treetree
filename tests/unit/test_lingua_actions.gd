@@ -135,3 +135,18 @@ func test_world_node_unlock_spends_sap_once() -> void:
 	assert_that(s.lingua_nodes).contains(&"world_trace")
 	assert_that(s.sap.to_value()).is_equal_approx(0.0, 1e-4)
 	assert_that(LinguaActions.unlock_node(s, &"world_trace").get("ok", false)).is_false()
+
+func test_world_breath_uses_required_spine_without_optional_miracle_nodes() -> void:
+	var s := _fresh()
+	s.sap = BigNum.new(20000.0)
+	s.realm_echoes.assign([
+		&"midgard", &"nidavellir", &"alfheim",
+		&"muspelheim", &"jotunheim", &"niflheim",
+		&"vanaheim", &"helheim", &"asgard",
+	])
+	s.lingua_nodes.assign([&"world_trace", &"river_hearing", &"sky_ladder"])
+	assert_that(LinguaActions.can_unlock_node(s, &"world_breath")).is_true()
+	assert_that(LinguaActions.unlock_node(s, &"world_breath").get("ok", false)).is_true()
+	assert_that(s.lingua_nodes).contains(&"world_breath")
+	assert_that(s.lingua_nodes).not_contains(&"rain_name")
+	assert_that(s.lingua_nodes).not_contains(&"world_shaping")

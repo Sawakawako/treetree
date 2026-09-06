@@ -9,6 +9,7 @@ display_name = "穆斯贝尔海姆"
 subtitle = "熔火之心"
 tree_domain = "root"
 prerequisites = Array[StringName]([&"nidavellir"])
+required_lingua_node = &"world_trace"
 min_root_depth = 9
 sap_cost = 12000.0
 faith_cost = 200.0

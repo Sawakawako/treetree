@@ -313,7 +313,7 @@ M6 接手：世界之语、九界、奇迹、终局、多周目；领悟跨周�
 
 **M6 已知缺口（待后续）**：
 1. **正式标题场景不存在**：真结局「回到标题」现为 `reset_to_title()` 整档回 run1 数据语义；未来做标题界面/记忆图书馆重读画廊（设计 §6.3）需另建持久层（真结局元进度当前被重置清除）。
-2. **M6-D 实施中**：设计执行基线已写入 `docs/superpowers/specs/2026-09-06-world-tree-m6d-nine-realms-world-language-miracles-design.md`。按主人 2026-09-06 决定，废止“六层承载九响”的临时口径，改为冠/干/根三域连接九个神话世界；世界之语按 3/6/9 世界共鸣升阶；五奇迹消耗信仰且不增加关系。T1 九界数据/纯逻辑与 T2 世界之语已完成，当前 38 套件 / 450 测试通过；下一步 T3 五奇迹。实施计划见 `docs/superpowers/plans/2026-09-06-m6d-nine-realms-world-language-miracles.md`。
+2. **M6-D 实施中**：设计执行基线 v0.2 已写入 `docs/superpowers/specs/2026-09-06-world-tree-m6d-nine-realms-world-language-miracles-design.md`。按主人 2026-09-06 决定，废止“六层承载九响”的临时口径，固定九界项目标准译名，改为冠/干/根三域连接九个神话世界；探索分辨路/并行/合流三段，世界之语按 3/6/9 世界共鸣升阶；终局主干不经过奇迹支线，五奇迹消耗信仰且不增加关系。T1 九界数据/纯逻辑与 T2 世界之语已完成，当前 38 套件 / 452 测试通过；下一步 T3 五奇迹。实施计划见 `docs/superpowers/plans/2026-09-06-m6d-nine-realms-world-language-miracles.md`。
 
 **下一步 M6-D**：按 T1→T6 执行九界数据/纯逻辑、世界之语、奇迹、终局集成、UI、平衡与回归。设计数值仍是首轮估值，需以 Godot 运行数据校准。
 

@@ -63,6 +63,15 @@ func test_prerequisite_and_race_gates() -> void:
 	state.races[&"stoneborn"] = {"awakened": true, "population": 20.0}
 	assert_that(RealmActions.can_explore(state, &"nidavellir")).is_true()
 
+func test_second_phase_requires_world_trace_after_first_three_realms() -> void:
+	var state := _rich_state()
+	state.realm_echoes.assign([&"midgard", &"nidavellir", &"alfheim"])
+	for realm_id: StringName in [&"muspelheim", &"jotunheim", &"niflheim"]:
+		assert_that(RealmActions.can_explore(state, realm_id)).is_false()
+	state.lingua_nodes.append(&"world_trace")
+	for realm_id: StringName in [&"muspelheim", &"jotunheim", &"niflheim"]:
+		assert_that(RealmActions.can_explore(state, realm_id)).is_true()
+
 func test_sky_requires_world_language_node() -> void:
 	var state := _rich_state()
 	state.realm_echoes.assign([

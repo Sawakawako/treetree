@@ -16,14 +16,16 @@
 - [x] 向 LinguaData 加六个世界节点和通用 `prerequisites`。
 - [x] LinguaActions 按 RealmActions 推导的世界语阶判门。
 - [x] 世界节点周目重置；九界残响保留。
-- 完成证据：`test_lingua_data/actions` 18/18 通过；全量 38 套件 / 450 测试通过。
+- [x] 拆分终局主干与奇迹支线：`world_breath` 要求 `sky_ladder`，不强迫购买 `rain_name`/`world_shaping`。
+- 完成证据：`test_lingua_actions.gd` 15/15、`test_realm_actions.gd` 10/10；全量 38 套件 / 452 测试通过。
 
 ## T3 五奇迹与系统效果
 
 - [ ] 新增 MiracleDefinition、五份 `.tres`、MiracleCatalog、MiracleActions。
-- [ ] 新增 GameState 奇迹运行字段和兼容迁移。
-- [ ] 接入 RaceManager、GameLoop、PlunderActions、SoulActions。
-- [ ] 覆盖绿洲承载、雨势、驱影复发、唤灵守恒、塑形倍率。
+- [ ] 新增 GameState 奇迹运行字段和兼容迁移；清洗未知 id、负计数、雨势越界与重复种族。
+- [ ] 接入 RaceManager、GameLoop、PlunderActions、SoulActions；在线与离线统一使用“树体→种族→雨势递减”顺序。
+- [ ] 按 3/6/8/9 响节奏检查对应世界回响：绿洲/雨、驱影、唤灵、塑形。
+- [ ] 覆盖绿洲乘法承载、120 次雨势、驱影后二次夺梦复发、唤灵原子守恒、塑形固定上限与乘法生长。
 - 完成证据：奇迹、人口、夺梦、灵魂、离线相关测试通过。
 
 ## T4 终局与 GameManager 集成
@@ -35,9 +37,9 @@
 
 ## T5 低保真 UI 与内容
 
-- [ ] 主界面增加冠/干/根三域九世界状态、六世界节点、五奇迹入口。
+- [ ] 主界面增加近路模式与冠/干/根三域图、六世界节点、五奇迹入口。
 - [ ] 驱影/唤灵提供四族目标按钮；禁用态显示主要缺口。
-- [ ] 写入九界和奇迹短文本，按文风六则与 stop-slop 自检。
+- [ ] 按项目标准译名写入九界和奇迹短文本，加入二、三周目九界回响差分，并按文风六则与 stop-slop 自检。
 - [ ] 420×640 视口检查滚动、遮挡、按钮状态和结局恢复。
 - 完成证据：UI 静态测试、运行截图和一次手工链路记录。
 
@@ -45,6 +47,7 @@
 
 - [ ] 写 `BALANCE_PLAN.md`：主指标为首轮九界耗时，次指标为信仰/记忆停滞时长。
 - [ ] 用源数据驱动的确定性职业模拟检查 25—45 分钟目标；记录数值调整。
+- [ ] 走查五条纸面路线，确认三阶段路线可读、无奇迹路线可达、周目继承不重复扣款。
 - [ ] Godot `--import` 后执行全量 GdUnit4；检查错误、失败、跳过、孤儿节点与导入副作用。
 - [ ] 更新主设计冲突注、M6 主计划后置状态、CONTINUE、ROADMAP、AGENTS。
 - [ ] Code review 后修复问题，提交到 `main`；推送前核对并获得远端仓库授权。
