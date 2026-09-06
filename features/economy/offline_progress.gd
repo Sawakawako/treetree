@@ -34,6 +34,7 @@ static func calculate(state: GameState, seconds: int) -> Dictionary:
 	for _second in range(duration):
 		GameLoop.tick(simulated)
 		RaceManager.tick_races_offline(simulated)
+		MiracleActions.advance_tick(simulated)
 	var population_delta: Dictionary = {}
 	for race_id in simulated.races:
 		var delta := float(simulated.races[race_id].get("population", 0.0)) - float(before_population.get(race_id, 0.0))
@@ -63,5 +64,7 @@ static func apply(state: GameState, seconds: int) -> Dictionary:
 	state.faith = final_state.faith
 	state.memory = final_state.memory
 	state.races = final_state.races.duplicate(true)
+	state.miracle_rain_ticks = final_state.miracle_rain_ticks
+	state.miracle_cleansed_races.assign(final_state.miracle_cleansed_races)
 	summary.erase("_final_state")
 	return summary

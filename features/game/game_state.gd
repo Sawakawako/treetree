@@ -1,6 +1,9 @@
 class_name GameState
 extends RefCounted
 
+const MIRACLE_IDS: Array[StringName] = [&"oasis", &"rain", &"banish_shadow", &"call_soul", &"shape"]
+const RACE_IDS: Array[StringName] = [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]
+
 var daylight: BigNum
 var sap: BigNum
 var growth: BigNum
@@ -48,6 +51,9 @@ var lingua_life_level: int = 0      # 生命之语等级（M5e）
 var lingua_memory_level: int = 0    # 记忆之语等级（M5e，批 2 升）
 var lingua_nodes: Array[StringName] = []  # 已购树语节点（M5e）
 var realm_echoes: Array[StringName] = []  # 已抵达九界；知识余烬，跨周目保留（M6-D）
+var miracle_counts: Dictionary = {}  # 本周目各奇迹成功施展次数（M6-D）
+var miracle_rain_ticks: int = 0  # 唤雨剩余人口结算次数（M6-D）
+var miracle_cleansed_races: Array[StringName] = []  # 驱影暂时解除冻结的种族（M6-D）
 var last_saved_unix: int = 0       # 离线结算时间戳；0 表示旧档或尚未保存
 
 func _init() -> void:
@@ -90,6 +96,9 @@ func to_dict() -> Dictionary:
         "lingua_memory_level": lingua_memory_level,
         "lingua_nodes": lingua_nodes,
         "realm_echoes": realm_echoes,
+        "miracle_counts": miracle_counts,
+        "miracle_rain_ticks": miracle_rain_ticks,
+        "miracle_cleansed_races": miracle_cleansed_races,
         "last_saved_unix": last_saved_unix,
         "soul_river": soul_river,
         "run_number": run_number,
@@ -290,6 +299,36 @@ static func from_dict(d: Dictionary) -> GameState:
         if RealmCatalog.is_known(realm_id) and not realm_cleaned.has(realm_id):
             realm_cleaned.append(realm_id)
     s.realm_echoes.assign(realm_cleaned)
+    var miracle_counts_raw: Variant = d.get("miracle_counts", {})
+    if typeof(miracle_counts_raw) != TYPE_DICTIONARY:
+        miracle_counts_raw = {}
+    s.miracle_counts = {}
+    for raw_id: Variant in miracle_counts_raw:
+        if typeof(raw_id) != TYPE_STRING and typeof(raw_id) != TYPE_STRING_NAME:
+            continue
+        var miracle_id := StringName(str(raw_id))
+        if not MIRACLE_IDS.has(miracle_id):
+            continue
+        var raw_count: Variant = miracle_counts_raw[raw_id]
+        if typeof(raw_count) != TYPE_INT and typeof(raw_count) != TYPE_FLOAT:
+            continue
+        var count := maxi(int(raw_count), 0)
+        if miracle_id == &"oasis" or miracle_id == &"shape":
+            count = mini(count, 3)
+        s.miracle_counts[miracle_id] = count
+    var rain_ticks_raw: Variant = d.get("miracle_rain_ticks", 0)
+    s.miracle_rain_ticks = clampi(int(rain_ticks_raw), 0, 120) if typeof(rain_ticks_raw) == TYPE_INT or typeof(rain_ticks_raw) == TYPE_FLOAT else 0
+    var cleansed_raw: Variant = d.get("miracle_cleansed_races", [])
+    if typeof(cleansed_raw) != TYPE_ARRAY:
+        cleansed_raw = []
+    var cleansed: Array[StringName] = []
+    for raw_race_id: Variant in cleansed_raw:
+        if typeof(raw_race_id) != TYPE_STRING and typeof(raw_race_id) != TYPE_STRING_NAME:
+            continue
+        var race_id := StringName(str(raw_race_id))
+        if RACE_IDS.has(race_id) and not cleansed.has(race_id):
+            cleansed.append(race_id)
+    s.miracle_cleansed_races.assign(cleansed)
     var saved_at: Variant = d.get("last_saved_unix", 0)
     s.last_saved_unix = maxi(int(saved_at), 0) if typeof(saved_at) == TYPE_INT or typeof(saved_at) == TYPE_FLOAT else 0
     return s

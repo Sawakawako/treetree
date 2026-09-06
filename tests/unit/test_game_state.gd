@@ -412,3 +412,40 @@ func test_m6_new_run_preserves_only_knowledge() -> void:
     assert_that(s2.leaf_level).is_equal(0)
     assert_that(s2.races).is_empty()
     assert_that(s2.soul_river).is_equal(100)
+
+func test_m6d_miracle_fields_roundtrip() -> void:
+    var state := GameState.new()
+    state.miracle_counts = {&"oasis": 2, &"rain": 1, &"call_soul": 4}
+    state.miracle_rain_ticks = 87
+    state.miracle_cleansed_races.assign([&"human", &"wildfolk"])
+    var restored := GameState.from_dict(state.to_dict())
+    assert_that(restored.miracle_counts).is_equal(state.miracle_counts)
+    assert_that(restored.miracle_rain_ticks).is_equal(87)
+    assert_that(restored.miracle_cleansed_races).is_equal([&"human", &"wildfolk"])
+
+func test_m6d_miracle_fields_sanitize_corrupt_values() -> void:
+    var restored := GameState.from_dict({
+        "miracle_counts": {
+            "oasis": 8,
+            "shape": 4.9,
+            "rain": -2,
+            "banish_shadow": "bad",
+            "unknown": 99,
+        },
+        "miracle_rain_ticks": 999,
+        "miracle_cleansed_races": ["human", "human", "stoneborn", "unknown", 7],
+    })
+    assert_that(restored.miracle_counts).is_equal({&"oasis": 3, &"shape": 3, &"rain": 0})
+    assert_that(restored.miracle_rain_ticks).is_equal(120)
+    assert_that(restored.miracle_cleansed_races).is_equal([&"human", &"stoneborn"])
+    assert_that(GameState.from_dict({"miracle_rain_ticks": "bad"}).miracle_rain_ticks).is_equal(0)
+
+func test_m6d_new_run_resets_miracle_runtime_state() -> void:
+    var state := GameState.new()
+    state.miracle_counts = {&"oasis": 3, &"shape": 2}
+    state.miracle_rain_ticks = 60
+    state.miracle_cleansed_races.assign([&"human"])
+    var next := GameState.new_run_preserved(state)
+    assert_that(next.miracle_counts).is_empty()
+    assert_that(next.miracle_rain_ticks).is_equal(0)
+    assert_that(next.miracle_cleansed_races).is_empty()

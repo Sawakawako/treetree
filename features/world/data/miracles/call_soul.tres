@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MiracleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/miracle_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"call_soul"
+display_name = "唤灵"
+required_realms = Array[StringName]([&"helheim"])
+required_lingua_node = &"river_hearing"
+required_life_level = 3
+faith_costs = Array[int]([250])
+target_mode = "race"
+first_text = "河水让出一缕微光。\n十双眼睛在岸上睁开。名字还没有回来。"
+repeat_text = "又一缕光离开河底。\n岸上多了十次呼吸。"

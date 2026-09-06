@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MiracleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/miracle_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"banish_shadow"
+display_name = "驱影"
+required_realms = Array[StringName]([&"niflheim"])
+required_lingua_node = &"river_hearing"
+required_life_level = 2
+faith_costs = Array[int]([300])
+target_mode = "race"
+first_text = "影子从梦的缺口退开。\n人们重新起身。没有人说已经忘记。"
+repeat_text = "风吹进同一道缺口。\n影子松开手，又退到脚边。"

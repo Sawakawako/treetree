@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MiracleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/miracle_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"oasis"
+display_name = "绿洲化"
+required_realms = Array[StringName]([&"midgard"])
+required_lingua_node = &"rain_name"
+required_life_level = 2
+faith_costs = Array[int]([150, 300, 600])
+max_uses = 3
+first_text = "根须在裂土下找到湿意。\n水慢慢聚拢。四族把新路走向岸边。"
+repeat_text = "又一片低地留住了水。\n草从旧路边缘长回来。"

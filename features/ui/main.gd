@@ -1,4 +1,4 @@
-extends Control
+extends ScrollContainer
 
 const RACE_ROWS := {
     &"human": "人族",
@@ -35,6 +35,86 @@ static func relation_color(value: float) -> Color:
 static func format_relation(value: float) -> String:
     var text := "%.1f" % value
     return "+" + text if value > 0.0 else text
+
+static func realm_run_echo(run_number: int) -> String:
+    match run_number:
+        2:
+            return "九个名字比根先醒。你还没有伸出枝条，远处已经有回声。"
+        3:
+            return "这一次，没有哪一界先开口。你知道每一条路，也知道路的尽头。"
+        _:
+            return ""
+
+static func realm_visible_in_panel(state: GameState, realm_id: StringName) -> bool:
+    if realm_id == &"midgard" or state.realm_echoes.has(realm_id):
+        return true
+    if realm_id == &"nidavellir" or realm_id == &"alfheim":
+        return state.realm_echoes.has(&"midgard")
+    return state.lingua_nodes.has(&"world_trace")
+
+static func realm_gap_text(state: GameState, realm: RealmDefinition) -> String:
+    if realm == null:
+        return "界名尚未醒来"
+    if state.realm_echoes.has(realm.id):
+        return "已抵达"
+    for prerequisite: StringName in realm.prerequisites:
+        if not state.realm_echoes.has(prerequisite):
+            var previous := RealmCatalog.get_realm(prerequisite)
+            return "还差%s" % (previous.display_name if previous != null else str(prerequisite))
+    for race_id: StringName in realm.required_races:
+        if not state.races.has(race_id) or not bool(state.races[race_id].get("awakened", false)):
+            return "还差%s醒来" % RACE_ROWS.get(race_id, str(race_id))
+    if realm.required_lingua_node != &"" and not state.lingua_nodes.has(realm.required_lingua_node):
+        var node := LinguaData.get_node(realm.required_lingua_node)
+        return "还差%s" % str(node.get("name", realm.required_lingua_node))
+    if realm.required_relic > 0 and not state.relics_found.has(realm.required_relic):
+        return "还差遗迹 %d" % realm.required_relic
+    if state.root_depth < realm.min_root_depth:
+        return "根深还差 %d" % (realm.min_root_depth - state.root_depth)
+    if not state.growth.is_greater_or_equal(BigNum.new(realm.min_growth)):
+        return "生长还差 %s" % Formatter.format_cost(int(realm.min_growth - state.growth.to_value()))
+    if not state.sap.is_greater_or_equal(BigNum.new(realm.sap_cost)):
+        return "树液还差 %s" % Formatter.format_cost(int(realm.sap_cost - state.sap.to_value()))
+    if not state.memory.is_greater_or_equal(BigNum.new(realm.memory_cost)):
+        return "记忆还差 %s" % Formatter.format_cost(int(realm.memory_cost - state.memory.to_value()))
+    if not state.faith.is_greater_or_equal(BigNum.new(realm.faith_cost)):
+        return "信仰还差 %s" % Formatter.format_cost(int(realm.faith_cost - state.faith.to_value()))
+    return "可以抵达"
+
+static func miracle_gap_text(state: GameState, miracle: MiracleDefinition) -> String:
+    if miracle == null:
+        return "奇迹尚未醒来"
+    for realm_id: StringName in miracle.required_realms:
+        if not state.realm_echoes.has(realm_id):
+            var realm := RealmCatalog.get_realm(realm_id)
+            return "还差%s" % (realm.display_name if realm != null else str(realm_id))
+    if miracle.required_lingua_node != &"" and not state.lingua_nodes.has(miracle.required_lingua_node):
+        var node := LinguaData.get_node(miracle.required_lingua_node)
+        return "还差%s" % str(node.get("name", miracle.required_lingua_node))
+    if state.lingua_life_level < miracle.required_life_level:
+        return "生命之语还差 Lv%d" % (miracle.required_life_level - state.lingua_life_level)
+    if miracle.max_uses > 0 and MiracleActions.count(state, miracle.id) >= miracle.max_uses:
+        return "本轮已满"
+    if miracle.id == &"rain" and state.miracle_rain_ticks > 0:
+        return "雨还在落 · %d" % state.miracle_rain_ticks
+    if miracle.id == &"call_soul" and state.soul_river < SoulActions.REVIVE_COST_SOUL:
+        return "河里没有可唤的灵魂"
+    if not state.faith.is_greater_or_equal(BigNum.new(float(MiracleActions.faith_cost(state, miracle.id)))):
+        return "信仰不足"
+    if miracle.target_mode == "race":
+        for race_id: StringName in GameState.RACE_IDS:
+            if MiracleActions.can_perform(state, miracle.id, race_id):
+                return "选择四族"
+        return "没有可回应的目标"
+    return "可以施展"
+
+static func world_axis_gap_text(state: GameState) -> String:
+    var remaining := maxi(RealmCatalog.all_realms().size() - state.realm_echoes.size(), 0)
+    if remaining > 0:
+        return "世界之轴：还差 %d 个界域" % remaining
+    if not state.lingua_nodes.has(&"world_breath"):
+        return "世界之轴：天地一息未点亮"
+    return "世界之轴：九界正在同一口风里呼吸"
 
 @onready var daylight_label: Label = %DaylightLabel
 @onready var sap_label: Label = %SapLabel
@@ -142,6 +222,44 @@ static func format_relation(value: float) -> String:
 @onready var grace_button: Button = %GraceButton
 @onready var altar_button: Button = %AltarButton
 @onready var story_status_label: Label = %StoryStatusLabel
+@onready var nine_realms_panel: PanelContainer = %NineRealmsPanel
+@onready var world_header_label: Label = %WorldHeaderLabel
+@onready var world_run_echo_label: Label = %WorldRunEchoLabel
+@onready var world_mode_label: Label = %WorldModeLabel
+@onready var crown_label: Label = %CrownLabel
+@onready var crown_flow: HFlowContainer = %CrownFlow
+@onready var trunk_label: Label = %TrunkLabel
+@onready var root_domain_label: Label = %RootDomainLabel
+@onready var root_domain_flow: HFlowContainer = %RootDomainFlow
+@onready var asgard_button: Button = %AsgardButton
+@onready var vanaheim_button: Button = %VanaheimButton
+@onready var alfheim_button: Button = %AlfheimButton
+@onready var jotunheim_button: Button = %JotunheimButton
+@onready var midgard_button: Button = %MidgardButton
+@onready var nidavellir_button: Button = %NidavellirButton
+@onready var niflheim_button: Button = %NiflheimButton
+@onready var helheim_button: Button = %HelheimButton
+@onready var muspelheim_button: Button = %MuspelheimButton
+@onready var world_trace_button: Button = %WorldTraceButton
+@onready var rain_name_button: Button = %RainNameButton
+@onready var river_hearing_button: Button = %RiverHearingButton
+@onready var sky_ladder_button: Button = %SkyLadderButton
+@onready var world_shaping_button: Button = %WorldShapingButton
+@onready var world_breath_button: Button = %WorldBreathButton
+@onready var oasis_button: Button = %OasisButton
+@onready var rain_button: Button = %RainButton
+@onready var banish_shadow_button: Button = %BanishShadowButton
+@onready var call_soul_button: Button = %CallSoulButton
+@onready var shape_button: Button = %ShapeButton
+@onready var miracle_target_label: Label = %MiracleTargetLabel
+@onready var miracle_target_flow: HFlowContainer = %MiracleTargetFlow
+@onready var miracle_human_button: Button = %MiracleHumanButton
+@onready var miracle_forest_button: Button = %MiracleForestButton
+@onready var miracle_stone_button: Button = %MiracleStoneButton
+@onready var miracle_wild_button: Button = %MiracleWildButton
+@onready var axis_gate_label: Label = %AxisGateLabel
+
+var _pending_miracle_target_id: StringName = &""
 
 # ---------- M6 终局 UI：世界之轴 / 归还序列 / 结算 / 周目层叠 ----------
 
@@ -288,6 +406,7 @@ func _ready() -> void:
     faith_engine_button.pressed.connect(_on_engine_faith_pressed)
     memory_engine_button.pressed.connect(_on_engine_memory_pressed)
     _wire_node_buttons()
+    _wire_world_ui()
     GameManager.choice_available.connect(_on_choice_available)
     GameManager.choice_resolved.connect(_on_choice_resolved)
     GameManager.ending_resolved.connect(_on_ending_resolved)
@@ -309,6 +428,9 @@ func _ready() -> void:
     GameManager.relic_discovered.connect(_on_relic_discovered)
     GameManager.race_awakened.connect(_on_race_awakened)
     GameManager.totem_interpreted.connect(_on_totem_interpreted)
+    GameManager.realm_explored.connect(_on_realm_explored)
+    GameManager.world_language_changed.connect(_on_world_language_changed)
+    GameManager.miracle_performed.connect(_on_miracle_performed)
     # 读档恢复的唤醒发生在 autoload _ready（早于本场景），信号已发出——此处兜底播报
     if GameManager.is_human_awakened():
         var human := GameManager.get_race(&"human")
@@ -414,6 +536,7 @@ func _refresh() -> void:
     _refresh_storyteller()
     _refresh_m5d2()
     _refresh_lingua()
+    _refresh_world_ui()
 
 func _refresh_race_rows() -> void:
     var s := GameManager.get_state()
@@ -615,6 +738,7 @@ func _on_choice_available(choice_id: StringName, title: String, intro: String, o
     for i in range(options.size(), buttons.size()):
         buttons[i].visible = false
     choice_panel.visible = true
+    call_deferred("_ensure_visible", choice_panel)
 
 func _on_choice_pressed(option_id: StringName) -> void:
     # 当前弹层的 choice_id 由 GameManager._pending_choice 持有，经 resolve_choice 校验
@@ -669,6 +793,7 @@ func _resume_pending_ending() -> void:
     choice_panel.visible = false
     ending_panel.visible = false
     return_panel.visible = true
+    call_deferred("_ensure_visible", return_panel)
     return_title_label.text = "归还序列 · 周目 %d" % run_number
     return_text_label.text = ReturnSequence.halt_text(run_number) if halted else ReturnSequence.text_for(run_number, step)
     var progress := ReturnSequence.progress_for(step)
@@ -694,8 +819,13 @@ func _show_settlement(view: Dictionary) -> void:
     ending_action_button.text = str(view.get("action_text", "再次醒来"))
     _ending_loops = bool(view.get("loops", true))
     ending_panel.visible = true
+    call_deferred("_ensure_visible", ending_panel)
     race_event_label.text = str(view.get("title", "")) + " · " + str(view.get("hope_line", ""))
     _refresh()
+
+func _ensure_visible(control: Control) -> void:
+    if is_instance_valid(control) and control.visible:
+        ensure_control_visible(control)
 
 # 结算动作：再次醒来 → restart_run；回到标题 → GameManager.reset_to_title()
 func _on_ending_action_pressed() -> void:
@@ -919,3 +1049,195 @@ func _on_node_unlock_pressed(node_id: StringName) -> void:
         var node := LinguaData.get_node(node_id)
         log_label.text = "（%s 已点亮）" % str(node.get("name", ""))
     _refresh()
+
+# ---------- M6-D 九界 / 世界之语 / 奇迹 ----------
+
+func _realm_buttons() -> Array:
+    return [
+        [&"asgard", asgard_button],
+        [&"vanaheim", vanaheim_button],
+        [&"alfheim", alfheim_button],
+        [&"jotunheim", jotunheim_button],
+        [&"midgard", midgard_button],
+        [&"nidavellir", nidavellir_button],
+        [&"niflheim", niflheim_button],
+        [&"helheim", helheim_button],
+        [&"muspelheim", muspelheim_button],
+    ]
+
+func _world_node_buttons() -> Array:
+    return [
+        [&"world_trace", world_trace_button],
+        [&"rain_name", rain_name_button],
+        [&"river_hearing", river_hearing_button],
+        [&"sky_ladder", sky_ladder_button],
+        [&"world_shaping", world_shaping_button],
+        [&"world_breath", world_breath_button],
+    ]
+
+func _miracle_buttons() -> Array:
+    return [
+        [&"oasis", oasis_button],
+        [&"rain", rain_button],
+        [&"banish_shadow", banish_shadow_button],
+        [&"call_soul", call_soul_button],
+        [&"shape", shape_button],
+    ]
+
+func _miracle_target_buttons() -> Array:
+    return [
+        [&"human", miracle_human_button],
+        [&"forestfolk", miracle_forest_button],
+        [&"stoneborn", miracle_stone_button],
+        [&"wildfolk", miracle_wild_button],
+    ]
+
+func _wire_world_ui() -> void:
+    for pair in _realm_buttons():
+        var realm_id: StringName = pair[0]
+        var button: Button = pair[1]
+        button.pressed.connect(_on_realm_pressed.bind(realm_id))
+    for pair in _world_node_buttons():
+        var node_id: StringName = pair[0]
+        var button: Button = pair[1]
+        button.pressed.connect(_on_node_unlock_pressed.bind(node_id))
+    for pair in _miracle_buttons():
+        var miracle_id: StringName = pair[0]
+        var button: Button = pair[1]
+        button.pressed.connect(_on_miracle_pressed.bind(miracle_id))
+    for pair in _miracle_target_buttons():
+        var race_id: StringName = pair[0]
+        var button: Button = pair[1]
+        button.pressed.connect(_on_miracle_target_pressed.bind(race_id))
+
+func _world_node_gap_text(state: GameState, node: Dictionary) -> String:
+    var node_id := StringName(str(node.get("id", &"")))
+    if state.lingua_nodes.has(node_id):
+        return "已点亮"
+    var requirement := int(node.get("requirement", 99))
+    var level := RealmActions.world_level(state)
+    if level < requirement:
+        return "还差世界之语 Lv%d" % (requirement - level)
+    for prerequisite: Variant in node.get("prerequisites", []):
+        var prerequisite_id := StringName(str(prerequisite))
+        if not state.lingua_nodes.has(prerequisite_id):
+            return "还差%s" % str(LinguaData.get_node(prerequisite_id).get("name", prerequisite_id))
+    var cost := int(node.get("sap_cost", 0))
+    if not state.sap.is_greater_or_equal(BigNum.new(float(cost))):
+        return "树液还差 %s" % Formatter.format_cost(int(cost - state.sap.to_value()))
+    return "可以点亮"
+
+func _refresh_world_ui() -> void:
+    var state := GameManager.get_state()
+    nine_realms_panel.visible = state.relics_found.has(9)
+    if not nine_realms_panel.visible:
+        miracle_target_flow.visible = false
+        miracle_target_label.visible = false
+        return
+    var world_level := RealmActions.world_level(state)
+    world_header_label.text = "九界之树 · 世界之语 %d/9 · Lv%d" % [state.realm_echoes.size(), world_level]
+    var echo := realm_run_echo(state.run_number)
+    world_run_echo_label.text = echo
+    world_run_echo_label.visible = echo != "" and not state.realm_echoes.is_empty()
+    var expanded := state.lingua_nodes.has(&"world_trace") or state.run_number >= 2 and not state.realm_echoes.is_empty()
+    world_mode_label.text = "三域全景 · 冠 / 干 / 根" if expanded else "近路 · 当前可抵达"
+    crown_label.visible = expanded
+    trunk_label.visible = expanded
+    root_domain_label.visible = expanded
+    crown_flow.visible = expanded or realm_visible_in_panel(state, &"alfheim")
+    root_domain_flow.visible = expanded
+    for pair in _realm_buttons():
+        var realm_id: StringName = pair[0]
+        var button: Button = pair[1]
+        var realm := RealmCatalog.get_realm(realm_id)
+        button.visible = realm_visible_in_panel(state, realm_id)
+        if realm == null:
+            button.disabled = true
+            continue
+        var found := state.realm_echoes.has(realm_id)
+        var marker := "◇" if found and state.run_number >= 2 else ("●" if found else "○")
+        var gap := realm_gap_text(state, realm)
+        button.text = "%s %s" % [marker, realm.display_name]
+        if not found:
+            button.text += " · %s" % gap
+        button.disabled = found or not RealmActions.can_explore(state, realm_id)
+    for pair in _world_node_buttons():
+        var node_id: StringName = pair[0]
+        var button: Button = pair[1]
+        var node := LinguaData.get_node(node_id)
+        var gap := _world_node_gap_text(state, node)
+        button.text = "%s%s · %s" % ["◆ " if state.lingua_nodes.has(node_id) else "", str(node.get("name", "")), gap]
+        button.disabled = not LinguaActions.can_unlock_node(state, node_id)
+    for pair in _miracle_buttons():
+        var miracle_id: StringName = pair[0]
+        var button: Button = pair[1]
+        var miracle := MiracleCatalog.get_miracle(miracle_id)
+        var gap := miracle_gap_text(state, miracle)
+        var count_text := ""
+        if miracle != null and miracle.max_uses > 0:
+            count_text = " %d/%d" % [MiracleActions.count(state, miracle_id), miracle.max_uses]
+        var cost := MiracleActions.faith_cost(state, miracle_id)
+        button.text = "%s%s · %d 信仰 · %s" % [miracle.display_name if miracle != null else str(miracle_id), count_text, cost, gap]
+        button.disabled = gap != "可以施展" and gap != "选择四族"
+    axis_gate_label.text = world_axis_gap_text(state)
+    _refresh_miracle_targets()
+
+func _refresh_miracle_targets() -> void:
+    var state := GameManager.get_state()
+    var active := _pending_miracle_target_id != &""
+    miracle_target_label.visible = active
+    miracle_target_flow.visible = active
+    if not active:
+        return
+    var miracle := MiracleCatalog.get_miracle(_pending_miracle_target_id)
+    miracle_target_label.text = "%s，要落向谁？" % (miracle.display_name if miracle != null else "奇迹")
+    for pair in _miracle_target_buttons():
+        var race_id: StringName = pair[0]
+        var button: Button = pair[1]
+        var can_perform := GameManager.can_perform_miracle(_pending_miracle_target_id, race_id)
+        var gap := "可以回应"
+        if not can_perform:
+            if not state.races.has(race_id) or not bool(state.races[race_id].get("awakened", false)):
+                gap = "尚未醒来"
+            elif _pending_miracle_target_id == &"banish_shadow" and race_id == &"stoneborn":
+                gap = "石中没有影"
+            elif _pending_miracle_target_id == &"banish_shadow" and not PlunderActions.is_frozen(state, race_id):
+                gap = "没有待驱的影"
+            else:
+                gap = miracle_gap_text(state, miracle)
+        button.text = "%s · %s" % [RACE_ROWS.get(race_id, str(race_id)), gap]
+        button.disabled = not can_perform
+
+func _on_realm_pressed(realm_id: StringName) -> void:
+    GameManager.explore_realm(realm_id)
+
+func _on_realm_explored(_realm_id: StringName, realm_name: String, discovery_text: String, _world_level: int) -> void:
+    race_event_label.text = "%s\n\n%s" % [realm_name, discovery_text]
+    log_label.text = "（远处的一界，在年轮里有了名字。）"
+
+func _on_world_language_changed(_node_id: StringName, node_name: String, effect: String) -> void:
+    log_label.text = "（%s醒来。%s。）" % [node_name, effect]
+
+func _on_miracle_pressed(miracle_id: StringName) -> void:
+    var miracle := MiracleCatalog.get_miracle(miracle_id)
+    if miracle == null:
+        return
+    if miracle.target_mode == "race":
+        _pending_miracle_target_id = miracle_id
+        _refresh_miracle_targets()
+        return
+    _pending_miracle_target_id = &""
+    _refresh_miracle_targets()
+    GameManager.perform_miracle(miracle_id)
+
+func _on_miracle_target_pressed(race_id: StringName) -> void:
+    if _pending_miracle_target_id == &"":
+        return
+    var result := GameManager.perform_miracle(_pending_miracle_target_id, race_id)
+    if result.get("ok", false):
+        _pending_miracle_target_id = &""
+        _refresh_miracle_targets()
+
+func _on_miracle_performed(_miracle_id: StringName, _target_race_id: StringName, result_text: String, _count: int) -> void:
+    race_event_label.text = result_text
+    log_label.text = "（信仰落回土地，像雨落回河。）"

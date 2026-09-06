@@ -83,3 +83,22 @@ func test_calculate_does_not_mutate_and_offline_does_not_awaken_or_choose() -> v
 	assert_that(state.races.is_empty()).is_true()
 	assert_that(state.choices_done.is_empty()).is_true()
 	assert_that(snapshot.get("memory", 0.0)).is_greater(0.0)
+
+func test_rain_ticks_advance_only_when_offline_settlement_runs() -> void:
+	var blocked := GameState.new()
+	blocked.miracle_rain_ticks = 5
+	assert_that(OfflineProgress.apply(blocked, 3).get("applied", false)).is_false()
+	assert_that(blocked.miracle_rain_ticks).is_equal(5)
+	var state := _offline_state()
+	state.miracle_rain_ticks = 5
+	OfflineProgress.apply(state, 3)
+	assert_that(state.miracle_rain_ticks).is_equal(2)
+
+func test_offline_rain_uses_growth_before_decrementing() -> void:
+	var state := _offline_state()
+	state.races[&"human"] = {"awakened": true, "population": 50.0}
+	state.sap = BigNum.new(100.0)
+	state.miracle_rain_ticks = 1
+	OfflineProgress.apply(state, 1)
+	assert_that(float(state.races[&"human"]["population"])).is_equal_approx(50.5, 1e-4)
+	assert_that(state.miracle_rain_ticks).is_equal(0)

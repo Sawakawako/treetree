@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MiracleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/miracle_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shape"
+display_name = "塑形"
+required_realms = Array[StringName]([&"muspelheim", &"niflheim"])
+required_lingua_node = &"world_shaping"
+required_life_level = 3
+faith_costs = Array[int]([400, 800, 1600])
+max_uses = 3
+first_text = "山丘挪开半步。\n河在新土里转弯。你听见世界重新落稳。"
+repeat_text = "土与水又换了一次位置。\n新的空处，留给根和风。"

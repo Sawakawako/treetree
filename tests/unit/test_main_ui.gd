@@ -9,10 +9,60 @@ func test_scene_root_scrolls_at_small_viewport() -> void:
     assert_that(root.get_node("VBox/StoryStatusLabel").autowrap_mode).is_equal(TextServer.AUTOWRAP_WORD_SMART)
     assert_that(root.find_child("EarthSenseButton", true, false)).is_not_null()
     assert_that(root.find_child("SkyLightButton", true, false)).is_not_null()
-    assert_that(root.find_child("WorldLinguaButton", true, false)).is_null()
-    assert_that(root.find_child("MiracleButton", true, false)).is_null()
-    assert_that(root.find_child("NineRealmsButton", true, false)).is_null()
+    assert_that(root.find_child("NineRealmsPanel", true, false)).is_not_null()
     root.free()
+
+func test_m6d_world_ui_nodes_exist() -> void:
+    var scene := load("res://features/ui/main.tscn") as PackedScene
+    var root := scene.instantiate()
+    for node_name in [
+        "MidgardButton", "NidavellirButton", "AlfheimButton", "MuspelheimButton",
+        "JotunheimButton", "NiflheimButton", "VanaheimButton", "HelheimButton", "AsgardButton",
+        "WorldTraceButton", "RainNameButton", "RiverHearingButton", "SkyLadderButton",
+        "WorldShapingButton", "WorldBreathButton",
+        "OasisButton", "RainButton", "BanishShadowButton", "CallSoulButton", "ShapeButton",
+        "MiracleHumanButton", "MiracleForestButton", "MiracleStoneButton", "MiracleWildButton",
+    ]:
+        assert_that(root.find_child(node_name, true, false)).is_not_null()
+    root.free()
+
+func test_m6d_shortcut_mode_expands_after_world_trace() -> void:
+    var s := GameState.new()
+    assert_that(MainUI.realm_visible_in_panel(s, &"midgard")).is_true()
+    assert_that(MainUI.realm_visible_in_panel(s, &"nidavellir")).is_false()
+    s.realm_echoes.append(&"midgard")
+    assert_that(MainUI.realm_visible_in_panel(s, &"nidavellir")).is_true()
+    assert_that(MainUI.realm_visible_in_panel(s, &"alfheim")).is_true()
+    assert_that(MainUI.realm_visible_in_panel(s, &"muspelheim")).is_false()
+    s.lingua_nodes.append(&"world_trace")
+    assert_that(MainUI.realm_visible_in_panel(s, &"muspelheim")).is_true()
+    assert_that(MainUI.realm_visible_in_panel(s, &"asgard")).is_true()
+
+func test_m6d_realm_gap_names_primary_blocker() -> void:
+    var s := GameState.new()
+    var midgard := RealmCatalog.get_realm(&"midgard")
+    assert_that(MainUI.realm_gap_text(s, midgard)).contains("遗迹 9")
+    s.relics_found.append(9)
+    assert_that(MainUI.realm_gap_text(s, midgard)).contains("生长")
+
+func test_m6d_realm_echo_layers_by_run() -> void:
+    assert_that(MainUI.realm_run_echo(1)).is_equal("")
+    assert_that(MainUI.realm_run_echo(2)).contains("九个名字比根先醒")
+    assert_that(MainUI.realm_run_echo(3)).contains("没有哪一界先开口")
+
+func test_m6d_ui_texts_are_archived_exactly() -> void:
+    var file := FileAccess.open("res://docs/world-tree/narrative/09-ui-broadcast.md", FileAccess.READ)
+    assert_that(file).is_not_null()
+    var archive := file.get_as_text()
+    file.close()
+    for exact_text in [
+        "近路 · 当前可抵达",
+        "三域全景 · 冠 / 干 / 根",
+        "九个名字比根先醒。你还没有伸出枝条，远处已经有回声。",
+        "这一次，没有哪一界先开口。你知道每一条路，也知道路的尽头。",
+        "世界之轴：天地一息未点亮",
+    ]:
+        assert_that(archive).contains(exact_text)
 
 func test_storyteller_hidden_before_discovery() -> void:
     assert_that(bool(MainUI.storyteller_view(GameState.new()).get("visible", true))).is_false()

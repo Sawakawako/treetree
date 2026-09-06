@@ -13,6 +13,9 @@ signal soul_changed(soul_river: int)
 signal soul_revived(race_id: StringName, pop_gain: int)
 signal soul_plundered(race_id: StringName, pop_loss: int)
 signal story_heard(story_id: StringName, title: String, story_text: String)
+signal realm_explored(realm_id: StringName, realm_name: String, discovery_text: String, world_level: int)
+signal world_language_changed(node_id: StringName, node_name: String, effect: String)
+signal miracle_performed(miracle_id: StringName, target_race_id: StringName, result_text: String, count: int)
 # M6 终局：结局已结算（outcome + 结算后希望）；周目已重启（下一周目号）
 signal ending_resolved(outcome: StringName, hope_after: int)
 signal run_restarted(run_number: int)
@@ -50,6 +53,7 @@ func _process(delta: float) -> void:
         _tick_accumulator -= TICK_INTERVAL
         GameLoop.tick(_state)
         var events: Array[Dictionary] = RaceManager.tick_races(_state)
+        MiracleActions.advance_tick(_state)
         for ev in events:
             race_awakened.emit(ev["race_id"], ev["race_name"], ev["awaken_text"])
         if GameLoop.should_auto_save(_state):
@@ -209,6 +213,51 @@ func is_human_awakened() -> bool:
 
 func get_race(id: StringName) -> RaceData:
     return RaceManager.get_race(id)
+
+func get_world_level() -> int:
+    return RealmActions.world_level(_state)
+
+func get_realm(id: StringName) -> RealmDefinition:
+    return RealmCatalog.get_realm(id)
+
+func can_explore_realm(id: StringName) -> bool:
+    return RealmActions.can_explore(_state, id)
+
+func explore_realm(id: StringName) -> Dictionary:
+    var result := RealmActions.explore(_state, id)
+    if result.get("ok", false):
+        var realm := RealmCatalog.get_realm(id)
+        realm_explored.emit(
+            id,
+            realm.display_name if realm != null else "",
+            str(result.get("text", "")),
+            int(result.get("world_level", 0))
+        )
+        resources_changed.emit()
+    return result
+
+func get_miracle(id: StringName) -> MiracleDefinition:
+    return MiracleCatalog.get_miracle(id)
+
+func get_miracle_faith_cost(id: StringName) -> int:
+    return MiracleActions.faith_cost(_state, id)
+
+func can_perform_miracle(id: StringName, target_race_id: StringName = &"") -> bool:
+    return MiracleActions.can_perform(_state, id, target_race_id)
+
+func perform_miracle(id: StringName, target_race_id: StringName = &"") -> Dictionary:
+    var result := MiracleActions.perform(_state, id, target_race_id)
+    if result.get("ok", false):
+        miracle_performed.emit(
+            id,
+            target_race_id,
+            str(result.get("text", "")),
+            int(result.get("count", 0))
+        )
+        if id == &"call_soul":
+            soul_changed.emit(int(_state.soul_river))
+        resources_changed.emit()
+    return result
 
 func interpret_totem(totem_id: int) -> Dictionary:
     var result := TotemActions.interpret(_state, totem_id)
@@ -437,8 +486,11 @@ func upgrade_memory() -> bool:
     return false
 
 func unlock_node(node_id: StringName) -> bool:
+    var node := LinguaData.get_node(node_id)
     var ok := LinguaActions.unlock_node(_state, node_id)
     if ok.get("ok", false):
+        if StringName(node.get("language", &"life")) == &"world":
+            world_language_changed.emit(node_id, str(node.get("name", "")), str(node.get("effect", "")))
         resources_changed.emit()
         return true
     return false

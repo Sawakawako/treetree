@@ -642,3 +642,247 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "圣坛（信仰引擎效果 ×2）"
+
+[node name="NineRealmsPanel" type="PanelContainer" parent="VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="WorldVBox" type="VBoxContainer" parent="VBox/NineRealmsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WorldHeaderLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "九界之树 · 世界之语 0/9 · Lv0"
+
+[node name="WorldRunEchoLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="WorldModeLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "近路 · 当前可抵达"
+
+[node name="CrownLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "树冠"
+
+[node name="CrownFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="AsgardButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/CrownFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 阿斯加德"
+
+[node name="VanaheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/CrownFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 华纳海姆"
+
+[node name="AlfheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/CrownFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 亚尔夫海姆"
+
+[node name="TrunkLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "树干"
+
+[node name="TrunkFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="JotunheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/TrunkFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 约顿海姆"
+
+[node name="MidgardButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/TrunkFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 米德加德"
+
+[node name="NidavellirButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/TrunkFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 尼达维勒"
+
+[node name="RootDomainLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "树根"
+
+[node name="RootDomainFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="NiflheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/RootDomainFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 尼福尔海姆"
+
+[node name="HelheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/RootDomainFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 赫尔海姆"
+
+[node name="MuspelheimButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/RootDomainFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "○ 穆斯贝尔海姆"
+
+[node name="WorldLinguaLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+layout_mode = 2
+text = "世界之语"
+
+[node name="WorldLinguaFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="WorldTraceButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "界痕"
+
+[node name="RainNameButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "雨名"
+
+[node name="RiverHearingButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "河听"
+
+[node name="SkyLadderButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "天梯"
+
+[node name="WorldShapingButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "塑世"
+
+[node name="WorldBreathButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/WorldLinguaFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "天地一息"
+
+[node name="MiracleLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+layout_mode = 2
+text = "奇迹"
+
+[node name="MiracleFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="OasisButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "绿洲化"
+
+[node name="RainButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "唤雨"
+
+[node name="BanishShadowButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "驱影…"
+
+[node name="CallSoulButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "唤灵…"
+
+[node name="ShapeButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "塑形"
+
+[node name="MiracleTargetLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "把奇迹送往谁？"
+
+[node name="MiracleTargetFlow" type="HFlowContainer" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="MiracleHumanButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleTargetFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "人族"
+
+[node name="MiracleForestButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleTargetFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "林地民"
+
+[node name="MiracleStoneButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleTargetFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "石裔"
+
+[node name="MiracleWildButton" type="Button" parent="VBox/NineRealmsPanel/WorldVBox/MiracleTargetFlow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "野民"
+
+[node name="AxisGateLabel" type="Label" parent="VBox/NineRealmsPanel/WorldVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "世界之轴：还差 9 个界域"
+autowrap_mode = 3

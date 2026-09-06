@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MiracleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://features/world/miracle_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"rain"
+display_name = "唤雨"
+required_realms = Array[StringName]([&"alfheim"])
+required_lingua_node = &"rain_name"
+required_life_level = 2
+faith_costs = Array[int]([200])
+first_text = "第一滴落在叶背。\n林地民停下歌。石裔把水留在凿痕里。"
+repeat_text = "云又低了一些。\n雨沿枝叶落下，土地安静地喝着。"

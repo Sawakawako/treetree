@@ -10,5 +10,5 @@ subtitle = "原雾冰川"
 tree_domain = "root"
 prerequisites = Array[StringName]([&"alfheim"])
 required_lingua_node = &"world_trace"
-memory_cost = 200.0
+memory_cost = 300.0
 discovery_text = "光叶落进雾里，没有落地。\n冰封着许多名字。你读出一个，它便化成水。\n剩下的名字都安静了一些。"

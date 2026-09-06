@@ -9,7 +9,7 @@ const LIFE_MAX_LEVEL := 3
 const LINGUA_MEMORY_COSTS := {1: 500}
 const MEMORY_MAX_LEVEL := 1
 
-# 节点表（批 1 的 11 节点 + M5h 地脉感应/天光；tier: 1 初阶 2 中阶 3 高阶）
+# 节点表（M5 的 13 节点 + M6-D 世界之语 6 节点；tier: 1 初阶 2 中阶 3 高阶）
 const NODES: Array[Dictionary] = [
 	{"id": &"root_echo", "name": "遗迹回声", "branch": "root", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "遗迹文本回看"},
 	{"id": &"root_resonance", "name": "根须共鸣", "branch": "root", "tier": 1, "requirement": 1, "sap_cost": 3000, "effect": "解锁树液→记忆兑换"},

@@ -23,6 +23,12 @@ static func _all_races_awakened(state: GameState) -> bool:
 			return false
 	return true
 
+static func _all_realms_echoed(state: GameState) -> bool:
+	for realm: RealmDefinition in RealmCatalog.all_realms():
+		if not state.realm_echoes.has(realm.id):
+			return false
+	return true
+
 static func axis_ready(state: GameState) -> bool:
 	if not state.relics_found.has(9):
 		return false
@@ -33,6 +39,10 @@ static func axis_ready(state: GameState) -> bool:
 	if not state.storyteller_stories.has(&"story_6"):
 		return false
 	if not state.growth.is_greater_or_equal(BigNum.new(GROWTH_AXIS)):
+		return false
+	if not _all_realms_echoed(state):
+		return false
+	if not state.lingua_nodes.has(&"world_breath"):
 		return false
 	return true
 

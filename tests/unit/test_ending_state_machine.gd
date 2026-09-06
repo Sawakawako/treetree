@@ -12,6 +12,11 @@ func _state_axis_ready() -> GameState:
 		if cid != &"world_axis":
 			s.choices_done.append(cid)
 	s.storyteller_stories.append(&"story_6")
+	s.realm_echoes.assign([
+		&"midgard", &"nidavellir", &"alfheim", &"muspelheim", &"jotunheim",
+		&"niflheim", &"vanaheim", &"helheim", &"asgard",
+	])
+	s.lingua_nodes.append(&"world_breath")
 	return s
 
 func test_axis_not_ready_missing_relic() -> void:
@@ -32,6 +37,16 @@ func test_axis_not_ready_missing_choice() -> void:
 func test_axis_ready_when_all_met() -> void:
 	var s := _state_axis_ready()
 	assert_that(EndingStateMachine.axis_ready(s)).is_true()
+
+func test_axis_not_ready_without_all_nine_realms() -> void:
+	var s := _state_axis_ready()
+	s.realm_echoes.erase(&"asgard")
+	assert_that(EndingStateMachine.axis_ready(s)).is_false()
+
+func test_axis_not_ready_without_world_breath() -> void:
+	var s := _state_axis_ready()
+	s.lingua_nodes.erase(&"world_breath")
+	assert_that(EndingStateMachine.axis_ready(s)).is_false()
 
 func test_bad_when_no_insight_no_bonds() -> void:
 	var s := _state_axis_ready()  # insight 0, relations 空

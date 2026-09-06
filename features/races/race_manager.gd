@@ -49,11 +49,13 @@ static func capacity(state: GameState) -> float:
 		boom = 2
 	elif state.growth.to_value() >= 100.0:
 		boom = 1
-	return 100.0 * (1.0 + float(boom))
+	var oasis_mult := 1.0 + float(MiracleActions.count(state, &"oasis"))
+	return 100.0 * (1.0 + float(boom)) * oasis_mult
 
 static func _grow_race(state: GameState, race: RaceData, cap: float) -> void:
 	var pop := float(state.races[race.id]["population"])
-	var growth := pop * race.growth_rate * (1.0 - pop / cap)
+	var rate := race.growth_rate * MiracleActions.rain_growth_multiplier(state)
+	var growth := pop * rate * (1.0 - pop / cap)
 	state.races[race.id]["population"] = minf(pop + growth, cap)
 
 static func _produce_race(state: GameState, race: RaceData) -> void:

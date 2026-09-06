@@ -21,6 +21,8 @@ static func reveal_stage(state: GameState, race_id: StringName) -> int:
 	return 0
 
 static func is_frozen(state: GameState, race_id: StringName) -> bool:
+	if race_id == &"stoneborn" or state.miracle_cleansed_races.has(race_id):
+		return false
 	return reveal_stage(state, race_id) >= 1
 
 static func can_plunder(state: GameState, race_id: StringName) -> bool:
@@ -29,6 +31,8 @@ static func can_plunder(state: GameState, race_id: StringName) -> bool:
 static func plunder(state: GameState, race_id: StringName) -> Dictionary:
 	if not can_plunder(state, race_id):
 		return {"ok": false}
+	# 驱影只保护到下一次成功夺梦；先撤保护，再完成本次夺梦。
+	state.miracle_cleansed_races.erase(race_id)
 	var data := PlunderData.get_data(race_id)
 	var yield_mem := float(data.get("yield", 0.0))
 	var before := reveal_stage(state, race_id)

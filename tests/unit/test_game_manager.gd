@@ -19,6 +19,11 @@ func _state_axis_ready() -> GameState:
         if cid != &"world_axis":
             s.choices_done.append(cid)
     s.storyteller_stories.append(&"story_6")
+    s.realm_echoes.assign([
+        &"midgard", &"nidavellir", &"alfheim", &"muspelheim", &"jotunheim",
+        &"niflheim", &"vanaheim", &"helheim", &"asgard",
+    ])
+    s.lingua_nodes.append(&"world_breath")
     return s
 
 func before_test() -> void:
@@ -119,6 +124,15 @@ func test_human_produces_faith_after_awaken() -> void:
     gm._process(1.0)
     assert_that(gm.is_human_awakened()).is_true()
     assert_that(gm.get_faith().to_value()).is_equal_approx(0.1, 1e-4)
+
+func test_online_rain_applies_to_growth_before_decrementing() -> void:
+    gm._state = GameState.new()
+    gm._state.races[&"human"] = {"awakened": true, "population": 50.0}
+    gm._state.sap = BigNum.new(100.0)
+    gm._state.miracle_rain_ticks = 1
+    gm._process(1.0)
+    assert_that(float(gm._state.races[&"human"]["population"])).is_equal_approx(50.5, 1e-4)
+    assert_that(gm._state.miracle_rain_ticks).is_equal(0)
 
 func test_interpret_totem_signal() -> void:
     # 野民唤醒 + 记忆达标 → 解读 → 信号 + 领悟 +1
@@ -399,6 +413,60 @@ func test_lingua_entrances() -> void:
     gm._state.sap = BigNum.new(3000.0)
     assert_that(gm.unlock_node(&"tree_canopy")).is_true()
     assert_that(gm.get_state().lingua_nodes).contains(&"tree_canopy")
+
+func test_world_requests_emit_typed_domain_signals() -> void:
+    gm._state = GameState.new()
+    gm._state.growth = BigNum.new(1000.0)
+    gm._state.sap = BigNum.new(50000.0)
+    gm._state.faith = BigNum.new(1000.0)
+    gm._state.lingua_life_level = 2
+    gm._state.relics_found.append(9)
+    var got := {"realm": 0, "language": 0, "miracle": 0}
+    gm.realm_explored.connect(func(_id: StringName, _name: String, _text: String, _level: int) -> void:
+        got["realm"] += 1)
+    gm.world_language_changed.connect(func(_id: StringName, _name: String, _effect: String) -> void:
+        got["language"] += 1)
+    gm.miracle_performed.connect(func(_id: StringName, _target: StringName, _text: String, _count: int) -> void:
+        got["miracle"] += 1)
+    assert_that(gm.explore_realm(&"midgard").get("ok", false)).is_true()
+    gm._state.realm_echoes.append_array([&"nidavellir", &"alfheim"])
+    assert_that(gm.unlock_node(&"world_trace")).is_true()
+    gm._state.lingua_nodes.append(&"rain_name")
+    assert_that(gm.perform_miracle(&"oasis").get("ok", false)).is_true()
+    assert_that(got).is_equal({"realm": 1, "language": 1, "miracle": 1})
+
+func test_m6d_realm_to_world_breath_to_axis_integration() -> void:
+    gm._state = _state_axis_ready()
+    gm._state.realm_echoes.clear()
+    gm._state.lingua_nodes.erase(&"world_breath")
+    gm._state.sap = BigNum.new(200000.0)
+    gm._state.memory = BigNum.new(10000.0)
+    gm._state.faith = BigNum.new(10000.0)
+    gm._state.root_depth = 9
+    for realm_id: StringName in [&"midgard", &"nidavellir", &"alfheim"]:
+        assert_that(gm.explore_realm(realm_id).get("ok", false)).is_true()
+    assert_that(gm.unlock_node(&"world_trace")).is_true()
+    for realm_id: StringName in [&"muspelheim", &"jotunheim", &"niflheim"]:
+        assert_that(gm.explore_realm(realm_id).get("ok", false)).is_true()
+    assert_that(gm.unlock_node(&"river_hearing")).is_true()
+    assert_that(gm.unlock_node(&"sky_ladder")).is_true()
+    for realm_id: StringName in [&"vanaheim", &"helheim", &"asgard"]:
+        assert_that(gm.explore_realm(realm_id).get("ok", false)).is_true()
+    assert_that(gm.unlock_node(&"world_breath")).is_true()
+    assert_that(gm.try_start_world_axis()).is_true()
+
+func test_pending_ending_from_old_save_bypasses_new_axis_gates() -> void:
+    gm._state = GameState.from_dict({
+        "pending_ending": {
+            "outcome": "good", "intent": "return", "hope_before": 1,
+            "phase": "return", "return_step": 1, "return_halted": false,
+        },
+    })
+    assert_that(gm._state.realm_echoes).is_empty()
+    assert_that(gm._state.lingua_nodes).is_empty()
+    var result: Dictionary = gm.advance_return_sequence()
+    assert_that(result.get("ok", false)).is_true()
+    assert_that(int(result.get("return_step", 0))).is_equal(2)
 
 func test_upgrade_memory_emits_resources_only_on_success() -> void:
     gm._state = GameState.new()
