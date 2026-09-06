@@ -37,18 +37,18 @@ static func event_count() -> int:
 const EXTRA_EVENTS: Array[Dictionary] = [
 	# 石裔 ×3 —— 二周目「你记得」主题
 	{"event_id": &"stoneborn_r2a", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=300",
-		"text": "TASK5_SB_A"},
+		"text": "一个石裔在你根旁停下，看了很久。\n它说：这圈刻痕，我来过。\n你低头。那是上一轮的你，靠过的地方。\n它没有多问。只是把工具放下，陪你坐了一会儿。"},
 	{"event_id": &"stoneborn_r2b", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=600",
-		"text": "TASK5_SB_B"},
+		"text": "石裔抬来一块碑。\n碑上没有字，只有一道断痕——\n是你上一轮折断的根须的形状。\n为首的石裔说：我们照着记忆打的。\n它没说为谁打的。但碑立在你面前时，\n你听见所有锤声，都静了一下。"},
 	{"event_id": &"stoneborn_r2c", "race_id": &"stoneborn", "run_gte": 2, "condition": "sap>=900",
-		"text": "TASK5_SB_C"},
+		"text": "夜里，一个年轻的石裔问你：\n母树，你这次还会走吗。\n它问得很轻，像怕惊醒什么。\n你没有回答。\n它把一块温热的石头放进你的根隙。\n说：不走的话，这个给你垫着。"},
 	# 野民 ×3
 	{"event_id": &"wildfolk_r2a", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=2",
-		"text": "TASK5_WF_A"},
+		"text": "野民在你根旁画了一幅新画。\n画的是树——可那棵树，比你老。\n老得像上一轮。\n画完，她们没有走。\n她们看着画，又看着你，像在确认什么。"},
 	{"event_id": &"wildfolk_r2b", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=4",
-		"text": "TASK5_WF_B"},
+		"text": "野民首领把火把举到图腾前。\n图腾上的眼睛，正对着你。\n她说：这双眼睛，见过你两次了。\n第一次，你还不认得自己。\n她顿了顿。\n这一次，你认得吗？"},
 	{"event_id": &"wildfolk_r2c", "race_id": &"wildfolk", "run_gte": 2, "condition": "totem>=5",
-		"text": "TASK5_WF_C"},
+		"text": "夜里，野民围着火堆唱歌。\n唱到一半，她们忽然改了词——\n唱的是河。河底的东西，一样一样浮上来，又沉回去。\n你听懂了。\n那是你上一轮，还给河的记忆。\n她们把它们编成了歌。\n唱完，首领朝你的方向举了举杯。\n像敬一位老友。"},
 ]
 
 static func extra_events() -> Array[Dictionary]:

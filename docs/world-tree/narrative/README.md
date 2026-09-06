@@ -12,7 +12,7 @@
 | [02-totems.md](02-totems.md) | 图腾五幅 | 5 幅（含解读文本） | `features/memories/totem_library.gd` |
 | [03-plunder.md](03-plunder.md) | 夺梦文本 | 3 族信号池 ×3 + 揭示 ×3（石裔无梦 1 条） | `features/memories/plunder_data.gd` |
 | [04-race-awakenings.md](04-race-awakenings.md) | 四族唤醒 | 4 篇 | `features/races/data/*.tres` |
-| [05-relations.md](05-relations.md) | 关系仪式互动 | 4 篇 | `features/relations/relation_events.gd` |
+| [05-relations.md](05-relations.md) | 关系仪式互动 | 仪式 4 篇 + 二周目 6 篇 = 10 篇 | `features/relations/relation_events.gd` |
 | [06-intimate.md](06-intimate.md) | 亲密事件 | 4 篇（树以人形对坐） | `features/memories/intimate_events.gd` |
 | [07-avatar-tiers.md](07-avatar-tiers.md) | 化身观感 | 4 档（漂移镜子） | `features/memories/avatar_tiers.gd` |
 | [08-choices.md](08-choices.md) | 明选全文 | 6 组 8 卡 | `features/choices/data/choices.json` |
