@@ -250,6 +250,40 @@
           "result_text": "你听见每一场不会醒来的花开。\n完美的梦也是梦。\n树最懂了。"
         }
       ]
+    },
+    {
+      "id": "world_axis",
+      "title": "世界之轴",
+      "stage_hint": "世界之轴·终局",
+      "intro": "根须扎进冥河，树冠刺破天界。\n你第一次看清自己有多高。\n也看清，自己是用什么长成这样的。",
+      "trigger": {},
+      "options": [
+        {
+          "id": "a",
+          "text": "凝记忆为希望",
+          "effects": { "ending_intent": "condense" },
+          "result_text": "你把一生的记忆拢成一团，像拢一簇火。\n……然后，把它交给下一个自己。"
+        },
+        {
+          "id": "b",
+          "text": "拒绝",
+          "effects": { "ending_intent": "refuse" },
+          "result_text": "你不凝，也不还。\n你就站在那里。风穿过你。\n什么也没有发生——除了你还在。"
+        },
+        {
+          "id": "c",
+          "text": "把记忆还给河",
+          "effects": { "ending_intent": "return" },
+          "result_text": "你把记忆一颗一颗还给亡者之河。\n不是交还——是偿还。是归还一笔欠了太久的债。"
+        },
+        {
+          "id": "d",
+          "text": "……",
+          "unlock": { "run_gte": 3, "relations_all_gte": 3.0, "insight_gte": 10, "hope_gte": 2 },
+          "effects": { "ending_intent": "self" },
+          "result_text": "你还有一点多余的希望。\n这世间还有一个人需要它。\n——你自己。"
+        }
+      ]
     }
   ]
 }

@@ -46,6 +46,18 @@ static func _trigger_met(state: GameState, trigger: Dictionary) -> bool:
 	if trigger.has("soul_river_gte"):
 		if state.soul_river < int(trigger["soul_river_gte"]):
 			return false
+	# M6：周目/结局侧触发键（world_axis d 选项 unlock 使用）
+	if trigger.has("run_gte"):
+		if state.run_number < int(trigger["run_gte"]):
+			return false
+	if trigger.has("relations_all_gte"):
+		var need_all := float(trigger["relations_all_gte"])
+		for rid_all: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+			if RelationActions.get_relation(state, rid_all) < need_all:
+				return false
+	if trigger.has("hope_gte"):
+		if state.hope < int(trigger["hope_gte"]):
+			return false
 	return true
 
 static func available(state: GameState) -> Array[StringName]:
@@ -54,6 +66,8 @@ static func available(state: GameState) -> Array[StringName]:
 		var id := StringName(str(c.get("id", "")))
 		if state.choices_done.has(id):
 			continue
+		if id == &"world_axis":
+			continue  # 终局由 EndingStateMachine.axis_ready 主动门控，不进 tick 轮询
 		if _trigger_met(state, c.get("trigger", {})):
 			out.append(id)
 	return out
@@ -127,6 +141,9 @@ static func _apply_effects(state: GameState, effects: Dictionary) -> void:
 			var fn := StringName(str(f))
 			if not state.choice_flags.has(fn):
 				state.choice_flags.append(fn)
+	# M6：终局意图只落 flag（world_axis_intent_<intent>），GameManager.resolve_choice 消费
+	if effects.has("ending_intent"):
+		state.choice_flags.append(StringName("world_axis_intent_" + str(effects["ending_intent"])))
 
 static func resolve(state: GameState, choice_id: StringName, option_id: StringName) -> Dictionary:
 	if not can_choose(state, choice_id):

@@ -47,6 +47,52 @@ func test_trigger_soul_conditions() -> void:
 	assert_that(ChoiceActions._trigger_met(s, {"soul_river_gte": 89})).is_false()
 	assert_that(ChoiceActions._trigger_met(s, {"soul_river_gte": 88})).is_true()
 
+func test_trigger_run_gte() -> void:
+	var s := GameState.new()
+	s.run_number = 1
+	assert_that(ChoiceActions._trigger_met(s, {"run_gte": 2})).is_false()
+	s.run_number = 2
+	assert_that(ChoiceActions._trigger_met(s, {"run_gte": 2})).is_true()
+
+func test_trigger_relations_all_gte() -> void:
+	var s := GameState.new()
+	s.relations[&"human"] = 3.0
+	s.relations[&"forestfolk"] = 3.0
+	s.relations[&"stoneborn"] = 3.0
+	s.relations[&"wildfolk"] = 3.0
+	assert_that(ChoiceActions._trigger_met(s, {"relations_all_gte": 3.0})).is_true()
+	s.relations[&"wildfolk"] = 2.9
+	assert_that(ChoiceActions._trigger_met(s, {"relations_all_gte": 3.0})).is_false()
+
+func test_trigger_hope_gte() -> void:
+	var s := GameState.new()  # hope 默认 1
+	assert_that(ChoiceActions._trigger_met(s, {"hope_gte": 2})).is_false()
+	s.hope = 2
+	assert_that(ChoiceActions._trigger_met(s, {"hope_gte": 2})).is_true()
+
+func test_available_never_includes_world_axis() -> void:
+	# world_axis 只走 try_start_world_axis（EndingStateMachine.axis_ready 门控），不进 tick 轮询
+	var s := GameState.new()
+	var avail := ChoiceActions.available(s)
+	assert_that(avail.has(&"world_axis")).is_false()
+	# 即便 trigger {} 恒真、axis 条件全满足，也不得出现在 available()
+	s.growth = BigNum.new(1000.0)
+	s.relics_found.append(9)
+	for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		s.races[rid] = {"awakened": true, "population": 10.0}
+	for c in ChoiceLibrary.load_all():
+		var cid := StringName(str(c.get("id", "")))
+		if cid != &"world_axis":
+			s.choices_done.append(cid)
+	s.storyteller_stories.append(&"story_6")
+	var avail2 := ChoiceActions.available(s)
+	assert_that(avail2.has(&"world_axis")).is_false()
+
+func test_first_available_empty_with_only_world_axis_possible() -> void:
+	# world_axis 被轮询排除后，无可选卡时应返回空（不会把 world_axis 当作首个）
+	var s := GameState.new()
+	assert_that(ChoiceActions.first_available(s)).is_equal(&"")
+
 func test_trigger_relic_found_requires_exact_relic() -> void:
 	var s := GameState.new()
 	s.relics_found.assign([1, 2, 3, 4, 5, 6])
@@ -280,3 +326,62 @@ func test_resolve_before_trigger_fails() -> void:
 	var s := GameState.new()  # 人未醒
 	assert_that(ChoiceActions.resolve(s, &"human_nightmare", &"a").get("ok", false)).is_false()
 	assert_that(s.choices_done.is_empty()).is_true()
+
+# ---------- M6 世界之轴（world_axis）----------
+
+func _axis_ready_state() -> GameState:
+	var s := GameState.new()
+	s.growth = BigNum.new(1000.0)
+	s.relics_found.append(9)
+	for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		s.races[rid] = {"awakened": true, "population": 10.0}
+	for c in ChoiceLibrary.load_all():
+		var cid := StringName(str(c.get("id", "")))
+		if cid != &"world_axis":
+			s.choices_done.append(cid)
+	s.storyteller_stories.append(&"story_6")
+	s.run_number = 3
+	s.hope = 2
+	s.insight = 10
+	for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+		s.relations[rid] = 3.0
+	return s
+
+func test_world_axis_resolves_intent_flag() -> void:
+	# resolve 成功 → 写入 world_axis_intent_* flag 而非直接调 EndingStateMachine
+	var s := GameState.new()
+	_awaken(s, &"human")
+	var r := ChoiceActions.resolve(s, &"world_axis", &"a")
+	assert_that(r.get("ok", false)).is_true()
+	assert_that(s.choice_flags).contains(&"world_axis_intent_condense")
+	assert_that(s.choices_done).contains(&"world_axis")
+
+func test_world_axis_option_d_locked_below_all_conditions() -> void:
+	var s := _axis_ready_state()
+	s.run_number = 2  # 未到三周目
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"d")).is_false()
+
+func test_world_axis_option_d_unlocks_when_all_met() -> void:
+	var s := _axis_ready_state()
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"d")).is_true()
+
+func test_world_axis_option_d_requires_full_relations() -> void:
+	var s := _axis_ready_state()
+	s.relations[&"wildfolk"] = 2.9
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"d")).is_false()
+
+func test_world_axis_option_d_requires_insight() -> void:
+	var s := _axis_ready_state()
+	s.insight = 9
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"d")).is_false()
+
+func test_world_axis_option_d_requires_hope() -> void:
+	var s := _axis_ready_state()
+	s.hope = 1
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"d")).is_false()
+
+func test_world_axis_options_abc_always_unlocked() -> void:
+	var s := _axis_ready_state()
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"a")).is_true()
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"b")).is_true()
+	assert_that(ChoiceActions.option_unlocked(s, &"world_axis", &"c")).is_true()

@@ -1,12 +1,12 @@
 extends GdUnitTestSuite
 
-func test_load_all_returns_eight_choices() -> void:
+func test_load_all_returns_nine_choices() -> void:
 	var choices := ChoiceLibrary.load_all()
-	assert_that(choices.size()).is_equal(8)
+	assert_that(choices.size()).is_equal(9)
 
 func test_choice_ids_unique_and_valid() -> void:
 	var ids := ChoiceLibrary.valid_choice_ids()
-	assert_that(ids.size()).is_equal(8)
+	assert_that(ids.size()).is_equal(9)
 	assert_that(ids).contains(&"human_nightmare")
 	assert_that(ids).contains(&"odin_sacrifice")
 	assert_that(ids).contains(&"norne_past")
@@ -15,9 +15,10 @@ func test_choice_ids_unique_and_valid() -> void:
 	assert_that(ids).contains(&"dodder")
 	assert_that(ids).contains(&"theseus")
 	assert_that(ids).contains(&"experience_machine")
+	assert_that(ids).contains(&"world_axis")
 
 func test_choice_count() -> void:
-	assert_that(ChoiceLibrary.choice_count()).is_equal(8)
+	assert_that(ChoiceLibrary.choice_count()).is_equal(9)
 
 func test_experience_machine_has_three_frozen_routes() -> void:
 	var c := ChoiceLibrary.get_choice(&"experience_machine")

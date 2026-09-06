@@ -4,11 +4,39 @@ const GameManagerScript := preload("res://autoloads/game_manager.gd")
 
 var gm
 
+# 世界之轴结算会写真实 SAVE_PATH（user://save.json）——测试前后备份/还原，避免污染真档
+var _save_backup: Variant = null
+
+func _state_axis_ready() -> GameState:
+    var s := GameState.new()
+    s.growth = BigNum.new(1000.0)
+    s.relics_found.append(9)
+    for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+        s.races[rid] = {"awakened": true, "population": 10.0}
+    # 明选①—⑥（8 卡除 world_axis 外全做）
+    for c in ChoiceLibrary.load_all():
+        var cid := StringName(str(c.get("id", "")))
+        if cid != &"world_axis":
+            s.choices_done.append(cid)
+    s.storyteller_stories.append(&"story_6")
+    return s
+
 func before_test() -> void:
     gm = GameManagerScript.new()
+    var path := "user://save.json"
+    _save_backup = FileAccess.get_file_as_bytes(path) if FileAccess.file_exists(path) else null
 
 func after_test() -> void:
     gm.free()
+    var path := "user://save.json"
+    if _save_backup != null:
+        var f := FileAccess.open(path, FileAccess.WRITE)
+        if f != null:
+            f.store_buffer(_save_backup)
+            f.close()
+    elif FileAccess.file_exists(path):
+        DirAccess.remove_absolute(path)
+    _save_backup = null
 
 func test_explore_relic_signal() -> void:
     gm._state = GameState.new()
@@ -412,3 +440,110 @@ func test_unlock_blocked() -> void:
     gm._state.sap = BigNum.new(3000.0)
     assert_that(gm.unlock_node(&"root_resonance")).is_true()
     assert_that(gm.unlock_node(&"cloud_crown")).is_false()  # 需 Lv2
+
+# ---------- M6 世界之轴：主动入口 + 终局结算 ----------
+
+func test_try_start_world_axis_gated_on_axis_ready() -> void:
+    gm._state = _state_axis_ready()  # axis_ready 全满足
+    gm._pending_choice = &""
+    var got := {"ok": false, "title": ""}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        got["ok"] = true
+        got["title"] = title)
+    assert_that(gm.try_start_world_axis()).is_true()
+    assert_that(gm._pending_choice).is_equal(&"world_axis")
+    assert_that(got["ok"]).is_true()
+    assert_that(str(got["title"])).is_equal("世界之轴")
+
+func test_try_start_world_axis_blocked_when_not_ready() -> void:
+    gm._state = GameState.new()  # 无遗迹/未醒/卡未做/无 story_6/growth 0
+    var got := {"n": 0}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        got["n"] += 1)
+    assert_that(gm.try_start_world_axis()).is_false()
+    assert_that(gm._pending_choice).is_equal(&"")
+    assert_that(got["n"]).is_equal(0)
+
+func test_try_start_world_axis_blocked_when_pending_choice() -> void:
+    gm._state = _state_axis_ready()
+    gm._pending_choice = &"human_nightmare"  # 已有待决明选
+    var got := {"n": 0}
+    gm.choice_available.connect(func(id: StringName, title: String, intro: String, options: Array) -> void:
+        got["n"] += 1)
+    assert_that(gm.try_start_world_axis()).is_false()
+    assert_that(gm._pending_choice).is_equal(&"human_nightmare")
+
+func test_resolve_world_axis_settles_via_ending_machine() -> void:
+    gm._state = _state_axis_ready()
+    gm._state.run_number = 3
+    gm._state.hope = 2
+    gm._state.insight = 10
+    for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+        gm._state.relations[rid] = 3.0
+    gm._pending_choice = &"world_axis"
+    var got := {"resolved": false, "ended": false, "outcome": "", "hope_after": -1}
+    gm.choice_resolved.connect(func(id: StringName, opt: StringName, text: String, opt_text: String) -> void:
+        got["resolved"] = true)
+    gm.ending_resolved.connect(func(outcome: StringName, hope_after: int) -> void:
+        got["ended"] = true
+        got["outcome"] = outcome
+        got["hope_after"] = hope_after)
+    var r: Dictionary = gm.resolve_choice(&"world_axis", &"d")
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(str(r.get("outcome", ""))).is_equal("true")
+    assert_that(got["ended"]).is_true()
+    assert_that(str(got["outcome"])).is_equal("true")
+    assert_that(int(got["hope_after"])).is_equal(0)
+    assert_that(gm._pending_choice).is_equal(&"")
+    assert_that(gm.get_state().choices_done).contains(&"world_axis")
+
+func test_resolve_world_axis_condense_emits_good() -> void:
+    # 三周目希望不靠 d；用 condense 验证 hope+1 后结算通路
+    gm._state = _state_axis_ready()
+    gm._state.run_number = 3
+    gm._state.insight = 10
+    for rid: StringName in [&"human", &"forestfolk", &"stoneborn", &"wildfolk"]:
+        gm._state.relations[rid] = 3.0
+    gm._state.hope = 1
+    gm._pending_choice = &"world_axis"
+    var got := {"ended": false, "outcome": "", "hope_after": -1}
+    gm.ending_resolved.connect(func(outcome: StringName, hope_after: int) -> void:
+        got["ended"] = true
+        got["outcome"] = outcome
+        got["hope_after"] = hope_after)
+    var r: Dictionary = gm.resolve_choice(&"world_axis", &"a")
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(str(r.get("outcome", ""))).is_equal("good")
+    assert_that(got["ended"]).is_true()
+    assert_that(int(got["hope_after"])).is_equal(2)
+
+func test_resolve_world_axis_still_requires_pending() -> void:
+    gm._state = _state_axis_ready()  # axis 全就绪
+    gm._pending_choice = &""  # 但无待决
+    var r: Dictionary = gm.resolve_choice(&"world_axis", &"a")
+    assert_that(r.get("ok", false)).is_false()
+
+func test_ending_blocked_returns_ok_false() -> void:
+    # d 在 <run3 时 UI 不可选，但 resolve 入口若被强行调用 self：状态机挡回
+    gm._state = _state_axis_ready()
+    gm._pending_choice = &"world_axis"
+    var got := {"n": 0}
+    gm.ending_resolved.connect(func(outcome: StringName, hope_after: int) -> void: got["n"] += 1)
+    var r: Dictionary = gm.resolve_choice(&"world_axis", &"d")  # run_number=1, hope=1
+    assert_that(r.get("ok", false)).is_false()
+    assert_that(got["n"]).is_equal(0)
+
+func test_resolve_non_axis_choice_still_works() -> void:
+    # 回归：普通明选（非 world_axis）走原流程——choice_resolved + pending 清空，不发 ending_resolved
+    gm._state = GameState.new()
+    gm._state.races["human"] = {"awakened": true, "population": 50.0}
+    var got := {"resolved": false, "ended": false}
+    gm.choice_resolved.connect(func(id: StringName, opt: StringName, text: String, opt_text: String) -> void:
+        got["resolved"] = true)
+    gm.ending_resolved.connect(func(outcome: StringName, hope_after: int) -> void: got["ended"] = true)
+    gm._process(1.0)  # 弹 human_nightmare
+    var r: Dictionary = gm.resolve_choice(&"human_nightmare", &"b")
+    assert_that(r.get("ok", false)).is_true()
+    assert_that(got["resolved"]).is_true()
+    assert_that(got["ended"]).is_false()
+    assert_that(gm._pending_choice).is_equal(&"")

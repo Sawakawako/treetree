@@ -13,6 +13,9 @@ signal soul_changed(soul_river: int)
 signal soul_revived(race_id: StringName, pop_gain: int)
 signal soul_plundered(race_id: StringName, pop_loss: int)
 signal story_heard(story_id: StringName, title: String, story_text: String)
+# M6 终局：结局已结算（outcome + 结算后希望）；周目已重启（下一周目号）
+signal ending_resolved(outcome: StringName, hope_after: int)
+signal run_restarted(run_number: int)
 
 const SAVE_PATH := "user://save.json"
 const TICK_INTERVAL := 1.0
@@ -261,6 +264,19 @@ func _check_choice_trigger() -> void:
     var c := ChoiceLibrary.get_choice(cid)
     choice_available.emit(cid, str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
 
+func try_start_world_axis() -> bool:
+    if _pending_choice != &"":
+        return false
+    if not EndingStateMachine.axis_ready(_state):
+        return false
+    _pending_choice = &"world_axis"
+    var c := ChoiceLibrary.get_choice(&"world_axis")
+    if c.is_empty():
+        _pending_choice = &""
+        return false
+    choice_available.emit(&"world_axis", str(c.get("title", "")), str(c.get("intro", "")), c.get("options", []))
+    return true
+
 func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     if _pending_choice != choice_id:
         return {"ok": false}
@@ -268,6 +284,9 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     if not result.get("ok", false):
         return result
     _pending_choice = &""
+    # M6：world_axis 结算 → 终局状态机（不回调 choice_resolved，以 ending_resolved 终结）
+    if choice_id == &"world_axis":
+        return _settle_world_axis(option_id, result)
     # 第 4 参 = 所选选项的按钮文字（从 JSON options 按 option_id 取 text）
     var c := ChoiceLibrary.get_choice(choice_id)
     var opt_text := ""
@@ -278,6 +297,20 @@ func resolve_choice(choice_id: StringName, option_id: StringName) -> Dictionary:
     choice_resolved.emit(choice_id, option_id, str(result.get("result_text", "")), opt_text)
     resources_changed.emit()
     return result
+
+func _settle_world_axis(option_id: StringName, result: Dictionary) -> Dictionary:
+    var intent := &"condense"
+    match option_id:
+        &"a": intent = &"condense"
+        &"b": intent = &"refuse"
+        &"c": intent = &"return"
+        &"d": intent = &"self"
+    var er := EndingStateMachine.resolve_ending(_state, intent)
+    if not er.get("ok", false):
+        return {"ok": false, "reason": "ending_blocked"}
+    ending_resolved.emit(StringName(str(er.get("outcome", &""))), int(er.get("hope_after", 0)))
+    SaveManager.save(_state, SAVE_PATH)
+    return er
 
 func hear_story(story_id: StringName) -> Dictionary:
     var result := StoryActions.hear(_state, story_id)
