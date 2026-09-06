@@ -320,6 +320,9 @@ func _settle_world_axis(option_id: StringName, result: Dictionary) -> Dictionary
 func restart_run() -> Dictionary:
     _state = GameState.new_run_preserved(_state)
     _pending_choice = &""
+    # M6 三周目浓缩快进（spec §8.6）：进入 run>=3 的开局即赠予，直扑终局
+    if _state.run_number >= 3:
+        RunBoost.apply_boost(_state)
     SaveManager.save(_state, SAVE_PATH)
     run_restarted.emit(int(_state.run_number))
     return {"ok": true, "run_number": int(_state.run_number)}

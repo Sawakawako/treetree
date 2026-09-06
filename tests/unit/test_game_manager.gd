@@ -563,6 +563,21 @@ func test_restart_run_preserves_and_increments() -> void:
     assert_that(gm.get_state().insight).is_equal(11)
     assert_that(gm.get_state().relations).is_empty()
 
+func test_restart_into_run3_applies_boost() -> void:
+    # M6 三周目浓缩快进：restart 落入 run3（2→3）即开局赠予资源/解锁，直扑终局；
+    # run<3 不触发由 RunBoost.apply_boost 守卫测试 + 既有 1→2 restart 测试锁定
+    gm._state = GameState.new()
+    gm._state.hope = 2
+    gm._state.run_number = 2
+    var first: Dictionary = gm.restart_run()
+    assert_that(int(first.get("run_number", 0))).is_equal(3)
+    assert_that(gm.get_state().sap.to_value()).is_greater(0.0)
+    assert_that(gm.get_state().lingua_life_level).is_equal(RunBoost.BOOST_LIFE_LV)
+    assert_that(gm.get_state().leaf_level).is_equal(RunBoost.BOOST_LEAF)
+    assert_that(gm.get_state().root_depth).is_equal(RunBoost.BOOST_ROOT)
+    for f: StringName in RunBoost.BOOST_FLAGS:
+        assert_that(gm.get_state().choice_flags).contains(f)
+
 func test_restart_run_clears_pending_emits_signal_and_saves() -> void:
     # 契约：清 _pending_choice、发 run_restarted(新周目号)、新档落盘 user://save.json
     gm._state = GameState.new()
