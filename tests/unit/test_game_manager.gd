@@ -575,8 +575,8 @@ func test_restart_into_run3_applies_boost() -> void:
     assert_that(gm.get_state().lingua_life_level).is_equal(RunBoost.BOOST_LIFE_LV)
     assert_that(gm.get_state().leaf_level).is_equal(RunBoost.BOOST_LEAF)
     assert_that(gm.get_state().root_depth).is_equal(RunBoost.BOOST_ROOT)
-    for f: StringName in RunBoost.BOOST_FLAGS:
-        assert_that(gm.get_state().choice_flags).contains(f)
+    for n: StringName in RunBoost.BOOST_NODES:
+        assert_that(gm.get_state().lingua_nodes).contains(n)
 
 func test_restart_run_clears_pending_emits_signal_and_saves() -> void:
     # 契约：清 _pending_choice、发 run_restarted(新周目号)、新档落盘 user://save.json

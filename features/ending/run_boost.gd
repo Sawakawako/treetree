@@ -9,7 +9,8 @@ const BOOST_GROWTH := 600.0
 const BOOST_LEAF := 3
 const BOOST_ROOT := 3
 const BOOST_LIFE_LV := 2
-const BOOST_FLAGS: Array[StringName] = [&"tree_canopy", &"root_resonance", &"cloud_crown", &"grace"]
+# 三周目开局免费解锁的树语节点（写 lingua_nodes——兑换/引擎门控 LinguaActions.has_node 读此，choice_flags 无人消费）
+const BOOST_NODES: Array[StringName] = [&"tree_canopy", &"root_resonance", &"cloud_crown", &"grace"]
 
 static func apply_boost(state: GameState) -> void:
 	if state.run_number < 3:
@@ -21,7 +22,7 @@ static func apply_boost(state: GameState) -> void:
 	state.leaf_level = maxi(state.leaf_level, BOOST_LEAF)
 	state.root_depth = maxi(state.root_depth, BOOST_ROOT)
 	state.lingua_life_level = maxi(state.lingua_life_level, BOOST_LIFE_LV)
-	for f in BOOST_FLAGS:
-		if not state.choice_flags.has(f):
-			state.choice_flags.append(f)
+	for n in BOOST_NODES:
+		if not state.lingua_nodes.has(n):
+			state.lingua_nodes.append(n)
 	# 明选全开：已完成卡保留（跨周目知识 flag），本局可触发卡正常轮询
