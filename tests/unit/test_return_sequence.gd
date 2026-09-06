@@ -31,3 +31,10 @@ func test_run_differs() -> void:
 func test_halt_text_nonempty() -> void:
 	for run: int in [1, 2, 3]:
 		assert_that(str(ReturnSequence.halt_text(run)).length()).is_greater(10)
+
+func test_run_four_and_later_fall_back_to_run_three_text() -> void:
+	for run: int in [4, 5, 99]:
+		for step: int in range(1, ReturnSequence.STEPS + 1):
+			assert_that(ReturnSequence.text_for(run, step)).is_equal(
+				ReturnSequence.text_for(3, step))
+		assert_that(ReturnSequence.halt_text(run)).is_equal(ReturnSequence.halt_text(3))

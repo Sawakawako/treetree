@@ -1222,4 +1222,6 @@ git commit -m "docs: M6 终局+多周目封板记录 + 路线图同步"
 - [x] 归还序列增加 `树留存度 ↓ / 世界复苏度 ↑` 的互补进度，UI 同步显示并保证合计 100%。
 - [x] 交接文档分支名统一为 `main`。
 
-**验证结果**：37 套件 / 435 测试全绿（0 失败、0 flaky、0 skipped、0 orphan）；隔离 `user://` 的 headless 主场景启动与存档写入成功，无 SCRIPT ERROR。沙箱内仍会记录 Windows 根证书库不可读，不影响离线 GDScript 游戏逻辑。
+**验证结果**：37 套件 / 436 测试全绿（0 失败、0 flaky、0 skipped、0 orphan）；隔离 `user://` 的 headless 主场景启动与存档写入成功，无 SCRIPT ERROR。沙箱内仍会记录 Windows 根证书库不可读，不影响离线 GDScript 游戏逻辑。
+
+- [x] 封板后继续修复：`run >= 4` 的归还正文/停步文案回退到三周目文本，避免第四周目及以后出现空白。

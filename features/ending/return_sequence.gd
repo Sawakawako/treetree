@@ -44,11 +44,13 @@ const HALT_TEXTS := {
 }
 
 static func text_for(run: int, step: int) -> String:
-	var run_map: Dictionary = TEXTS.get(run, {})
+	var text_run := mini(run, 3) if run >= 1 else run
+	var run_map: Dictionary = TEXTS.get(text_run, {})
 	return str(run_map.get(step, ""))
 
 static func halt_text(run: int) -> String:
-	return str(HALT_TEXTS.get(run, ""))
+	var text_run := mini(run, 3) if run >= 1 else run
+	return str(HALT_TEXTS.get(text_run, ""))
 
 static func progress_for(step: int) -> Dictionary:
 	var safe_step := clampi(step, 0, STEPS)
