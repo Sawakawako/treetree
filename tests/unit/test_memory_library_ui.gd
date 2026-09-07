@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const LibraryUI := preload("res://features/memories/memory_library.gd")
+const ResourceBarScene := preload("res://features/ui/components/resource_bar.tscn")
 
 func test_library_scene_has_category_list_reader_and_back_nodes() -> void:
 	var scene := load("res://features/memories/memory_library.tscn") as PackedScene
@@ -26,6 +27,22 @@ func test_detail_text_keeps_readable_contrast_against_library_background() -> vo
 	var text_color := detail_text.get_theme_color("default_color")
 	assert_that(_contrast_ratio(text_color, background.color)).is_greater_equal(4.5)
 	root.free()
+
+func test_theme_keeps_resource_disabled_and_rich_text_body_readable() -> void:
+	var background := Color("f5f0e6")
+	var resource_bar := ResourceBarScene.instantiate()
+	add_child(resource_bar)
+	var resource_value := resource_bar.find_child("DaylightValueLabel", true, false) as Label
+	assert_that(_contrast_ratio(resource_value.get_theme_color("font_color"), background)).is_greater_equal(4.5)
+	var theme := load("res://features/ui/world_tree_theme.tres") as Theme
+	assert_that(_contrast_ratio(theme.get_color("font_disabled_color", &"Button"), background)).is_greater_equal(4.5)
+	var library_scene := load("res://features/memories/memory_library.tscn") as PackedScene
+	var library := library_scene.instantiate()
+	add_child(library)
+	var detail_text := library.find_child("DetailText", true, false) as RichTextLabel
+	assert_that(_contrast_ratio(detail_text.get_theme_color("default_color"), background)).is_greater_equal(4.5)
+	resource_bar.free()
+	library.free()
 
 func _contrast_ratio(first: Color, second: Color) -> float:
 	var first_luminance := _relative_luminance(first)
