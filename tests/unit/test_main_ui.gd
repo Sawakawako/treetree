@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const MainUI := preload("res://features/ui/main.gd")
+const WorldAxisView := preload("res://features/ui/projections/world_axis_projection.gd")
 
 func test_scene_root_scrolls_at_small_viewport() -> void:
     var scene := load("res://features/ui/main.tscn") as PackedScene
@@ -64,6 +65,10 @@ func test_m6d_ui_texts_are_archived_exactly() -> void:
         "世界之轴：天地一息未点亮",
     ]:
         assert_that(archive).contains(exact_text)
+
+func test_m6d_world_axis_projection_matches_legacy_main_shell() -> void:
+    var state := GameState.new()
+    assert_that(WorldAxisView.gap_text(state)).is_equal(MainUI.world_axis_gap_text(state))
 
 func test_storyteller_hidden_before_discovery() -> void:
     assert_that(bool(MainUI.storyteller_view(GameState.new()).get("visible", true))).is_false()

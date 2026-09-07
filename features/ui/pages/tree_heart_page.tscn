@@ -1,0 +1,224 @@
+[gd_scene load_steps=3 format=3 uid="uid://dw4ttqhqqvckl"]
+
+[ext_resource type="Script" path="res://features/ui/pages/tree_heart_page.gd" id="1_page"]
+[ext_resource type="Theme" path="res://features/ui/world_tree_theme.tres" id="2_theme"]
+
+[node name="TreeHeartPage" type="ScrollContainer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+theme = ExtResource("2_theme")
+script = ExtResource("1_page")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="StageLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+text = "当前阶段 · 种子"
+autowrap_mode = 3
+
+[node name="HeartLabel" type="Label" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "风从旧土上经过。\n有些名字，还在叶脉里。"
+autowrap_mode = 3
+
+[node name="GoalCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="GoalLabel" type="Label" parent="Content/GoalCard"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "下一目标 · 嫩叶教学"
+autowrap_mode = 3
+
+[node name="GatherButton" type="Button" parent="Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"PrimaryAction"
+text = "舒展叶片"
+
+[node name="BasicGrowthCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="BasicGrowth" type="VBoxContainer" parent="Content/BasicGrowthCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "树体生长"
+autowrap_mode = 3
+
+[node name="LeafButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "叶序螺旋（日光采集 +25%/级）"
+
+[node name="LeafCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：500"
+autowrap_mode = 3
+
+[node name="BranchButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "分枝序（自动采集 +1/级）"
+
+[node name="BranchCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：1,200"
+autowrap_mode = 3
+
+[node name="ChloroplastButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "叶绿体（光合 +0.01/级）"
+
+[node name="ChloroplastCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：800"
+autowrap_mode = 3
+
+[node name="XylemButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "木质部（生长 +5%/级）"
+
+[node name="XylemCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：50"
+autowrap_mode = 3
+
+[node name="SunflowerButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "花盘（信仰 +0.5/tick/级）"
+
+[node name="SunflowerCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：2,000"
+autowrap_mode = 3
+
+[node name="NautilusButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "螺舱（储量 +5000/级）"
+
+[node name="NautilusCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：2,000"
+autowrap_mode = 3
+
+[node name="RootEffButton" type="Button" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "根须等级（记忆 +10%/级）"
+
+[node name="RootEffCostLabel" type="Label" parent="Content/BasicGrowthCard/BasicGrowth"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：1,000"
+autowrap_mode = 3
+
+[node name="RootCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="RootContent" type="VBoxContainer" parent="Content/RootCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/RootCard/RootContent"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "根须与旧梦"
+autowrap_mode = 3
+
+[node name="RootStatusLabel" type="Label" parent="Content/RootCard/RootContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "遗迹：0/9 · 探索价格：200 树液"
+autowrap_mode = 3
+
+[node name="RootExploreButton" type="Button" parent="Content/RootCard/RootContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "根须探索（200 树液）"
+
+[node name="BodyMemoryCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="BodyMemory" type="VBoxContainer" parent="Content/BodyMemoryCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/BodyMemoryCard/BodyMemory"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "枝叶的记忆"
+autowrap_mode = 3
+
+[node name="SeedlingButton" type="Button" parent="Content/BodyMemoryCard/BodyMemory"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "嫩叶（点击采集 +1/级）"
+
+[node name="SeedlingCostLabel" type="Label" parent="Content/BodyMemoryCard/BodyMemory"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：10"
+autowrap_mode = 3
+
+[node name="DeepDreamButton" type="Button" parent="Content/BodyMemoryCard/BodyMemory"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "深根梦（3000 树液 → 记忆 +15）"
+
+[node name="WindVeilButton" type="Button" parent="Content/BodyMemoryCard/BodyMemory"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "风语膜（2500 树液 → 信仰 +30）"
