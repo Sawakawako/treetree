@@ -37,3 +37,10 @@ func test_every_existing_action_and_blocking_control_has_a_migration_target() ->
     for node_name: String in ACTION_NODE_NAMES + EVENT_NODE_NAMES:
         assert_that(root.find_child(node_name, true, false)).is_not_null()
     root.free()
+
+func test_every_existing_action_has_exactly_one_owner() -> void:
+    var scene := load("res://features/ui/main.tscn") as PackedScene
+    var root := scene.instantiate()
+    for node_name: String in ACTION_NODE_NAMES:
+        assert_that(root.find_children(node_name, "Button", true, false)).has_size(1)
+    root.free()

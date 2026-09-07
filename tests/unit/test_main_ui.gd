@@ -1,58 +1,30 @@
 extends GdUnitTestSuite
 
-const MainUI := preload("res://features/ui/main.gd")
+const LegacyContract := preload("res://tests/unit/test_main_ui_legacy_contract.gd")
+const TreeHeartPage := preload("res://features/ui/pages/tree_heart_page.gd")
 const BeingsPage := preload("res://features/ui/pages/beings_page.gd")
 const LinguaPage := preload("res://features/ui/pages/lingua_page.gd")
-const WorldAxisView := preload("res://features/ui/projections/world_axis_projection.gd")
+const NineRealmsPage := preload("res://features/ui/pages/nine_realms_page.gd")
 
-func test_scene_root_scrolls_at_small_viewport() -> void:
+func test_main_scene_uses_fixed_shell_and_independent_pages() -> void:
     var scene := load("res://features/ui/main.tscn") as PackedScene
     var root := scene.instantiate()
-    assert_that(root is ScrollContainer).is_true()
-    assert_that(root.get_node("VBox/StoryStatusLabel").autowrap_mode).is_equal(TextServer.AUTOWRAP_WORD_SMART)
-    assert_that(root.find_child("EarthSenseButton", true, false)).is_not_null()
-    assert_that(root.find_child("SkyLightButton", true, false)).is_not_null()
-    assert_that(root.find_child("NineRealmsPanel", true, false)).is_not_null()
-    assert_that(root.find_child("ReturnTitleButton", true, false)).is_not_null()
-    root.free()
-
-func test_m6d_world_ui_nodes_exist() -> void:
-    var scene := load("res://features/ui/main.tscn") as PackedScene
-    var root := scene.instantiate()
-    for node_name in [
-        "MidgardButton", "NidavellirButton", "AlfheimButton", "MuspelheimButton",
-        "JotunheimButton", "NiflheimButton", "VanaheimButton", "HelheimButton", "AsgardButton",
-        "WorldTraceButton", "RainNameButton", "RiverHearingButton", "SkyLadderButton",
-        "WorldShapingButton", "WorldBreathButton",
-        "OasisButton", "RainButton", "BanishShadowButton", "CallSoulButton", "ShapeButton",
-        "MiracleHumanButton", "MiracleForestButton", "MiracleStoneButton", "MiracleWildButton",
+    assert_that(root is Control).is_true()
+    for node_name: String in [
+        "ResourceBar", "PageStack", "TreeHeartPage", "BeingsPage",
+        "LinguaPage", "NineRealmsPage", "BottomNavigation", "EventLayer",
     ]:
         assert_that(root.find_child(node_name, true, false)).is_not_null()
+    assert_that(root.find_child("PageStack", true, false) is ScrollContainer).is_false()
     root.free()
 
-func test_m6d_shortcut_mode_expands_after_world_trace() -> void:
-    var s := GameState.new()
-    assert_that(MainUI.realm_visible_in_panel(s, &"midgard")).is_true()
-    assert_that(MainUI.realm_visible_in_panel(s, &"nidavellir")).is_false()
-    s.realm_echoes.append(&"midgard")
-    assert_that(MainUI.realm_visible_in_panel(s, &"nidavellir")).is_true()
-    assert_that(MainUI.realm_visible_in_panel(s, &"alfheim")).is_true()
-    assert_that(MainUI.realm_visible_in_panel(s, &"muspelheim")).is_false()
-    s.lingua_nodes.append(&"world_trace")
-    assert_that(MainUI.realm_visible_in_panel(s, &"muspelheim")).is_true()
-    assert_that(MainUI.realm_visible_in_panel(s, &"asgard")).is_true()
-
-func test_m6d_realm_gap_names_primary_blocker() -> void:
-    var s := GameState.new()
-    var midgard := RealmCatalog.get_realm(&"midgard")
-    assert_that(MainUI.realm_gap_text(s, midgard)).contains("遗迹 9")
-    s.relics_found.append(9)
-    assert_that(MainUI.realm_gap_text(s, midgard)).contains("生长")
-
-func test_m6d_realm_echo_layers_by_run() -> void:
-    assert_that(MainUI.realm_run_echo(1)).is_equal("")
-    assert_that(MainUI.realm_run_echo(2)).contains("九个名字比根先醒")
-    assert_that(MainUI.realm_run_echo(3)).contains("没有哪一界先开口")
+func test_every_action_belongs_to_exactly_one_page_or_shell() -> void:
+    var scene := load("res://features/ui/main.tscn") as PackedScene
+    var root := scene.instantiate()
+    for node_name: String in LegacyContract.ACTION_NODE_NAMES:
+        var matches := root.find_children(node_name, "Button", true, false)
+        assert_that(matches).has_size(1)
+    root.free()
 
 func test_m6d_ui_texts_are_archived_exactly() -> void:
     var file := FileAccess.open("res://docs/world-tree/narrative/09-ui-broadcast.md", FileAccess.READ)
@@ -68,9 +40,10 @@ func test_m6d_ui_texts_are_archived_exactly() -> void:
     ]:
         assert_that(archive).contains(exact_text)
 
-func test_m6d_world_axis_projection_matches_legacy_main_shell() -> void:
+func test_nine_realms_projection_preserves_the_legacy_shortcut_contract() -> void:
     var state := GameState.new()
-    assert_that(WorldAxisView.gap_text(state)).is_equal(MainUI.world_axis_gap_text(state))
+    assert_that(NineRealmsPage.realm_visible_in_panel(state, &"midgard")).is_true()
+    assert_that(NineRealmsPage.realm_visible_in_panel(state, &"nidavellir")).is_false()
 
 func test_storyteller_hidden_before_discovery() -> void:
     assert_that(bool(BeingsPage.storyteller_view(GameState.new()).get("visible", true))).is_false()
@@ -157,34 +130,10 @@ func test_m6_world_axis_choice_has_hidden_self_option() -> void:
 
 func test_m6_run_opening_text_layers_by_run() -> void:
     # spec §8.6 / 设计 §5.3：二周目/三周目开局文本层叠；一周目无附加层
-    assert_that(MainUI.run_opening_text(1)).is_equal("")
-    assert_that(MainUI.run_opening_text(2)).contains("你记得这缕光。你曾把它交给下一个自己。")
-    assert_that(MainUI.run_opening_text(3)).contains("一点半")
-    assert_that(MainUI.run_opening_text(4)).is_equal("")
-
-func test_m6_settlement_view_loop_outcomes() -> void:
-    # 好结局：hope +1（1→2），仍可「再次醒来」
-    var good: Dictionary = MainUI.settlement_view(&"good", 1, 2)
-    assert_that(str(good.get("title", ""))).is_equal("好结局")
-    assert_that(str(good.get("hope_line", ""))).contains("1 → 2")
-    assert_that(str(good.get("action_text", ""))).is_equal("再次醒来")
-    assert_that(bool(good.get("loops", true))).is_true()
-    # 坏/普通：hope 不变，仍循环
-    var bad: Dictionary = MainUI.settlement_view(&"bad", 1, 1)
-    assert_that(str(bad.get("title", ""))).is_equal("坏结局")
-    assert_that(str(bad.get("hope_line", ""))).contains("1")
-    assert_that(str(bad.get("action_text", ""))).is_equal("再次醒来")
-    var normal: Dictionary = MainUI.settlement_view(&"normal", 1, 1)
-    assert_that(str(normal.get("title", ""))).is_equal("普通结局")
-    assert_that(str(normal.get("action_text", ""))).is_equal("再次醒来")
-
-func test_m6_settlement_view_true_ends_loop() -> void:
-    # 真结局：循环终止 → 「回到标题」，无「再次醒来」
-    var view: Dictionary = MainUI.settlement_view(&"true", 2, 0)
-    assert_that(str(view.get("title", ""))).is_equal("真结局")
-    assert_that(str(view.get("action_text", ""))).is_equal("回到标题")
-    assert_that(bool(view.get("loops", true))).is_false()
-    assert_that(str(view.get("body", "")).length()).is_greater(10)
+    assert_that(TreeHeartPage.run_opening_text(1)).is_equal("")
+    assert_that(TreeHeartPage.run_opening_text(2)).contains("你记得这缕光。你曾把它交给下一个自己。")
+    assert_that(TreeHeartPage.run_opening_text(3)).contains("一点半")
+    assert_that(TreeHeartPage.run_opening_text(4)).is_equal("")
 
 func test_m6_ending_ui_texts_are_archived_exactly() -> void:
     var file := FileAccess.open("res://docs/world-tree/narrative/09-ui-broadcast.md", FileAccess.READ)

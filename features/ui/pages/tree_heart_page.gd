@@ -92,6 +92,13 @@ static func heart_text(state: GameState) -> String:
 		_:
 			return DEFAULT_HEART_TEXT
 
+static func run_opening_text(run_number: int) -> String:
+	if run_number == 2:
+		return RUN2_OPENING_TEXT
+	if run_number == 3:
+		return RUN3_OPENING_TEXT
+	return ""
+
 static func next_goal_view(state: GameState, costs: Dictionary) -> Dictionary:
 	if state.seedling_level < 3:
 		return {

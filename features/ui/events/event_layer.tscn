@@ -1,0 +1,299 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://features/ui/events/event_layer.gd" id="1_layer"]
+[ext_resource type="Theme" path="res://features/ui/world_tree_theme.tres" id="2_theme"]
+
+[node name="EventLayer" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_layer")
+
+[node name="ToastLayer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 76.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ToastPanel" type="PanelContainer" parent="ToastLayer"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ActionCard"
+
+[node name="ToastLabel" type="Label" parent="ToastLayer/ToastPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "风从叶间经过。"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+mouse_filter = 2
+
+[node name="NarrativeScrim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.17, 0.13, 0.09, 0.24)
+
+[node name="NarrativeCard" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -292.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 0
+theme_type_variation = &"ActionCard"
+
+[node name="VBox" type="VBoxContainer" parent="NarrativeCard"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NarrativeTitleLabel" type="Label" parent="NarrativeCard/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "一阵风"
+autowrap_mode = 3
+
+[node name="NarrativeScroll" type="ScrollContainer" parent="NarrativeCard/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 160)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="NarrativeBodyLabel" type="RichTextLabel" parent="NarrativeCard/VBox/NarrativeScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "从根边经过。"
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="NarrativeCloseButton" type="Button" parent="NarrativeCard/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "收进年轮"
+
+[node name="BlockingOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BlockingScrim" type="ColorRect" parent="BlockingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.09, 0.06, 0.62)
+
+[node name="ChoicePanel" type="PanelContainer" parent="BlockingOverlay"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -230.0
+offset_right = 190.0
+offset_bottom = 230.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ActionCard"
+
+[node name="VBox" type="VBoxContainer" parent="BlockingOverlay/ChoicePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChoiceTitleLabel" type="Label" parent="BlockingOverlay/ChoicePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+autowrap_mode = 3
+
+[node name="ChoiceIntroScroll" type="ScrollContainer" parent="BlockingOverlay/ChoicePanel/VBox"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChoiceIntroLabel" type="RichTextLabel" parent="BlockingOverlay/ChoicePanel/VBox/ChoiceIntroScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="ChoiceOptionAButton" type="Button" parent="BlockingOverlay/ChoicePanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ChoiceOptionBButton" type="Button" parent="BlockingOverlay/ChoicePanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ChoiceOptionCButton" type="Button" parent="BlockingOverlay/ChoicePanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ChoiceOptionDButton" type="Button" parent="BlockingOverlay/ChoicePanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ReturnPanel" type="PanelContainer" parent="BlockingOverlay"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -220.0
+offset_right = 190.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ActionCard"
+
+[node name="VBox" type="VBoxContainer" parent="BlockingOverlay/ReturnPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ReturnTitleLabel" type="Label" parent="BlockingOverlay/ReturnPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+autowrap_mode = 3
+
+[node name="ReturnScroll" type="ScrollContainer" parent="BlockingOverlay/ReturnPanel/VBox"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ReturnTextLabel" type="RichTextLabel" parent="BlockingOverlay/ReturnPanel/VBox/ReturnScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="ReturnProgressLabel" type="Label" parent="BlockingOverlay/ReturnPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="ReturnAdvanceButton" type="Button" parent="BlockingOverlay/ReturnPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryAction"
+text = "继续归还"
+
+[node name="EndingPanel" type="PanelContainer" parent="BlockingOverlay"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -250.0
+offset_right = 190.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ActionCard"
+
+[node name="VBox" type="VBoxContainer" parent="BlockingOverlay/EndingPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EndingTitleLabel" type="Label" parent="BlockingOverlay/EndingPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+autowrap_mode = 3
+
+[node name="EndingScroll" type="ScrollContainer" parent="BlockingOverlay/EndingPanel/VBox"]
+custom_minimum_size = Vector2(0, 290)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="EndingBodyLabel" type="RichTextLabel" parent="BlockingOverlay/EndingPanel/VBox/EndingScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="EndingHopeLabel" type="Label" parent="BlockingOverlay/EndingPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="EndingActionButton" type="Button" parent="BlockingOverlay/EndingPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryAction"
+text = "再次醒来"
