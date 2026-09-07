@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 
 const MainUI := preload("res://features/ui/main.gd")
 const BeingsPage := preload("res://features/ui/pages/beings_page.gd")
+const LinguaPage := preload("res://features/ui/pages/lingua_page.gd")
 const WorldAxisView := preload("res://features/ui/projections/world_axis_projection.gd")
 
 func test_scene_root_scrolls_at_small_viewport() -> void:
@@ -73,6 +74,16 @@ func test_m6d_world_axis_projection_matches_legacy_main_shell() -> void:
 
 func test_storyteller_hidden_before_discovery() -> void:
     assert_that(bool(BeingsPage.storyteller_view(GameState.new()).get("visible", true))).is_false()
+
+func test_lingua_page_projection_preserves_the_legacy_unlock_contract() -> void:
+    var state := GameState.new()
+    state.lingua_life_level = 1
+    state.sap = BigNum.new(3000.0)
+    var before := state.to_dict()
+    var view := LinguaPage.node_view(state, &"root_echo")
+    assert_that(view.get("disabled", true)).is_false()
+    assert_that(view.get("status", "")).is_equal("可以点亮")
+    assert_that(state.to_dict()).is_equal(before)
 
 func test_storyteller_shows_locked_hint_after_cave() -> void:
     var s := GameState.new()

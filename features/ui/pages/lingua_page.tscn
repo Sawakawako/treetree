@@ -1,0 +1,280 @@
+[gd_scene load_steps=3 format=3 uid="uid://ds8gxnj5h8v2m"]
+
+[ext_resource type="Script" path="res://features/ui/pages/lingua_page.gd" id="1_page"]
+[ext_resource type="Theme" path="res://features/ui/world_tree_theme.tres" id="2_theme"]
+
+[node name="LinguaPage" type="ScrollContainer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+theme = ExtResource("2_theme")
+script = ExtResource("1_page")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="PageHeader" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Content/PageHeader"]
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+text = "树语"
+autowrap_mode = 3
+
+[node name="InsightContextLabel" type="Label" parent="Content/PageHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "领悟：0"
+autowrap_mode = 3
+
+[node name="LanguageSummaryCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Summary" type="VBoxContainer" parent="Content/LanguageSummaryCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/LanguageSummaryCard/Summary"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "语阶"
+autowrap_mode = 3
+
+[node name="LifeLevelLabel" type="Label" parent="Content/LanguageSummaryCard/Summary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "生命之语 · Lv0 / 3"
+autowrap_mode = 3
+
+[node name="MemoryLevelLabel" type="Label" parent="Content/LanguageSummaryCard/Summary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "记忆之语 · Lv0 / 1"
+autowrap_mode = 3
+
+[node name="SuggestedNodeLabel" type="Label" parent="Content/LanguageSummaryCard/Summary"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "建议节点：遗迹回声"
+autowrap_mode = 3
+
+[node name="ConversionCard" type="PanelContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/ConversionCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/ConversionCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "转换"
+autowrap_mode = 3
+
+[node name="FaithConvertButton" type="Button" parent="Content/ConversionCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "献祭（100 树液 → 信仰 +1）"
+
+[node name="MemoryConvertButton" type="Button" parent="Content/ConversionCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "挖梦（500 树液 → 记忆 +1）"
+
+[node name="EngineCard" type="PanelContainer" parent="Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/EngineCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/EngineCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "引擎"
+autowrap_mode = 3
+
+[node name="FaithEngineButton" type="Button" parent="Content/EngineCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "信仰引擎 · 升级"
+
+[node name="FaithEngineCostLabel" type="Label" parent="Content/EngineCard/Actions"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：200"
+autowrap_mode = 3
+
+[node name="MemoryEngineButton" type="Button" parent="Content/EngineCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "记忆引擎 · 升级"
+
+[node name="MemoryEngineCostLabel" type="Label" parent="Content/EngineCard/Actions"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "价格：500"
+autowrap_mode = 3
+
+[node name="LanguageUpgradeCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/LanguageUpgradeCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/LanguageUpgradeCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "生命与记忆"
+autowrap_mode = 3
+
+[node name="LifeUpgradeButton" type="Button" parent="Content/LanguageUpgradeCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "生命之语 · 升级"
+
+[node name="LifeCostLabel" type="Label" parent="Content/LanguageUpgradeCard/Actions"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="MemoryLinguaButton" type="Button" parent="Content/LanguageUpgradeCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "记忆之语 · 醒来"
+
+[node name="MemoryLinguaCostLabel" type="Label" parent="Content/LanguageUpgradeCard/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "记忆之语 Lv1 · 500 记忆 + 领悟 5（领悟不消耗）"
+autowrap_mode = 3
+
+[node name="NodePathCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/NodePathCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/NodePathCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "树语之路"
+autowrap_mode = 3
+
+[node name="RootEchoButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "遗迹回声（遗迹文本回看）"
+
+[node name="RootResonanceButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "根须共鸣（解锁树液→记忆兑换）"
+
+[node name="EarthSenseButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "地脉感应（解锁离线进度）"
+
+[node name="DeepRootButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "深层根须（根须探索成本 -50%）"
+
+[node name="TreeCanopyButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "树冠舒展（解锁树液→信仰兑换）"
+
+[node name="RingMemoryButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "年轮记忆（生长 +20%）"
+
+[node name="CloudCrownButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "云冠（解锁信仰引擎）"
+
+[node name="WoodHeartButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "木质强化（sap 上限 +50%）"
+
+[node name="SkyLightButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "天光（离线有效时间 ×2）"
+
+[node name="SongResonanceButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "歌之共鸣（信仰产出 +10%）"
+
+[node name="VillageHeartButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "聚落之心（四族设施产出 +50%）"
+
+[node name="GraceButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "恩泽（解锁记忆引擎）"
+
+[node name="AltarButton" type="Button" parent="Content/NodePathCard/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "圣坛（信仰引擎效果 ×2）"
