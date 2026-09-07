@@ -44,6 +44,14 @@ func test_theme_keeps_resource_disabled_and_rich_text_body_readable() -> void:
 	resource_bar.free()
 	library.free()
 
+func test_selected_bottom_tab_keeps_text_readable_and_focus_structurally_distinct() -> void:
+	var theme := load("res://features/ui/world_tree_theme.tres") as Theme
+	var normal := theme.get_stylebox("normal", &"BottomTabSelected") as StyleBoxFlat
+	var focus := theme.get_stylebox("focus", &"BottomTabSelected") as StyleBoxFlat
+	assert_that(_contrast_ratio(theme.get_color("font_color", &"BottomTabSelected"), normal.bg_color)).is_greater_equal(4.5)
+	assert_that(focus.border_width_left).is_greater(normal.border_width_left)
+	assert_that(focus.border_color).is_not_equal(normal.border_color)
+
 func _contrast_ratio(first: Color, second: Color) -> float:
 	var first_luminance := _relative_luminance(first)
 	var second_luminance := _relative_luminance(second)

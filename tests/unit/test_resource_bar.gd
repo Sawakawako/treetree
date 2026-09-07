@@ -53,3 +53,31 @@ func test_collapse_hides_expanded_panel_and_emits_false() -> void:
 	assert_that((root.find_child("ExpandedPanel", true, false) as Control).visible).is_false()
 	assert_that(emitted).is_equal([true, false])
 	root.free()
+
+func test_refresh_flashes_only_increases_replaces_tweens_and_cleans_on_exit() -> void:
+	var root := ResourceBarScene.instantiate() as ResourceBar
+	add_child(root)
+	var state := GameState.new()
+	state.sap = BigNum.new(10.0)
+	root.refresh(state, 100.0, &"tree_heart")
+	assert_that(_value_tweens(root)).is_empty()
+	state.sap = BigNum.new(5.0)
+	root.refresh(state, 100.0, &"tree_heart")
+	assert_that(_value_tweens(root)).is_empty()
+	state.sap = BigNum.new(12.0)
+	root.refresh(state, 100.0, &"tree_heart")
+	var summary_label := root.find_child("SummarySap", true, false) as Label
+	var first := _value_tweens(root).get(summary_label) as Tween
+	assert_that(first).is_not_null()
+	state.sap = BigNum.new(13.0)
+	root.refresh(state, 100.0, &"tree_heart")
+	var replacement := _value_tweens(root).get(summary_label) as Tween
+	assert_that(first.is_valid()).is_false()
+	assert_that(replacement).is_not_same(first)
+	remove_child(root)
+	assert_that(_value_tweens(root)).is_empty()
+	assert_that(replacement.is_valid()).is_false()
+	root.free()
+
+func _value_tweens(resource_bar: ResourceBar) -> Dictionary:
+	return resource_bar.get("_value_tweens") as Dictionary
