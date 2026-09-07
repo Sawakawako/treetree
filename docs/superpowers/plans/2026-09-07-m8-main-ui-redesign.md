@@ -1250,7 +1250,7 @@ git commit -m "refactor: 组装渐进式主玩法界面"
 - Consumes: 完整 M8 主壳、现有真实游戏流程、GdUnit4 与 Godot Agent Vision。
 - Produces: 全量自动化证据、420×640 多状态截图与量化视觉审查、继续指南和路线图的新基线。
 
-- [ ] **Step 1: 运行静态与导入检查**
+- [x] **Step 1: 运行静态与导入检查**
 
 ```powershell
 $godot = 'C:\Users\冯骜\Desktop\Godot_v4.7.1-stable_mono_win64_console.exe'
@@ -1262,7 +1262,7 @@ git status --short
 
 Expected: 无空白错误；UI 页面没有 `_process`；`GameManager.*.connect` 只出现在 `features/ui/main.gd`；导入新增 `.uid` 均属于本计划文件且准备入库。
 
-- [ ] **Step 2: 运行全量 GdUnit4 与主场景冒烟**
+- [x] **Step 2: 运行全量 GdUnit4 与主场景冒烟**
 
 ```powershell
 & $godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode -c
@@ -1271,7 +1271,7 @@ Expected: 无空白错误；UI 页面没有 `_process`；`GameManager.*.connect`
 
 Expected: 测试总数高于 M7 的 46 套件 / 513 测试，且 0 error / 0 failure / 0 skipped / 0 orphan；冒烟无 `SCRIPT ERROR`。
 
-- [ ] **Step 3: 创建忽略的 420×640 真实状态 QA 驱动**
+- [x] **Step 3: 创建忽略的 420×640 真实状态 QA 驱动**
 
 以现有 `.gdskills/qa_capture.gd` 的 `SceneTree`、`_settle()`、`_capture()`、`_check()` 为基底，新建 `.gdskills/m8_qa_capture.gd`，使用真实节点/动作完成以下状态并保存 PNG 到 `.gdskills/m8-captures/`：
 
@@ -1286,7 +1286,7 @@ const REQUIRED_CAPTURES: Array[String] = [
 
 驱动必须逐项 `_check()`：当前页唯一可见、页签出现顺序、每页能滚到尾部、导航不遮挡内容、阻塞层禁止底层点击、关闭后焦点恢复、返回标题/继续游戏仍可用。它可以直接设置隔离 `GameManager.get_state()` 构造视觉快照，但所有动作链冒烟必须至少各走一次真实 GameManager 入口。
 
-- [ ] **Step 4: 在隔离 user:// 下运行 QA 驱动**
+- [x] **Step 4: 在隔离 user:// 下运行 QA 驱动**
 
 ```powershell
 $qaAppData = Join-Path (Get-Location) '.gdskills\runtime-user-m8'
@@ -1302,7 +1302,7 @@ try {
 
 Expected: 驱动退出码 0，输出每项 `QA_PASS` 和 13 个 420×640 捕获；真实用户存档未被读取或修改。
 
-- [ ] **Step 5: 按 godot-master 的 Agent Vision 流程转码并看图**
+- [x] **Step 5: 按 godot-master 的 Agent Vision 流程转码并看图**
 
 执行前读取：
 
@@ -1333,17 +1333,17 @@ python $vision asset --project-root . --paths .gdskills/m8-captures/m8-ending.pn
 
 仅对文字/1px 接缝不清的画面加 `--detail`。不得把 PNG 墙直接送入上下文，也不得提交 `.gdskills/`。
 
-- [ ] **Step 6: 量化审查并修复所有阻断项**
+- [x] **Step 6: 量化审查并修复所有阻断项**
 
 对每组截图按 Taste Receptor Atlas 记录适用项 0/1/2，至少覆盖：首屏层级、正文最差对比度、标题/资源数字/按钮字号、44px 触控区、禁用/选中 affordance、间距节奏、暖纸色彩角色、固定头尾构图、弹层遮挡、焦点可见性、动效静帧、M7↔M8 视觉身份一致性。
 
 任何文字截断、横向溢出、底栏遮挡、透明容器吃输入、正文对比度 <4.5、焦点不可见或 `SLOP-STACK` 阻断项都先写失败回归测试，再修复，再重跑 Task 9 Step 2—5。
 
-- [ ] **Step 7: 执行独立代码审查与验证后完成流程**
+- [x] **Step 7: 执行独立代码审查与验证后完成流程**
 
 调用 `requesting-code-review` 检查：旧入口映射、信号重复连接、页面直接写状态、事件优先级、Tween 生命周期、存档/终局回归。修复确认有效的问题后，调用 `verification-before-completion` 重新执行全量测试、冒烟、`git diff --check`、工作区检查和最终视觉复查。
 
-- [ ] **Step 8: 同步项目状态文档**
+- [x] **Step 8: 同步项目状态文档**
 
 在三处记录相同的实际结果：
 
@@ -1356,7 +1356,7 @@ AGENTS.md：当前交接基线追加 M8，替换“下一里程碑尚未冻结�
 
 不得猜测测试数量；从最终 GdUnit4 输出逐字记录套件数、测试数、失败、跳过和 orphan。
 
-- [ ] **Step 9: 提交封板文档与最终修复**
+- [x] **Step 9: 提交封板文档与最终修复**
 
 ```powershell
 git add -- AGENTS.md docs/world-tree/CONTINUE.md docs/world-tree/ROADMAP.md docs/superpowers/plans/2026-09-07-m8-main-ui-redesign.md features/ui tests/unit
@@ -1367,7 +1367,7 @@ git commit -m "docs: 封板 M8 主玩法界面重构"
 
 Expected: `.gdskills/`、`.godot/`、`reports/` 未进入暂存；提交只包含 M8 代码、测试与文档。
 
-- [ ] **Step 10: 提交后最终核验**
+- [x] **Step 10: 提交后最终核验**
 
 ```powershell
 & $godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests/unit --ignoreHeadlessMode -c
@@ -1377,6 +1377,13 @@ git log --oneline --decorate -10
 ```
 
 Expected: 最终全量仍为 0 error / 0 failure / 0 skipped / 0 orphan，冒烟无脚本错误，工作区干净，M8 各任务提交与封板提交都在当前分支。
+
+### Task 9 封板记录（2026-09-08）
+
+- 隔离驱动 `.gdskills/m8_qa_capture.gd` 真实加载 `main.tscn`，完成 13 个状态捕获；每张图均为 420×640，驱动退出码 0，PNG 与联系表均保留在 `.gdskills/` 忽略目录。
+- Agent Vision 复查了 `m8-core`、`m8-pages`、`m8-events`、`m8-ending` 四组 WebP；层级、正文对比度、字体可读性、按钮触控面积、阻塞层与底栏安全区无阻断项。
+- 授权隔离 `user://` 后全量回归权威结果为 55/55 套件、596/596 测试，0 error / 0 failure / 0 skipped / 0 orphan；主场景冒烟退出码 0。
+- 仅保留与 M8 相关的代码、测试与文档；`.gdskills/`、`.godot/`、`reports/` 不进入提交。
 
 ---
 
