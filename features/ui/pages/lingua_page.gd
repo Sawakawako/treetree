@@ -79,8 +79,12 @@ func refresh(state: GameState) -> void:
 	_refresh_nodes(state)
 
 func _refresh_conversions(state: GameState) -> void:
-	_faith_convert_button.visible = LinguaActions.has_node(state, &"tree_canopy")
-	_memory_convert_button.visible = LinguaActions.has_node(state, &"root_resonance")
+	var faith_visible := LinguaActions.has_node(state, &"tree_canopy")
+	var memory_visible := LinguaActions.has_node(state, &"root_resonance")
+	_faith_convert_button.visible = faith_visible
+	_memory_convert_button.visible = memory_visible
+	_faith_convert_button.disabled = not (faith_visible and state.sap.is_greater_or_equal(BigNum.new(100.0)))
+	_memory_convert_button.disabled = not (memory_visible and state.sap.is_greater_or_equal(BigNum.new(500.0)))
 	_conversion_card.visible = _faith_convert_button.visible or _memory_convert_button.visible
 
 func _refresh_engines(state: GameState) -> void:

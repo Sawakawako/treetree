@@ -219,6 +219,30 @@ func test_failed_button_is_silent_and_requests_one_refresh() -> void:
 	root.free()
 	GameManager._state = previous_state
 
+func test_conversion_buttons_use_conversion_resource_gates() -> void:
+	var previous_state: GameState = GameManager._state
+	var state := GameState.new()
+	state.lingua_nodes.assign([&"tree_canopy", &"root_resonance"])
+	state.sap = BigNum.new(99.0)
+	GameManager._state = state
+	var root := _page_for(state)
+	assert_that(_button(root, "FaithConvertButton").disabled).is_true()
+	assert_that(_button(root, "MemoryConvertButton").disabled).is_true()
+	state.sap = BigNum.new(100.0)
+	root.refresh(state)
+	assert_that(_button(root, "FaithConvertButton").disabled).is_false()
+	assert_that(_button(root, "MemoryConvertButton").disabled).is_true()
+	state.sap = BigNum.new(499.0)
+	root.refresh(state)
+	assert_that(_button(root, "FaithConvertButton").disabled).is_false()
+	assert_that(_button(root, "MemoryConvertButton").disabled).is_true()
+	state.sap = BigNum.new(500.0)
+	root.refresh(state)
+	assert_that(_button(root, "FaithConvertButton").disabled).is_false()
+	assert_that(_button(root, "MemoryConvertButton").disabled).is_false()
+	root.free()
+	GameManager._state = previous_state
+
 func _assert_single_touch_button(root: Node, node_name: String) -> void:
 	var matches := root.find_children(node_name, "Button", true, false)
 	assert_that(matches).has_size(1)
