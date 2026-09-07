@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const MainUI := preload("res://features/ui/main.gd")
+const BeingsPage := preload("res://features/ui/pages/beings_page.gd")
 const WorldAxisView := preload("res://features/ui/projections/world_axis_projection.gd")
 
 func test_scene_root_scrolls_at_small_viewport() -> void:
@@ -71,12 +72,12 @@ func test_m6d_world_axis_projection_matches_legacy_main_shell() -> void:
     assert_that(WorldAxisView.gap_text(state)).is_equal(MainUI.world_axis_gap_text(state))
 
 func test_storyteller_hidden_before_discovery() -> void:
-    assert_that(bool(MainUI.storyteller_view(GameState.new()).get("visible", true))).is_false()
+    assert_that(bool(BeingsPage.storyteller_view(GameState.new()).get("visible", true))).is_false()
 
 func test_storyteller_shows_locked_hint_after_cave() -> void:
     var s := GameState.new()
     s.choice_flags.append(&"cave_found")
-    var view: Dictionary = MainUI.storyteller_view(s)
+    var view: Dictionary = BeingsPage.storyteller_view(s)
     assert_that(view.get("visible", false)).is_true()
     assert_that(view.get("disabled", false)).is_true()
     assert_that(str(view.get("status_text", ""))).contains("被守住的梦")
@@ -84,14 +85,14 @@ func test_storyteller_shows_locked_hint_after_cave() -> void:
 func test_storyteller_shows_available_and_completed_states() -> void:
     var ready := GameState.new()
     ready.choice_flags.assign([&"cave_found", &"human_nightmare_protected"])
-    var available: Dictionary = MainUI.storyteller_view(ready)
+    var available: Dictionary = BeingsPage.storyteller_view(ready)
     assert_that(available.get("disabled", true)).is_false()
     assert_that(str(available.get("button_text", ""))).contains("已读 0/3")
 
     var done := GameState.new()
     done.choice_flags.append(&"cave_found")
     done.storyteller_stories.assign([&"story_4", &"story_5", &"story_6"])
-    var completed: Dictionary = MainUI.storyteller_view(done)
+    var completed: Dictionary = BeingsPage.storyteller_view(done)
     assert_that(completed.get("disabled", false)).is_true()
     assert_that(str(completed.get("button_text", ""))).contains("已读 3/3")
 

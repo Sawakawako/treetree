@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const MainUi = preload("res://features/ui/main.gd")
+const MainUi = preload("res://features/ui/pages/beings_page.gd")
 
 func test_half_step_relation_display() -> void:
 	assert_that(MainUi.relation_label(0.5)).is_equal("友善")

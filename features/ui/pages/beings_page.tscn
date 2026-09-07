@@ -1,0 +1,397 @@
+[gd_scene load_steps=3 format=3 uid="uid://dwn7d5hoeeqgn"]
+
+[ext_resource type="Script" path="res://features/ui/pages/beings_page.gd" id="1_page"]
+[ext_resource type="Theme" path="res://features/ui/world_tree_theme.tres" id="2_theme"]
+
+[node name="BeingsPage" type="ScrollContainer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+theme = ExtResource("2_theme")
+script = ExtResource("1_page")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="PageHeader" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Content/PageHeader"]
+layout_mode = 2
+theme_type_variation = &"PageTitleLabel"
+text = "众生"
+autowrap_mode = 3
+
+[node name="SoulContextLabel" type="Label" parent="Content/PageHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "河底灵魂：100 / 100"
+autowrap_mode = 3
+
+[node name="InsightContextLabel" type="Label" parent="Content/PageHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "领悟：0"
+autowrap_mode = 3
+
+[node name="RaceSummaryCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="RaceSummary" type="VBoxContainer" parent="Content/RaceSummaryCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/RaceSummaryCard/RaceSummary"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "四族"
+autowrap_mode = 3
+
+[node name="RaceHumanLabel" type="Label" parent="Content/RaceSummaryCard/RaceSummary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "人族：记忆 2 时苏醒"
+autowrap_mode = 3
+
+[node name="RaceForestLabel" type="Label" parent="Content/RaceSummaryCard/RaceSummary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "林地民：信仰 30 时苏醒"
+autowrap_mode = 3
+
+[node name="RaceStoneLabel" type="Label" parent="Content/RaceSummaryCard/RaceSummary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "石裔：信仰 60 时苏醒"
+autowrap_mode = 3
+
+[node name="RaceWildLabel" type="Label" parent="Content/RaceSummaryCard/RaceSummary"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "野民：信仰 100 时苏醒"
+autowrap_mode = 3
+
+[node name="RelationCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/RelationCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/RelationCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "仪式与关系"
+autowrap_mode = 3
+
+[node name="InteractHumanButton" type="Button" parent="Content/RelationCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与人族围火"
+
+[node name="InteractForestButton" type="Button" parent="Content/RelationCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与林地民听歌"
+
+[node name="InteractStoneButton" type="Button" parent="Content/RelationCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与石裔看地基"
+
+[node name="InteractWildButton" type="Button" parent="Content/RelationCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与野民看壁画"
+
+[node name="DreamCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/DreamCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/DreamCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "梦与亲密"
+autowrap_mode = 3
+
+[node name="PlunderHumanButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderForestButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderStoneButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="PlunderWildButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "把梦收进年轮"
+
+[node name="IntimateHumanButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与她促膝"
+
+[node name="IntimateForestButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与她对坐"
+
+[node name="IntimateStoneButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "与他谈船"
+
+[node name="IntimateWildButton" type="Button" parent="Content/DreamCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "随它们看画"
+
+[node name="FacilityCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/FacilityCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/FacilityCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "族群设施"
+autowrap_mode = 3
+
+[node name="FirepitButton" type="Button" parent="Content/FacilityCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "火塘（人族设施 · 记忆 +0.1/tick）"
+
+[node name="RingButton" type="Button" parent="Content/FacilityCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "歌之环（林地民设施 · 信仰 +0.3/tick）"
+
+[node name="ForgeButton" type="Button" parent="Content/FacilityCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "铸根坊（石裔设施 · 树液 +0.5/tick）"
+
+[node name="TotemPoleButton" type="Button" parent="Content/FacilityCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "图腾柱（野民设施 · 记忆 +0.1/tick）"
+
+[node name="TotemCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Content" type="VBoxContainer" parent="Content/TotemCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/TotemCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "图腾与领悟"
+autowrap_mode = 3
+
+[node name="TotemPanel" type="PanelContainer" parent="Content/TotemCard/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="TotemLabel" type="Label" parent="Content/TotemCard/Content/TotemPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="TotemInterpretButton" type="Button" parent="Content/TotemCard/Content"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "解读图腾"
+
+[node name="AvatarCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="AvatarPanel" type="PanelContainer" parent="Content/AvatarCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="AvatarLabel" type="Label" parent="Content/AvatarCard/AvatarPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="SoulCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Actions" type="VBoxContainer" parent="Content/SoulCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/SoulCard/Actions"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "亡者之河"
+autowrap_mode = 3
+
+[node name="SoulLabel" type="Label" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "灵魂：100 / 100"
+autowrap_mode = 3
+
+[node name="ReviveHumanButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "唤回说梦的人"
+
+[node name="ReviveForestButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "唤回听风的人"
+
+[node name="ReviveStoneButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "唤回执锤的人"
+
+[node name="ReviveWildButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "唤回画影的人"
+
+[node name="PlunderSoulHumanButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulForestButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulStoneButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="PlunderSoulWildButton" type="Button" parent="Content/SoulCard/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "让它沉回河底"
+
+[node name="StoryCard" type="PanelContainer" parent="Content"]
+layout_mode = 2
+theme_type_variation = &"ActionCard"
+
+[node name="Content" type="VBoxContainer" parent="Content/StoryCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Content/StoryCard/Content"]
+layout_mode = 2
+theme_type_variation = &"SectionTitleLabel"
+text = "说书人的火"
+autowrap_mode = 3
+
+[node name="StoryStatusLabel" type="Label" parent="Content/StoryCard/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "说书人的火还没有亮。"
+autowrap_mode = 3
+
+[node name="StoryButton" type="Button" parent="Content/StoryCard/Content"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "听说书人讲下一个故事"
+
+[node name="StreamStoryButton" type="Button" parent="Content/StoryCard/Content"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "听一个没有署名的故事"
